@@ -1,5 +1,7 @@
 # Node & dependencies
 /node_modules/
+# Node & dependencies
+/node_modules/
 npm-debug.log
 yarn-error.log
 
@@ -24,6 +26,7 @@ auth.json
 public_html/storage
 public_html/hot
 
+# Homestead & Vagrant
 # Homestead & Vagrant
 Homestead.yaml
 Homestead.json
