@@ -1,23 +1,42 @@
-/.phpunit.cache
-/node_modules
-/public/build
-/public/hot
-/public/storage
-/storage/*.key
-/storage/pail
-/vendor
+# Node & dependencies
+/node_modules/
+npm-debug.log
+yarn-error.log
+
+# Laravel general
+/vendor/
 .env
 .env.backup
 .env.production
-.phpactor.json
 .phpunit.result.cache
-Homestead.json
+.phpunit.cache
+.phpactor.json
+auth.json
+
+# Laravel storage & build
+/storage/*.key
+/storage/pail
+/public/build
+/public/hot
+/public/storage
+
+# Laravel alternate public paths
+public_html/storage
+public_html/hot
+
+# Homestead & Vagrant
 Homestead.yaml
-npm-debug.log
-yarn-error.log
-/auth.json
-/.fleet
-/.idea
-/.nova
-/.vscode
-/.zed
+Homestead.json
+/.vagrant
+
+# IDEs & tools
+/.idea/
+/.vscode/
+/.nova/
+/.fleet/
+/.zed/
+
+# Laravel 4 legacy
+bootstrap/compiled.php
+app/storage/
+node_modules
