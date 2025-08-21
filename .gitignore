@@ -43,3 +43,4 @@ Homestead.json
 bootstrap/compiled.php
 app/storage/
 node_modules
+database/schema/mysql-schema.sql

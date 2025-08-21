@@ -16,30 +16,31 @@
         </a>
 
         <flux:navlist variant="outline">
-            <flux:navlist.group :heading="__('Platform')" class="grid">
-                <flux:navlist.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')"
-                    wire:navigate>{{ __('Dashboard') }}</flux:navlist.item>
-                <flux:navlist.item icon="cog" href="#" :current="false">{{ __('Repuestos') }}
-                </flux:navlist.item>
-                <flux:navlist.item icon="wrench-screwdriver" href="#" :current="false">{{ __('Máquinas') }}
-                </flux:navlist.item>
-                <flux:navlist.item icon="document-text" href="#" :current="false">{{ __('Reportes') }}
-                </flux:navlist.item>
-                <flux:navlist.item icon="users" href="#" :current="false">{{ __('Usuarios') }}
-                </flux:navlist.item>
-            </flux:navlist.group>
+            @if (auth()->check())
+                <flux:navlist.group :heading="__('Bienvenid@') . ' ' . auth()->user()->name" class="grid">
+                    <flux:navlist.item icon="home" :href="route('dashboard')"
+                        :current="request()->routeIs('dashboard')" wire:navigate>{{ __('Dashboard') }}
+                    </flux:navlist.item>
+                    <flux:navlist.item icon="cog" href="#" :current="false">{{ __('Repuestos') }}
+                    </flux:navlist.item>
+                    <flux:navlist.item icon="wrench-screwdriver" href="#" :current="false">
+                        {{ __('Máquinas') }}</flux:navlist.item>
+                    <flux:navlist.item icon="document-text" href="#" :current="false">{{ __('Reportes') }}
+                    </flux:navlist.item>
+                    <flux:navlist.item icon="users" href="#" :current="false">{{ __('Usuarios') }}
+                    </flux:navlist.item>
+                </flux:navlist.group>
+            @endif
         </flux:navlist>
 
         <flux:spacer />
 
         <flux:navlist variant="outline">
-            <flux:navlist.item icon="folder-git-2" href="https://github.com/laravel/livewire-starter-kit"
-                target="_blank">
+            <flux:navlist.item icon="folder-git-2" href="#" target="_blank">
                 {{ __('Repository') }}
             </flux:navlist.item>
 
-            <flux:navlist.item icon="book-open-text" href="https://laravel.com/docs/starter-kits#livewire"
-                target="_blank">
+            <flux:navlist.item icon="book-open-text" href="#" target="_blank">
                 {{ __('Documentation') }}
             </flux:navlist.item>
         </flux:navlist>
@@ -72,15 +73,14 @@
 
                 <flux:menu.radio.group>
                     <flux:menu.item :href="route('settings.profile')" icon="cog" wire:navigate>
-                        {{ __('Settings') }}</flux:menu.item>
+                        {{ __('Ajustes') }}</flux:menu.item>
                 </flux:menu.radio.group>
-
                 <flux:menu.separator />
 
                 <form method="POST" action="{{ route('logout') }}" class="w-full">
                     @csrf
                     <flux:menu.item as="button" type="submit" icon="arrow-right-start-on-rectangle" class="w-full">
-                        {{ __('Log Out') }}
+                        {{ __('Cerrar sesión') }}
                     </flux:menu.item>
                 </form>
             </flux:menu>
@@ -102,7 +102,7 @@
                         <div class="flex items-center gap-2 px-1 py-1.5 text-start text-sm">
                             <span class="relative flex h-8 w-8 shrink-0 overflow-hidden rounded-lg">
                                 <span
-                                    class="flex h-full w-full items-center justify-center rounded-lg bg-neutral-200 text-black dark:bg-neutral-700 dark:text-white">
+                                    class="flex h-full w-full items-center justify-center rounded-lg bg-neutral-200 text-black dark:bg-blue-200 dark:text-white">
                                     {{ auth()->user()->initials() }}
                                 </span>
                             </span>
@@ -119,15 +119,16 @@
 
                 <flux:menu.radio.group>
                     <flux:menu.item :href="route('settings.profile')" icon="cog" wire:navigate>
-                        {{ __('Settings') }}</flux:menu.item>
+                        {{ __('Ajustes') }}</flux:menu.item>
                 </flux:menu.radio.group>
 
                 <flux:menu.separator />
 
-                <form method="POST" action="{{ route('logout') }}" class="w-full">
+                <form method="POST" action="{{ route('logout') }}" icon="arrow-right-start-on-rectangle"
+                    class="w-full">
                     @csrf
                     <flux:menu.item as="button" type="submit" icon="arrow-right-start-on-rectangle" class="w-full">
-                        {{ __('Log Out') }}
+                        {{ __('Cerrar sesión') }}
                     </flux:menu.item>
                 </form>
             </flux:menu>
