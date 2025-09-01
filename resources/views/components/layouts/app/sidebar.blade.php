@@ -4,7 +4,6 @@
 <head>
     @include('partials.head')
     <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
-
 </head>
 
 <body class="min-h-screen bg-white dark:bg-zinc-800">
@@ -15,19 +14,69 @@
             <x-app-logo />
         </a>
 
+        <flux:navlist.group :heading="__('Bienvenid@') . ' ' . auth()->user()->name" class="grid">
+            <flux:navlist.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')"
+                wire:navigate>
+                {{ __('Dashboard') }}
+            </flux:navlist.item>
+        </flux:navlist.group>
+
         <flux:navlist variant="outline">
             @if (auth()->check())
-                <flux:navlist.group :heading="__('Bienvenid@') . ' ' . auth()->user()->name" class="grid">
-                    <flux:navlist.item icon="home" :href="route('dashboard')"
-                        :current="request()->routeIs('dashboard')" wire:navigate>{{ __('Dashboard') }}
+                <!-- Grupo: Gestión -->
+                <flux:navlist.group :heading="__('Gestión')" class="grid">
+                    <flux:navlist.item icon="users" :href="route('users.index')"
+                        :current="request()->routeIs('users.*')" wire:navigate>
+                        {{ __('Usuarios') }}
                     </flux:navlist.item>
-                    <flux:navlist.item icon="cog" href="#" :current="false">{{ __('Repuestos') }}
+                    <flux:navlist.item icon="shield-check" :href="route('roles.index')"
+                        :current="request()->routeIs('roles.*')" wire:navigate>
+                        {{ __('Roles') }}
+                    </flux:navlist.item>
+                    <flux:navlist.item icon="key" :href="route('privilegios.index')"
+                        :current="request()->routeIs('privilegios.*')" wire:navigate>
+                        {{ __('Privilegios') }}
+                    </flux:navlist.item>
+                    <flux:navlist.item icon="users" :href="route('clientes.index')"
+                        :current="request()->routeIs('clientes.*')" wire:navigate>
+                        {{ __('Clientes') }}
+                    </flux:navlist.item>
+                    <flux:navlist.item icon="building-office-2" :href="route('centros.index')"
+                        :current="request()->routeIs('centros.*')" wire:navigate>
+                        {{ __('Centros Médicos') }}
+                    </flux:navlist.item>
+                </flux:navlist.group>
+
+                <!-- Grupo: Inventario -->
+                <flux:navlist.group :heading="__('Inventario')" class="grid">
+                    <flux:navlist.item icon="archive-box" :href="route('productos.index')"
+                        :current="request()->routeIs('productos.*')" wire:navigate>
+                        {{ __('Productos') }}
+                    </flux:navlist.item>
+                    <flux:navlist.item icon="tag" :href="route('categorias.index')"
+                        :current="request()->routeIs('categorias.*')" wire:navigate>
+                        {{ __('Categorías') }}
+                    </flux:navlist.item>
+                    <flux:navlist.item icon="arrow-right-start-on-rectangle" :href="route('salidas.index')"
+                        :current="request()->routeIs('salidas.*')" wire:navigate>
+                        {{ __('Salidas') }}
+                    </flux:navlist.item>
+                    <flux:navlist.item icon="clipboard-document-list" :href="route('solicitudes.index')"
+                        :current="request()->routeIs('solicitudes.*')" wire:navigate>
+                        {{ __('Solicitudes') }}
+                    </flux:navlist.item>
+                </flux:navlist.group>
+
+                <!-- Grupo: Utilidades -->
+                <flux:navlist.group :heading="__('Utilidades')" class="grid">
+                    <flux:navlist.item icon="document-text" href="#" :current="false">
+                        {{ __('Reportes') }}
+                    </flux:navlist.item>
+                    <flux:navlist.item icon="cog" href="#" :current="false">
+                        {{ __('Repuestos') }}
                     </flux:navlist.item>
                     <flux:navlist.item icon="wrench-screwdriver" href="#" :current="false">
-                        {{ __('Máquinas') }}</flux:navlist.item>
-                    <flux:navlist.item icon="document-text" href="#" :current="false">{{ __('Reportes') }}
-                    </flux:navlist.item>
-                    <flux:navlist.item icon="users" href="#" :current="false">{{ __('Usuarios') }}
+                        {{ __('Máquinas') }}
                     </flux:navlist.item>
                 </flux:navlist.group>
             @endif
@@ -73,7 +122,8 @@
 
                 <flux:menu.radio.group>
                     <flux:menu.item :href="route('settings.profile')" icon="cog" wire:navigate>
-                        {{ __('Ajustes') }}</flux:menu.item>
+                        {{ __('Ajustes') }}
+                    </flux:menu.item>
                 </flux:menu.radio.group>
                 <flux:menu.separator />
 
@@ -119,7 +169,8 @@
 
                 <flux:menu.radio.group>
                     <flux:menu.item :href="route('settings.profile')" icon="cog" wire:navigate>
-                        {{ __('Ajustes') }}</flux:menu.item>
+                        {{ __('Ajustes') }}
+                    </flux:menu.item>
                 </flux:menu.radio.group>
 
                 <flux:menu.separator />
