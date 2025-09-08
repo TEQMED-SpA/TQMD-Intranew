@@ -19,10 +19,10 @@ class SalidaController extends Controller
 
     public function create()
     {
-        $productos = Producto::orderBy('producto_nombre')->get();
+        $repuestos = Producto::orderBy('producto_nombre')->get();
         $usuarios = User::orderBy('name')->get();
         $centros = CentroMedico::orderBy('centro_dialisis')->get();
-        return view('salidas.create', compact('productos', 'usuarios', 'centros'));
+        return view('salidas.create', compact('repuestos', 'usuarios', 'centros'));
     }
 
     public function store(Request $request)
@@ -47,10 +47,10 @@ class SalidaController extends Controller
 
     public function edit(Salida $salida)
     {
-        $productos = Producto::orderBy('producto_nombre')->get();
+        $repuestos = Producto::orderBy('producto_nombre')->get();
         $usuarios = User::orderBy('name')->get();
         $centros = CentroMedico::orderBy('centro_dialisis')->get();
-        return view('salidas.edit', compact('salida', 'productos', 'usuarios', 'centros'));
+        return view('salidas.edit', compact('salida', 'repuestos', 'usuarios', 'centros'));
     }
 
     public function update(Request $request, Salida $salida)

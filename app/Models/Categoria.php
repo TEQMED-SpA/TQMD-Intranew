@@ -18,15 +18,15 @@ class Categoria extends Model
     ];
 
     // Relaciones
-    public function productos()
+    public function repuestos()
     {
         return $this->hasMany(Producto::class, 'categoria_id', 'categoria_id');
     }
 
     // Scopes
-    public function scopeConProductos($query)
+    public function scopeConrepuestos($query)
     {
-        return $query->has('productos');
+        return $query->has('repuestos');
     }
 
     public function scopePorNombre($query, $nombre)
@@ -37,18 +37,18 @@ class Categoria extends Model
     // Accessors
     public function getNombreCompletoAttribute()
     {
-        return $this->categoria_subcategoria 
+        return $this->categoria_subcategoria
             ? $this->categoria_nombre . ' - ' . $this->categoria_subcategoria
             : $this->categoria_nombre;
     }
 
-    public function getTotalProductosAttribute()
+    public function getTotalrepuestosAttribute()
     {
-        return $this->productos()->count();
+        return $this->repuestos()->count();
     }
 
-    public function getProductosConStockAttribute()
+    public function getrepuestosConStockAttribute()
     {
-        return $this->productos()->where('producto_stock', '>', 0)->count();
+        return $this->repuestos()->where('producto_stock', '>', 0)->count();
     }
 }

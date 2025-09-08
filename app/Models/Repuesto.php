@@ -79,11 +79,11 @@ class Producto extends Model
 
     public function scopeBuscar($query, $termino)
     {
-        return $query->where(function($q) use ($termino) {
+        return $query->where(function ($q) use ($termino) {
             $q->where('producto_nombre', 'like', "%{$termino}%")
-              ->orWhere('producto_serie', 'like', "%{$termino}%")
-              ->orWhere('producto_modelo', 'like', "%{$termino}%")
-              ->orWhere('producto_marca', 'like', "%{$termino}%");
+                ->orWhere('producto_serie', 'like', "%{$termino}%")
+                ->orWhere('producto_modelo', 'like', "%{$termino}%")
+                ->orWhere('producto_marca', 'like', "%{$termino}%");
         });
     }
 
@@ -114,7 +114,7 @@ class Producto extends Model
     }
 
     // Mutators
-    public function setProductoSerieAttribute($value)
+    public function setrepuestoserieAttribute($value)
     {
         $this->attributes['producto_serie'] = strtoupper(trim($value));
     }

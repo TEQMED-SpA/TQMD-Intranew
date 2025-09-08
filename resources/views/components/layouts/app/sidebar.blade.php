@@ -49,9 +49,9 @@
 
                 <!-- Grupo: Inventario -->
                 <flux:navlist.group :heading="__('Inventario')" class="grid">
-                    <flux:navlist.item icon="archive-box" :href="route('productos.index')"
-                        :current="request()->routeIs('productos.*')" wire:navigate>
-                        {{ __('Productos') }}
+                    <flux:navlist.item icon="archive-box" :href="route('repuestos.index')"
+                        :current="request()->routeIs('repuestos.*')" wire:navigate>
+                        {{ __('Repuestos') }}
                     </flux:navlist.item>
                     <flux:navlist.item icon="tag" :href="route('categorias.index')"
                         :current="request()->routeIs('categorias.*')" wire:navigate>
@@ -71,9 +71,6 @@
                 <flux:navlist.group :heading="__('Utilidades')" class="grid">
                     <flux:navlist.item icon="document-text" href="#" :current="false">
                         {{ __('Reportes') }}
-                    </flux:navlist.item>
-                    <flux:navlist.item icon="cog" href="#" :current="false">
-                        {{ __('Repuestos') }}
                     </flux:navlist.item>
                     <flux:navlist.item icon="wrench-screwdriver" href="#" :current="false">
                         {{ __('Máquinas') }}

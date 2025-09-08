@@ -1,13 +1,13 @@
-<x-layouts.app :title="$title ?? 'Solicitudes'">
+<x-layouts.app :title="$title ?? 'Salidas'">
     <div class="min-h-screen px-4 py-8 bg-zinc-50 dark:bg-zinc-800 transition-all">
         <div class="max-w-6xl mx-auto">
             <div class="flex justify-between items-center mb-6">
-                <h1 class="text-2xl font-bold text-zinc-800 dark:text-white">Solicitudes</h1>
-                <a href="{{ route('solicitudes.create') }}">
+                <h1 class="text-2xl font-bold text-zinc-800 dark:text-white">Salidas</h1>
+                <a href="{{ route('salidas.create') }}">
                     <button type="button"
                         class="bg-zinc-200 dark:bg-zinc-700 text-zinc-100 dark:text-zinc-100 font-semibold px-4 py-2 rounded-lg hover:bg-zinc-300 dark:hover:bg-zinc-600 transition flex items-center gap-2">
                         <i class="fa fa-plus"></i>
-                        Nueva Solicitud
+                        Nueva Salida
                     </button>
                 </a>
             </div>
@@ -24,23 +24,23 @@
                     <thead>
                         <tr class="bg-white dark:bg-zinc-700">
                             <th class="p-3 text-zinc-700 dark:text-white font-semibold">Fecha</th>
-                            <th class="p-3 text-zinc-700 dark:text-white font-semibold">Solicitante</th>
-                            <th class="p-3 text-zinc-700 dark:text-white font-semibold">Detalle</th>
+                            <th class="p-3 text-zinc-700 dark:text-white font-semibold">Producto</th>
+                            <th class="p-3 text-zinc-700 dark:text-white font-semibold">Cantidad</th>
+                            <th class="p-3 text-zinc-700 dark:text-white font-semibold">Destino</th>
                             <th class="p-3 text-zinc-700 dark:text-white font-semibold">Estado</th>
                             <th class="p-3 text-center text-zinc-700 dark:text-white font-semibold">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach ($solicitudes as $solicitud)
+                        @foreach ($salidas as $salida)
                             <tr class="{{ $tableRowClass }}">
-                                <td class="p-3 text-zinc-900 dark:text-zinc-100 font-medium">{{ $solicitud->fecha }}
-                                </td>
-                                <td class="p-3 text-zinc-900 dark:text-zinc-300">{{ $solicitud->solicitante?->nombre }}
-                                </td>
-                                <td class="p-3 text-zinc-900 dark:text-zinc-300">{{ $solicitud->detalle }}</td>
+                                <td class="p-3 text-zinc-900 dark:text-zinc-100 font-medium">{{ $salida->fecha }}</td>
+                                <td class="p-3 text-zinc-900 dark:text-zinc-300">{{ $salida->producto?->nombre }}</td>
+                                <td class="p-3 text-zinc-900 dark:text-zinc-300">{{ $salida->cantidad }}</td>
+                                <td class="p-3 text-zinc-900 dark:text-zinc-300">{{ $salida->destino }}</td>
                                 <td class="p-3">
                                     @php
-                                        $isActive = (int) $solicitud->estado === 1;
+                                        $isActive = (int) $salida->estado === 1;
                                     @endphp
                                     <span
                                         class="inline-block rounded-full px-3 py-1 text-xs font-semibold transition-colors duration-200
@@ -52,18 +52,18 @@
                                 </td>
                                 <td class="p-3 text-center">
                                     <div class="flex items-center justify-center gap-2">
-                                        <a href="{{ route('solicitudes.show', $solicitud) }}"
+                                        <a href="{{ route('salidas.show', $salida) }}"
                                             class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-blue-500 hover:bg-blue-600 text-white transition-colors duration-200"
                                             title="Ver">
                                             <i class="fa fa-eye text-sm"></i>
                                         </a>
-                                        <a href="{{ route('solicitudes.edit', $solicitud) }}"
+                                        <a href="{{ route('salidas.edit', $salida) }}"
                                             class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-green-500 hover:bg-green-600 text-white transition-colors duration-200"
                                             title="Editar">
                                             <i class="fa fa-pencil text-sm"></i>
                                         </a>
-                                        <form action="{{ route('solicitudes.destroy', $solicitud) }}" method="POST"
-                                            style="display:inline;" onsubmit="return confirm('¿Eliminar solicitud?');">
+                                        <form action="{{ route('salidas.destroy', $salida) }}" method="POST"
+                                            style="display:inline;" onsubmit="return confirm('¿Eliminar salida?');">
                                             @csrf @method('DELETE')
                                             <button type="submit"
                                                 class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-red-500 hover:bg-red-600 text-white transition-colors duration-200"
@@ -78,7 +78,7 @@
                     </tbody>
                 </table>
                 <div class="p-4 bg-white dark:bg-zinc-800">
-                    {{ $solicitudes->links() }}
+                    {{ $salidas->links() }}
                 </div>
             </div>
         </div>

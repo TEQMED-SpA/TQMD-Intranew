@@ -53,4 +53,20 @@ class CategoriaController extends Controller
         $categoria->delete();
         return redirect()->route('categorias.index')->with('success', 'Categoría eliminada correctamente');
     }
+    
+    public function ajaxStore(Request $request)
+    {
+        $request->validate([
+            'categoria_nombre' => 'required|string|max:50',
+            'categoria_subcategoria' => 'nullable|string|max:150',
+        ]);
+        $categoria = Categoria::create([
+            'categoria_nombre' => $request->categoria_nombre,
+            'categoria_subcategoria' => $request->categoria_subcategoria,
+        ]);
+        return response()->json([
+            'id' => $categoria->categoria_id,
+            'nombre' => $categoria->categoria_nombre,
+        ]);
+    }
 }

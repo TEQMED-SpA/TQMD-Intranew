@@ -9,7 +9,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\ClienteController;
 use App\Http\Controllers\CentroMedicoController;
 use App\Http\Controllers\CategoriaController;
-use App\Http\Controllers\ProductoController;
+use App\Http\Controllers\RepuestoController;
 use App\Http\Controllers\SolicitudController;
 use App\Http\Controllers\SalidaController;
 use App\Http\Controllers\RoleController;
@@ -28,16 +28,18 @@ Route::middleware(['auth'])->group(function () {
     Route::get('settings/password', Password::class)->name('settings.password');
     Route::get('settings/appearance', Appearance::class)->name('settings.appearance');
 
-    // RUTAS RESOURCE DE TUS MÓDULOS PRINCIPALES
+    // RUTAS RESOURCE DE MÓDULOS PRINCIPALES
     Route::resource('users', UserController::class);
     Route::resource('clientes', ClienteController::class);
     Route::resource('centros', CentroMedicoController::class);
     Route::resource('categorias', CategoriaController::class);
-    Route::resource('productos', ProductoController::class);
+    Route::resource('repuestos', RepuestoController::class);
     Route::resource('solicitudes', SolicitudController::class);
     Route::resource('salidas', SalidaController::class);
     Route::resource('roles', RoleController::class);
     Route::resource('privilegios', PrivilegioController::class);
 });
+
+Route::post('/categorias/ajax-store', [CategoriaController::class, 'ajaxStore'])->name('categorias.ajax-store');
 
 require __DIR__ . '/auth.php';
