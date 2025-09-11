@@ -29,10 +29,10 @@ class UserController extends Controller
             'password' => 'required|string|min:6|confirmed',
             'rol_id'   => 'nullable|exists:roles,id',
             'avatar'   => 'nullable|string|max:255',
-            'estado'   => 'required|boolean'
         ]);
         $data = $request->all();
         $data['password'] = Hash::make($data['password']);
+        $data['estado'] = 1; // Activo por defecto
 
         User::create($data);
 
@@ -71,7 +71,7 @@ class UserController extends Controller
 
     public function destroy(User $user)
     {
-        $user->delete();
+        $user->update(['estado' => 0]);
         return redirect()->route('users.index')->with('success', 'Usuario eliminado correctamente');
     }
 }

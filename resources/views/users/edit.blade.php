@@ -52,14 +52,14 @@
                         @enderror
                     </div>
                     <div class="mb-4">
-                        <label for="status"
+                        <label for="estado"
                             class="block text-zinc-700 dark:text-zinc-200 font-semibold mb-1">Estado</label>
-                        <select name="status" id="status"
+                        <select name="estado" id="estado"
                             class="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring focus:border-blue-400">
-                            <option value="activo" @selected(old('status', $user->status) == 'activo')>Activo</option>
-                            <option value="inactivo" @selected(old('status', $user->status) == 'inactivo')>Inactivo</option>
+                            <option value="1" @selected(old('estado', $user->estado) == '1')>Activo</option>
+                            <option value="0" @selected(old('estado', $user->estado) == '0')>Inactivo</option>
                         </select>
-                        @error('status')
+                        @error('estado')
                             <div class="text-red-500 text-sm mt-1">{{ $message }}</div>
                         @enderror
                     </div>
@@ -75,7 +75,7 @@
                     </div>
                     <div class="flex justify-end gap-2">
                         <button type="submit"
-                            class="bg-[#00618E] text-zinc-700 dark:text-zinc-200 font-semibold px-4 py-2 rounded-lg hover:bg-[#004a6b] transition flex items-center gap-2">
+                            class="bg-[#00618E] text-white font-semibold px-4 py-2 rounded-lg hover:bg-[#004a6b] transition flex items-center gap-2">
                             <i class="fa fa-check"></i>
                             Actualizar
                         </button>

@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Salida;
-use App\Models\Producto;
+use App\Models\Repuesto;
 use App\Models\User;
 use App\Models\CentroMedico;
 use Illuminate\Http\Request;
@@ -12,14 +12,14 @@ class SalidaController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Salida::with(['producto', 'usuarioPedido', 'usuarioRequiere', 'centroMedico']);
+        $query = Salida::with(['repuesto', 'usuarioPedido', 'usuarioRequiere', 'centroMedico']);
         $salidas = $query->orderBy('fecha_hora', 'desc')->paginate(15);
         return view('salidas.index', compact('salidas'));
     }
 
     public function create()
     {
-        $repuestos = Producto::orderBy('producto_nombre')->get();
+        $repuestos = Repuesto::orderBy('nombre')->get();
         $usuarios = User::orderBy('name')->get();
         $centros = CentroMedico::orderBy('centro_dialisis')->get();
         return view('salidas.create', compact('repuestos', 'usuarios', 'centros'));
@@ -29,7 +29,7 @@ class SalidaController extends Controller
     {
         $request->validate([
             'solicitud_id' => 'nullable|exists:solicitudes,id',
-            'producto_id' => 'required|exists:producto,producto_id',
+            'repuesto_id' => 'required|exists:repuestos,id',
             'usuario_pedido_id' => 'required|exists:users,id',
             'usuario_requiere_id' => 'required|exists:users,id',
             'cantidad' => 'required|integer|min:1',
@@ -47,7 +47,7 @@ class SalidaController extends Controller
 
     public function edit(Salida $salida)
     {
-        $repuestos = Producto::orderBy('producto_nombre')->get();
+        $repuestos = Repuesto::orderBy('nombre')->get();
         $usuarios = User::orderBy('name')->get();
         $centros = CentroMedico::orderBy('centro_dialisis')->get();
         return view('salidas.edit', compact('salida', 'repuestos', 'usuarios', 'centros'));
@@ -57,7 +57,7 @@ class SalidaController extends Controller
     {
         $request->validate([
             'solicitud_id' => 'nullable|exists:solicitudes,id',
-            'producto_id' => 'required|exists:producto,producto_id',
+            'repuesto_id' => 'required|exists:repuestos,id',
             'usuario_pedido_id' => 'required|exists:users,id',
             'usuario_requiere_id' => 'required|exists:users,id',
             'cantidad' => 'required|integer|min:1',

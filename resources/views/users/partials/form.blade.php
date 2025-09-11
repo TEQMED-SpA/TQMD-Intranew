@@ -63,4 +63,15 @@
             <div class="text-red-500 text-sm mt-1">{{ $message }}</div>
         @enderror
     </div>
+    <div class="mb-6">
+        <label for="password_confirmation" class="block text-zinc-700 dark:text-zinc-200 font-semibold mb-1">
+            Confirmar contraseña
+        </label>
+        <input type="password" name="password_confirmation" id="password_confirmation"
+            class="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring focus:border-blue-400"
+            required>
+    </div>
+    @error('password_confirmation')
+        <div class="text-red-500 text-sm mt-1">{{ $message }}</div>
+    @enderror
 @endif

@@ -26,15 +26,12 @@
                     <thead>
                         <tr class="bg-white dark:bg-zinc-700">
                             <th class="p-3 text-zinc-700 dark:text-white font-semibold">Nombre</th>
-                            <th class="p-3 text-zinc-700 dark:text-white font-semibold">Serie</th>
                             <th class="p-3 text-zinc-700 dark:text-white font-semibold">Modelo</th>
                             <th class="p-3 text-zinc-700 dark:text-white font-semibold">Marca</th>
                             <th class="p-3 text-zinc-700 dark:text-white font-semibold">Ubicación</th>
                             <th class="p-3 text-zinc-700 dark:text-white font-semibold">Descripción</th>
                             <th class="p-3 text-zinc-700 dark:text-white font-semibold">Stock</th>
-                            <th class="p-3 text-zinc-700 dark:text-white font-semibold">Foto</th>
                             <th class="p-3 text-zinc-700 dark:text-white font-semibold">Categoría</th>
-                            <th class="p-3 text-zinc-700 dark:text-white font-semibold">Estado</th>
                             <th class="p-3 text-center text-zinc-700 dark:text-white font-semibold">Acciones</th>
                         </tr>
                     </thead>
@@ -42,34 +39,16 @@
                         @foreach ($repuestos as $repuesto)
                             <tr class="{{ $tableRowClass }}">
                                 <td class="p-3 text-zinc-900 dark:text-zinc-100 font-medium">
-                                    {{ $repuesto->producto_nombre }}</td>
-                                <td class="p-3 text-zinc-900 dark:text-zinc-100">{{ $repuesto->producto_serie }}</td>
-                                <td class="p-3 text-zinc-900 dark:text-zinc-300">{{ $repuesto->producto_modelo }}</td>
-                                <td class="p-3 text-zinc-900 dark:text-zinc-300">{{ $repuesto->producto_marca }}</td>
-                                <td class="p-3 text-zinc-900 dark:text-zinc-300">{{ $repuesto->producto_ubicacion }}
+                                    {{ $repuesto->nombre }}</td>
+                                <td class="p-3 text-zinc-900 dark:text-zinc-300">{{ $repuesto->modelo }}</td>
+                                <td class="p-3 text-zinc-900 dark:text-zinc-300">{{ $repuesto->marca }}</td>
+                                <td class="p-3 text-zinc-900 dark:text-zinc-300">{{ $repuesto->ubicacion }}
                                 </td>
-                                <td class="p-3 text-zinc-900 dark:text-zinc-300">{{ $repuesto->producto_descripcion }}
+                                <td class="p-3 text-zinc-900 dark:text-zinc-300">{{ $repuesto->descripcion }}
                                 </td>
-                                <td class="p-3 text-zinc-900 dark:text-zinc-300">{{ $repuesto->producto_stock }}</td>
+                                <td class="p-3 text-zinc-900 dark:text-zinc-300">{{ $repuesto->stock }}</td>
                                 <td class="p-3 text-zinc-900 dark:text-zinc-300">
-                                    @if ($repuesto->producto_foto)
-                                        <img src="{{ asset('storage/' . $repuesto->producto_foto) }}" alt="Foto"
-                                            class="h-8 w-8 object-cover rounded" />
-                                    @endif
-                                </td>
-                                <td class="p-3 text-zinc-900 dark:text-zinc-300">{{ $repuesto->categoria?->nombre }}
-                                </td>
-                                <td class="p-3">
-                                    @php
-                                        $isActive = ($repuesto->producto_estado ?? '') === 'activo';
-                                    @endphp
-                                    <span
-                                        class="inline-block rounded-full px-3 py-1 text-xs font-semibold transition-colors duration-200
-                                        {{ $isActive
-                                            ? 'bg-green-200 dark:bg-green-800 text-green-900 dark:text-zinc-800'
-                                            : 'bg-red-200 dark:bg-red-800 text-red-900 dark:text-zinc-800' }}">
-                                        {{ $isActive ? 'Activo' : 'Inactivo' }}
-                                    </span>
+                                    {{ $repuesto->categoria?->categoria_nombre }}
                                 </td>
                                 <td class="p-3 text-center">
                                     <div class="flex items-center justify-center gap-2">

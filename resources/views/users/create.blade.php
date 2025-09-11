@@ -50,19 +50,6 @@
                             <div class="text-red-500 text-sm mt-1">{{ $message }}</div>
                         @enderror
                     </div>
-                    <div class="mb-4">
-                        <label for="estado"
-                            class="block text-zinc-700 dark:text-zinc-200 font-semibold mb-1">Estado</label>
-                        <select name="estado" id="estado"
-                            class="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring focus:border-blue-400">
-                            <option value="1" @selected(old('estado') == '1')>Activo</option>
-                            <option value="0" @selected(old('estado') == '0')>Inactivo</option>
-                        </select>
-                        @error('estado')
-                            <div class="text-red-500 text-sm mt-1">{{ $message }}</div>
-                        @enderror
-                    </div>
-
                     <div class="mb-6">
                         <label for="password"
                             class="block text-zinc-700 dark:text-zinc-200 font-semibold mb-1">Contraseña</label>
@@ -72,6 +59,15 @@
                         @error('password')
                             <div class="text-red-500 text-sm mt-1">{{ $message }}</div>
                         @enderror
+                    </div>
+                    <div class="mb-6">
+                        <label for="password_confirmation"
+                            class="block text-zinc-700 dark:text-zinc-200 font-semibold mb-1">
+                            Confirmar contraseña
+                        </label>
+                        <input type="password" name="password_confirmation" id="password_confirmation"
+                            class="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring focus:border-blue-400"
+                            required>
                     </div>
                     <div class="flex justify-end gap-2">
                         <button type="submit"

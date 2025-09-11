@@ -13,7 +13,7 @@ class SolicitudRepuesto extends Model
 
     protected $fillable = [
         'solicitud_id',
-        'producto_id',
+        'repuesto_id',
         'cantidad',
         'orden'
     ];
@@ -29,9 +29,9 @@ class SolicitudRepuesto extends Model
         return $this->belongsTo(Solicitud::class);
     }
 
-    public function producto()
+    public function repuesto()
     {
-        return $this->belongsTo(Producto::class, 'producto_id', 'producto_id');
+        return $this->belongsTo(Repuesto::class, 'repuesto_id', 'repuesto_id');
     }
 
     // Scopes
@@ -48,6 +48,6 @@ class SolicitudRepuesto extends Model
     // Accessors
     public function getTotalValueAttribute()
     {
-        return $this->cantidad * ($this->producto->precio ?? 0);
+        return $this->cantidad * ($this->repuesto->precio ?? 0);
     }
 }

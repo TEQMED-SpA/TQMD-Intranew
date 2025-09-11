@@ -13,7 +13,7 @@ class Salida extends Model
 
     protected $fillable = [
         'solicitud_id',
-        'producto_id',
+        'repuesto_id',
         'usuario_pedido_id',
         'usuario_requiere_id',
         'cantidad',
@@ -32,9 +32,9 @@ class Salida extends Model
         return $this->belongsTo(Solicitud::class);
     }
 
-    public function producto()
+    public function repuesto()
     {
-        return $this->belongsTo(Producto::class, 'producto_id', 'producto_id');
+        return $this->belongsTo(Repuesto::class, 'repuesto_id', 'id');
     }
 
     public function usuarioPedido()
@@ -53,9 +53,9 @@ class Salida extends Model
     }
 
     // Scopes
-    public function scopePorProducto($query, $productoId)
+    public function scopePorRepuesto($query, $repuestoId)
     {
-        return $query->where('producto_id', $productoId);
+        return $query->where('repuesto_id', $repuestoId);
     }
 
     public function scopePorCentro($query, $centroId)
@@ -76,7 +76,7 @@ class Salida extends Model
     public function scopeEsteMes($query)
     {
         return $query->whereMonth('fecha_hora', now()->month)
-                    ->whereYear('fecha_hora', now()->year);
+            ->whereYear('fecha_hora', now()->year);
     }
 
     // Boot method para eventos
@@ -85,18 +85,18 @@ class Salida extends Model
         parent::boot();
 
         static::created(function ($salida) {
-            // Actualizar stock del producto
-            $producto = $salida->producto;
-            if ($producto) {
-                $producto->decrement('producto_stock', $salida->cantidad);
+            // Actualizar stock del repuesto
+            $repuesto = $salida->repuesto;
+            if ($repuesto) {
+                $repuesto->decrement('stock', $salida->cantidad);
             }
         });
 
         static::deleted(function ($salida) {
-            // Revertir stock del producto
-            $producto = $salida->producto;
-            if ($producto) {
-                $producto->increment('producto_stock', $salida->cantidad);
+            // Revertir stock del repuesto
+            $repuesto = $salida->repuesto;
+            if ($repuesto) {
+                $repuesto->increment('stock', $salida->cantidad);
             }
         });
     }

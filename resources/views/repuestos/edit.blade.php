@@ -15,13 +15,12 @@
                 <form action="{{ route('repuestos.update', $repuesto) }}" method="POST" enctype="multipart/form-data">
                     @csrf
                     @method('PUT')
-                    @include('repuestos.form', ['repuesto' => $repuesto, 'categorias' => $categorias])
+                    @include('repuestos.partials.form', [
+                        'repuesto' => $repuesto,
+                        'categorias' => $categorias,
+                    ])
                     <div class="flex justify-end gap-2">
-                        <button type="submit"
-                            class="bg-[#00618E] text-white font-semibold px-4 py-2 rounded-lg hover:bg-[#004a6b] transition flex items-center gap-2">
-                            <i class="fa fa-check"></i>
-                            Actualizar
-                        </button>
+
                     </div>
                 </form>
             </div>

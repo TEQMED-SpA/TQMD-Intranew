@@ -20,7 +20,7 @@ class Categoria extends Model
     // Relaciones
     public function repuestos()
     {
-        return $this->hasMany(Producto::class, 'categoria_id', 'categoria_id');
+        return $this->hasMany(Repuesto::class, 'categoria_id', 'categoria_id');
     }
 
     // Scopes
@@ -49,6 +49,6 @@ class Categoria extends Model
 
     public function getrepuestosConStockAttribute()
     {
-        return $this->repuestos()->where('producto_stock', '>', 0)->count();
+        return $this->repuestos()->where('stock', '>', 0)->count();
     }
 }

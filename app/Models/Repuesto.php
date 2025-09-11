@@ -5,29 +5,29 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Producto extends Model
+class Repuesto extends Model
 {
     use HasFactory;
 
-    protected $table = 'producto';
-    protected $primaryKey = 'producto_id';
+    protected $table = 'repuesto';
+    protected $primaryKey = 'repuesto_id';
 
     protected $fillable = [
-        'producto_serie',
-        'producto_nombre',
-        'producto_modelo',
-        'producto_marca',
-        'producto_estado',
-        'producto_ubicacion',
-        'producto_descripcion',
-        'producto_stock',
-        'producto_foto',
+        'serie',
+        'nombre',
+        'modelo',
+        'marca',
+        'estado',
+        'ubicacion',
+        'descripcion',
+        'stock',
+        'foto',
         'categoria_id',
         'usuario_id'
     ];
 
     protected $casts = [
-        'producto_stock' => 'integer'
+        'stock' => 'integer'
     ];
 
     // Relaciones
@@ -43,28 +43,28 @@ class Producto extends Model
 
     public function salidas()
     {
-        return $this->hasMany(Salida::class, 'producto_id', 'producto_id');
+        return $this->hasMany(Salida::class, 'repuesto_id', 'repuesto_id');
     }
 
     public function solicitudRepuestos()
     {
-        return $this->hasMany(SolicitudRepuesto::class, 'producto_id', 'producto_id');
+        return $this->hasMany(SolicitudRepuesto::class, 'repuesto_id', 'repuesto_id');
     }
 
     // Scopes
     public function scopeConStock($query)
     {
-        return $query->where('producto_stock', '>', 0);
+        return $query->where('stock', '>', 0);
     }
 
     public function scopeStockBajo($query, $umbral = 5)
     {
-        return $query->where('producto_stock', '<=', $umbral)->where('producto_stock', '>', 0);
+        return $query->where('stock', '<=', $umbral)->where('stock', '>', 0);
     }
 
     public function scopeSinStock($query)
     {
-        return $query->where('producto_stock', 0);
+        return $query->where('stock', 0);
     }
 
     public function scopePorCategoria($query, $categoriaId)
@@ -74,38 +74,38 @@ class Producto extends Model
 
     public function scopePorEstado($query, $estado)
     {
-        return $query->where('producto_estado', $estado);
+        return $query->where('estado', $estado);
     }
 
     public function scopeBuscar($query, $termino)
     {
         return $query->where(function ($q) use ($termino) {
-            $q->where('producto_nombre', 'like', "%{$termino}%")
-                ->orWhere('producto_serie', 'like', "%{$termino}%")
-                ->orWhere('producto_modelo', 'like', "%{$termino}%")
-                ->orWhere('producto_marca', 'like', "%{$termino}%");
+            $q->where('nombre', 'like', "%{$termino}%")
+                ->orWhere('serie', 'like', "%{$termino}%")
+                ->orWhere('modelo', 'like', "%{$termino}%")
+                ->orWhere('marca', 'like', "%{$termino}%");
         });
     }
 
     // Accessors
     public function getIdentificacionCompletaAttribute()
     {
-        return "{$this->producto_serie} - {$this->producto_nombre}";
+        return "{$this->serie} - {$this->nombre}";
     }
 
     public function getStockBajoAttribute()
     {
-        return $this->producto_stock <= 5 && $this->producto_stock > 0;
+        return $this->stock <= 5 && $this->stock > 0;
     }
 
     public function getStockCriticoAttribute()
     {
-        return $this->producto_stock <= 2 && $this->producto_stock > 0;
+        return $this->stock <= 2 && $this->stock > 0;
     }
 
     public function getSinStockAttribute()
     {
-        return $this->producto_stock == 0;
+        return $this->stock == 0;
     }
 
     public function getTotalSalidasAttribute()
@@ -114,13 +114,13 @@ class Producto extends Model
     }
 
     // Mutators
-    public function setrepuestoserieAttribute($value)
+    public function setRepuestoSerieAttribute($value)
     {
-        $this->attributes['producto_serie'] = strtoupper(trim($value));
+        $this->attributes['serie'] = strtoupper(trim($value));
     }
 
-    public function setProductoNombreAttribute($value)
+    public function setRepuestoNombreAttribute($value)
     {
-        $this->attributes['producto_nombre'] = ucwords(strtolower(trim($value)));
+        $this->attributes['nombre'] = ucwords(strtolower(trim($value)));
     }
 }

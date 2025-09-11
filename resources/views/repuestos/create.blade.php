@@ -15,13 +15,6 @@
                 <form action="{{ route('repuestos.store') }}" method="POST" enctype="multipart/form-data">
                     @csrf
                     @include('repuestos.partials.form', ['categorias' => $categorias])
-                    <div class="flex justify-end gap-2">
-                        <button type="submit"
-                            class="bg-[#00618E] text-white font-semibold px-4 py-2 rounded-lg hover:bg-[#004a6b] transition flex items-center gap-2">
-                            <i class="fa fa-check"></i>
-                            Guardar
-                        </button>
-                    </div>
                 </form>
             </div>
         </div>

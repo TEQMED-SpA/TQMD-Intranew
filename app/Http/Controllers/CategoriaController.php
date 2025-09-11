@@ -45,7 +45,7 @@ class CategoriaController extends Controller
             'categoria_subcategoria' => 'nullable|string|max:150',
         ]);
         $categoria->update($request->all());
-        return redirect()->route('categorias.show', $categoria)->with('success', 'Categoría actualizada correctamente');
+        return redirect()->route('categorias.index')->with('success', 'Categoría actualizada correctamente');
     }
 
     public function destroy(Categoria $categoria)
@@ -53,7 +53,7 @@ class CategoriaController extends Controller
         $categoria->delete();
         return redirect()->route('categorias.index')->with('success', 'Categoría eliminada correctamente');
     }
-    
+
     public function ajaxStore(Request $request)
     {
         $request->validate([

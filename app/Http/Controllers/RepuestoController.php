@@ -2,68 +2,70 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Producto;
+use App\Models\Repuesto;
 use App\Models\Categoria;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class RepuestoController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Producto::with('categoria');
+        $query = Repuesto::with('categoria');
         if ($request->filled('buscar')) {
             $query->buscar($request->buscar);
         }
-        $repuestos = $query->orderBy('producto_nombre')->paginate(15);
+        $repuestos = $query->orderBy('nombre')->paginate(15);
         return view('repuestos.index', compact('repuestos'));
     }
 
     public function create()
     {
         $categorias = Categoria::orderBy('categoria_nombre')->get();
-        // Extrae modelos, marcas y ubicaciones únicos de la tabla producto
-        $modelos = Producto::select('producto_modelo')->distinct()->whereNotNull('producto_modelo')->pluck('producto_modelo');
-        $marcas = Producto::select('producto_marca')->distinct()->whereNotNull('producto_marca')->pluck('producto_marca');
-        $ubicaciones = Producto::select('producto_ubicacion')->distinct()->whereNotNull('producto_ubicacion')->pluck('producto_ubicacion');
+        // Extrae modelos, marcas y ubicaciones únicos de la tabla Repuesto
+        $modelos = Repuesto::select('modelo')->distinct()->whereNotNull('modelo')->pluck('modelo');
+        $marcas = Repuesto::select('marca')->distinct()->whereNotNull('marca')->pluck('marca');
+        $ubicaciones = Repuesto::select('ubicacion')->distinct()->whereNotNull('ubicacion')->pluck('ubicacion');
         return view('repuestos.create', compact('categorias', 'modelos', 'marcas', 'ubicaciones'));
     }
 
     public function store(Request $request)
     {
         $request->validate([
-            'producto_nombre' => 'required|string|max:70',
-            'producto_serie' => 'required|string|max:70',
-            'producto_modelo' => 'required|string|max:70',
-            'producto_marca' => 'required|string|max:70',
-            'producto_estado' => 'nullable|string|max:70',
-            'producto_ubicacion' => 'required|string|max:70',
-            'producto_descripcion' => 'nullable|string|max:200',
-            'producto_stock' => 'required|integer|min:0',
-            'producto_foto' => 'nullable|file|image|max:2048',
+            'nombre' => 'required|string|max:70',
+            'serie' => 'required|string|max:70',
+            'modelo' => 'required|string|max:70',
+            'marca' => 'required|string|max:70',
+            'estado' => 'nullable|string|max:70',
+            'ubicacion' => 'required|string|max:70',
+            'descripcion' => 'nullable|string|max:200',
+            'stock' => 'required|integer|min:0',
+            'foto' => 'nullable|file|image|max:2048',
             'categoria_id' => 'required|exists:categoria,categoria_id',
-            'usuario_id' => 'required|exists:users,id'
         ]);
         $data = $request->all();
-        if ($request->hasFile('producto_foto')) {
-            $data['producto_foto'] = $request->file('producto_foto')->store('repuestos', 'public');
+        $data['usuario_id'] = auth()->id();
+
+        if ($request->hasFile('foto')) {
+            $data['foto'] = $request->file('foto')->store('repuestos', 'public');
         }
-        Producto::create($data);
+        Repuesto::create($data);
         return redirect()->route('repuestos.index')->with('success', 'Repuesto creado correctamente');
     }
 
-    public function show(Producto $producto)
+    public function show(Repuesto $Repuesto)
     {
-        return view('repuestos.show', ['repuesto' => $producto]);
+        return view('repuestos.show', ['repuesto' => $Repuesto]);
     }
 
-    public function edit(Producto $producto)
+    public function edit(Repuesto $Repuesto)
     {
         $categorias = Categoria::orderBy('categoria_nombre')->get();
-        $modelos = Producto::select('producto_modelo')->distinct()->whereNotNull('producto_modelo')->pluck('producto_modelo');
-        $marcas = Producto::select('producto_marca')->distinct()->whereNotNull('producto_marca')->pluck('producto_marca');
-        $ubicaciones = Producto::select('producto_ubicacion')->distinct()->whereNotNull('producto_ubicacion')->pluck('producto_ubicacion');
+        $modelos = Repuesto::select('modelo')->distinct()->whereNotNull('modelo')->pluck('modelo');
+        $marcas = Repuesto::select('marca')->distinct()->whereNotNull('marca')->pluck('marca');
+        $ubicaciones = Repuesto::select('ubicacion')->distinct()->whereNotNull('ubicacion')->pluck('ubicacion');
         return view('repuestos.edit', [
-            'repuesto' => $producto,
+            'repuesto' => $Repuesto,
             'categorias' => $categorias,
             'modelos' => $modelos,
             'marcas' => $marcas,
@@ -71,34 +73,34 @@ class RepuestoController extends Controller
         ]);
     }
 
-    public function update(Request $request, Producto $producto)
+    public function update(Request $request, Repuesto $Repuesto)
     {
         $request->validate([
-            'producto_nombre' => 'required|string|max:70',
-            'producto_serie' => 'required|string|max:70',
-            'producto_modelo' => 'required|string|max:70',
-            'producto_marca' => 'required|string|max:70',
-            'producto_estado' => 'nullable|string|max:70',
-            'producto_ubicacion' => 'required|string|max:70',
-            'producto_descripcion' => 'nullable|string|max:200',
-            'producto_stock' => 'required|integer|min:0',
-            'producto_foto' => 'nullable|file|image|max:2048',
+            'nombre' => 'required|string|max:70',
+            'serie' => 'required|string|max:70',
+            'modelo' => 'required|string|max:70',
+            'marca' => 'required|string|max:70',
+            'estado' => 'nullable|string|max:70',
+            'ubicacion' => 'required|string|max:70',
+            'descripcion' => 'nullable|string|max:200',
+            'stock' => 'required|integer|min:0',
+            'foto' => 'nullable|file|image|max:2048',
             'categoria_id' => 'required|exists:categoria,categoria_id',
-            'usuario_id' => 'required|exists:users,id'
         ]);
         $data = $request->all();
-        if ($request->hasFile('producto_foto')) {
-            $data['producto_foto'] = $request->file('producto_foto')->store('repuestos', 'public');
+        $data['usuario_id'] = $producto->usuario_id ?? auth()->id();
+        if ($request->hasFile('foto')) {
+            $data['foto'] = $request->file('foto')->store('repuestos', 'public');
         } else {
-            unset($data['producto_foto']);
+            unset($data['foto']);
         }
-        $producto->update($data);
-        return redirect()->route('repuestos.show', $producto)->with('success', 'Repuesto actualizado correctamente');
+        $Repuesto->update($data);
+        return redirect()->route('repuestos.index')->with('success', 'Repuesto actualizado correctamente');
     }
 
-    public function destroy(Producto $producto)
+    public function destroy(Repuesto $Repuesto)
     {
-        $producto->delete();
+        $Repuesto->delete();
         return redirect()->route('repuestos.index')->with('success', 'Repuesto eliminado correctamente');
     }
 }

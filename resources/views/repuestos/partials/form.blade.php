@@ -5,49 +5,48 @@
         <div class="space-y-4">
             {{-- Serie --}}
             <div>
-                <label for="producto_serie" class="block text-zinc-700 dark:text-zinc-200 font-medium mb-2">Serie</label>
-                <input type="text" name="producto_serie" id="producto_serie" placeholder="Ej: ABC123-456"
-                    value="{{ old('producto_serie', $repuesto->producto_serie ?? '') }}"
-                    class="w-full px-4 py-3 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
-                @error('producto_serie')
+                <label for="serie" class="block text-zinc-700 dark:text-zinc-200 font-medium mb-2">Serie</label>
+                <input type="text" name="serie" id="serie" placeholder="Ej: ABC123-456"
+                    value="{{ old('serie', $repuesto->serie ?? '') }}"
+                    class="w-full px-4 py-3 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    required>
+                @error('serie')
                     <div class="text-red-500 text-sm mt-1">{{ $message }}</div>
                 @enderror
             </div>
 
             {{-- Nombre --}}
             <div>
-                <label for="producto_nombre" class="block text-zinc-700 dark:text-zinc-200 font-medium mb-2">Nombre del
+                <label for="nombre" class="block text-zinc-700 dark:text-zinc-200 font-medium mb-2">Nombre del
                     Repuesto</label>
-                <input type="text" name="producto_nombre" id="producto_nombre" placeholder="Ej: Bomba de concentrado"
-                    value="{{ old('producto_nombre', $repuesto->producto_nombre ?? '') }}"
+                <input type="text" name="nombre" id="nombre" placeholder="Ej: Bomba de concentrado"
+                    value="{{ old('nombre', $repuesto->nombre ?? '') }}"
                     class="w-full px-4 py-3 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
-                @error('producto_nombre')
+                @error('nombre')
                     <div class="text-red-500 text-sm mt-1">{{ $message }}</div>
                 @enderror
             </div>
 
             {{-- Modelo --}}
             <div>
-                <label for="producto_modelo"
-                    class="block text-zinc-700 dark:text-zinc-200 font-medium mb-2">Modelo</label>
-                <select name="producto_modelo" id="producto_modelo"
+                <label for="modelo" class="block text-zinc-700 dark:text-zinc-200 font-medium mb-2">Modelo</label>
+                <select name="modelo" id="modelo"
                     class="select2-modelo w-full px-4 py-3 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
                     <option value="">Seleccionar modelo...</option>
                     @foreach ($modelos as $modelo)
-                        <option value="{{ $modelo }}">{{ $modelo }}</option>
+                        <option value="{{ $modelo }}" @selected(old('modelo', $repuesto->modelo ?? '') == $modelo)>{{ $modelo }}</option>
                     @endforeach
                     <option value="__nuevo__">Agregar nuevo modelo...</option>
                 </select>
-                @error('producto_modelo')
+                @error('modelo')
                     <div class="text-red-500 text-sm mt-1">{{ $message }}</div>
                 @enderror
             </div>
 
             {{-- Marca --}}
             <div>
-                <label for="producto_marca"
-                    class="block text-zinc-700 dark:text-zinc-200 font-medium mb-2">Marca</label>
-                <select name="producto_marca" id="producto_marca"
+                <label for="marca" class="block text-zinc-700 dark:text-zinc-200 font-medium mb-2">Marca</label>
+                <select name="marca" id="marca"
                     class="select2-marca w-full px-4 py-3 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
                     <option value="">Seleccionar marca...</option>
                     @foreach ($marcas as $marca)
@@ -55,19 +54,19 @@
                     @endforeach
                     <option value="__nuevo__">Agregar nueva marca...</option>
                 </select>
-                @error('producto_marca')
+                @error('marca')
                     <div class="text-red-500 text-sm mt-1">{{ $message }}</div>
                 @enderror
             </div>
 
             {{-- Stock --}}
             <div>
-                <label for="producto_stock" class="block text-zinc-700 dark:text-zinc-200 font-medium mb-2">Cantidad en
+                <label for="stock" class="block text-zinc-700 dark:text-zinc-200 font-medium mb-2">Cantidad en
                     Stock</label>
-                <input type="number" name="producto_stock" id="producto_stock" min="0" step="1"
-                    placeholder="Ej: 25" value="{{ old('producto_stock', $repuesto->producto_stock ?? '') }}"
+                <input type="number" name="stock" id="stock" min="0" step="1" placeholder="Ej: 25"
+                    value="{{ old('stock', $repuesto->stock ?? '') }}"
                     class="w-full px-4 py-3 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
-                @error('producto_stock')
+                @error('stock')
                     <div class="text-red-500 text-sm mt-1">{{ $message }}</div>
                 @enderror
             </div>
@@ -77,17 +76,17 @@
         <div class="space-y-4">
             {{-- Ubicación --}}
             <div>
-                <label for="producto_ubicacion"
-                    class="block text-zinc-700 dark:text-zinc-200 font-medium mb-2">Ubicación en Almacén</label>
-                <select name="producto_ubicacion" id="producto_ubicacion"
+                <label for="ubicacion" class="block text-zinc-700 dark:text-zinc-200 font-medium mb-2">Ubicación en
+                    Almacén</label>
+                <select name="ubicacion" id="ubicacion"
                     class="select2-ubicacion w-full px-4 py-3 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
                     <option value="">Seleccionar ubicación...</option>
                     @foreach ($ubicaciones as $ubicacion)
-                        <option value="{{ $ubicacion }}">{{ $ubicacion }}</option>
+                        <option value="{{ $ubicacion }}" @selected(old('ubicacion', $repuesto->ubicacion ?? '') == $ubicacion)>{{ $ubicacion }}</option>
                     @endforeach
                     <option value="__nuevo__">Agregar nueva ubicación...</option>
                 </select>
-                @error('producto_ubicacion')
+                @error('ubicacion')
                     <div class="text-red-500 text-sm mt-1">{{ $message }}</div>
                 @enderror
             </div>
@@ -99,7 +98,7 @@
                 <select name="categoria_id" id="categoria_id" required
                     class="select2-categoria w-full px-4 py-3 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
                     <option value="" disabled
-                        {{ old('categoria_id', $repuesto->categoria_id ?? '') ? '' : 'selected' }}>Seleccionar
+                        {{ !old('categoria_id', $repuesto->categoria_id ?? '') ? 'selected' : '' }}>Seleccionar
                         categoría...</option>
                     @foreach ($categorias as $categoria)
                         <option value="{{ $categoria->categoria_id }}" @selected(old('categoria_id', $repuesto->categoria_id ?? '') == $categoria->categoria_id)>
@@ -115,36 +114,34 @@
 
             {{-- Estado --}}
             <div>
-                <label for="producto_estado"
-                    class="block text-zinc-700 dark:text-zinc-200 font-medium mb-2">Estado</label>
-                <select name="producto_estado" id="producto_estado"
+                <label for="estado" class="block text-zinc-700 dark:text-zinc-200 font-medium mb-2">Estado</label>
+                <select name="estado" id="estado"
                     class="w-full px-4 py-3 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
-                    <option value="activo" @selected(old('producto_estado', $repuesto->producto_estado ?? '') === 'activo')>✅ Activo</option>
-                    <option value="inactivo" @selected(old('producto_estado', $repuesto->producto_estado ?? '') === 'inactivo')>❌ Inactivo</option>
+                    <option value="activo" @selected(old('estado', $repuesto->estado ?? '') === 'activo')>✅ Activo</option>
+                    <option value="inactivo" @selected(old('estado', $repuesto->estado ?? '') === 'inactivo')>❌ Inactivo</option>
                 </select>
-                @error('producto_estado')
+                @error('estado')
                     <div class="text-red-500 text-sm mt-1">{{ $message }}</div>
                 @enderror
             </div>
 
             {{-- Foto --}}
             <div>
-                <label for="producto_foto" class="block text-zinc-700 dark:text-zinc-200 font-medium mb-2">Fotografía
+                <label for="foto" class="block text-zinc-700 dark:text-zinc-200 font-medium mb-2">Fotografía
                     del Repuesto</label>
-                <input type="file" name="producto_foto" id="producto_foto"
-                    accept="image/jpeg,image/jpg,image/png,image/webp"
+                <input type="file" name="foto" id="foto" accept="image/jpeg,image/jpg,image/png,image/webp"
                     class="w-full px-4 py-3 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
                 <div class="text-xs text-zinc-500 mt-1">
                     📁 Formatos permitidos: JPG, JPEG, PNG, WEBP | Tamaño máximo: 2MB | Dimensiones recomendadas:
                     800x600px
                 </div>
-                @error('producto_foto')
+                @error('foto')
                     <div class="text-red-500 text-sm mt-1">{{ $message }}</div>
                 @enderror
-                @if (!empty($repuesto->producto_foto))
+                @if (!empty($repuesto->foto))
                     <div class="mt-3 p-3 bg-zinc-50 dark:bg-zinc-800 rounded-lg">
                         <p class="text-sm text-zinc-600 dark:text-zinc-400 mb-2">Imagen actual:</p>
-                        <img src="{{ asset('storage/' . $repuesto->producto_foto) }}" alt="Foto actual del repuesto"
+                        <img src="{{ asset('storage/' . $repuesto->foto) }}" alt="Foto actual del repuesto"
                             class="h-20 w-20 object-cover rounded-lg border-2 border-zinc-200 dark:border-zinc-600" />
                     </div>
                 @endif
@@ -154,12 +151,12 @@
 
     <!-- Descripción - Campo completo ancho -->
     <div class="mt-6">
-        <label for="producto_descripcion" class="block text-zinc-700 dark:text-zinc-200 font-medium mb-2">Descripción
+        <label for="descripcion" class="block text-zinc-700 dark:text-zinc-200 font-medium mb-2">Descripción
             Detallada</label>
-        <textarea name="producto_descripcion" id="producto_descripcion" rows="3"
+        <textarea name="descripcion" id="descripcion" rows="3"
             placeholder="Describe las características, especificaciones técnicas, compatibilidad, etc..."
-            class="w-full px-4 py-3 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none">{{ old('producto_descripcion', $repuesto->producto_descripcion ?? '') }}</textarea>
-        @error('producto_descripcion')
+            class="w-full px-4 py-3 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none">{{ old('descripcion', $repuesto->descripcion ?? '') }}</textarea>
+        @error('descripcion')
             <div class="text-red-500 text-sm mt-1">{{ $message }}</div>
         @enderror
     </div>

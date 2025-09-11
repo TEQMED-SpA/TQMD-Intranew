@@ -43,7 +43,7 @@ class User extends Authenticatable
 
     public function repuestos()
     {
-        return $this->hasMany(Producto::class);
+        return $this->hasMany(Repuesto::class);
     }
 
     public function solicitudes()
