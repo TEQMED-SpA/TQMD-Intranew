@@ -47,7 +47,7 @@
                                 </td>
                                 <td class="p-3">
                                     @php
-                                        $isActive = (int) $user->estado === 1;
+                                        $isActive = (int) $user->activo === 1;
                                     @endphp
 
                                     <span

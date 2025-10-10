@@ -58,4 +58,5 @@ class Ticket extends Model
             ->orWhere('nombre_apellido', 'like', "%{$buscar}%")
             ->orWhere('telefono', 'like', "%{$buscar}%");
     }
+
 }

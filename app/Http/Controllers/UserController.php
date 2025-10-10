@@ -32,7 +32,7 @@ class UserController extends Controller
         ]);
         $data = $request->all();
         $data['password'] = Hash::make($data['password']);
-        $data['estado'] = 1; // Activo por defecto
+        $data['activo'] = 1; // Activo por defecto
 
         User::create($data);
 
@@ -57,7 +57,7 @@ class UserController extends Controller
             'email'    => 'required|email|max:255|unique:users,email,' . $user->id,
             'rol_id'   => 'nullable|exists:roles,id',
             'avatar'   => 'nullable|string|max:255',
-            'estado'   => 'required|boolean',
+            'activo'   => 'required|boolean',
             'password' => 'nullable|string|min:6|confirmed'
         ]);
         $data = $request->except('password');
@@ -71,7 +71,7 @@ class UserController extends Controller
 
     public function destroy(User $user)
     {
-        $user->update(['estado' => 0]);
+        $user->update(['activo' => 0]);
         return redirect()->route('users.index')->with('success', 'Usuario eliminado correctamente');
     }
 }

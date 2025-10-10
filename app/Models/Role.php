@@ -35,6 +35,6 @@ class Role extends Model
     // Accessors
     public function getUsuariosActivosCountAttribute()
     {
-        return $this->users()->where('estado', 1)->count();
+        return $this->users()->where('activo', 1)->count();
     }
 }

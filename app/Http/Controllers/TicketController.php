@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Ticket;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\TicketAsignado;
 
 class TicketController extends Controller
 {
@@ -50,6 +52,9 @@ class TicketController extends Controller
             'acciones_realizadas' => 'nullable|string',
         ]);
 
+        // Detectar si el técnico cambia
+        $tecnico_anterior_id = $ticket->tecnico_asignado_id;
+
         $ticket->update($request->only([
             'estado',
             'tecnico_asignado_id',
@@ -57,8 +62,19 @@ class TicketController extends Controller
             'acciones_realizadas'
         ]));
 
+        // Notificar al técnico sólo si ha cambiado o si antes era null
+        if (
+            $ticket->tecnico_asignado_id
+            && $ticket->tecnico_asignado_id != $tecnico_anterior_id
+        ) {
+            $tecnico = User::find($ticket->tecnico_asignado_id);
+            if ($tecnico && $tecnico->email) {
+                Mail::to($tecnico->email)->send(new TicketAsignado($ticket));
+            }
+        }
+
         return redirect()->route('tickets.index')
-            ->with('success', 'Ticket actualizado correctamente');
+            ->with('success', 'Ticket actualizado correctamente. Si cambió el técnico, fue notificado por correo.');
     }
 
     public function destroy(Ticket $ticket)

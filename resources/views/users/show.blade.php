@@ -33,7 +33,7 @@
                     <li class="py-3 flex justify-between items-center">
                         <span class="font-semibold text-zinc-700 dark:text-zinc-200">Estado:</span>
                         @php
-                            $isActive = (int) $user->estado === 1;
+                            $isActive = (int) $user->activo === 1;
                         @endphp
 
                         <span

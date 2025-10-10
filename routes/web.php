@@ -51,5 +51,6 @@ Route::post('/categorias/ajax-store', [CategoriaRepuestoController::class, 'ajax
 Route::resource('llamados', LlamadoController::class);
 Route::resource('categoria_llamados', CategoriaLlamadoController::class);
 Route::get('get-all-categorias', [CategoriaLlamadoController::class, 'getAllCategorias'])->name('get.all.categorias');
+Route::resource('users', App\Http\Controllers\UserController::class);
 
 require __DIR__ . '/auth.php';
