@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('categoria', function (Blueprint $table) {
             $table->id('categoria_id');
-            $table->string('categoria_nombre', 50);
+            $table->string('nombre', 50);
             $table->string('categoria_subcategoria', 150)->nullable();
             $table->timestamps();
         });

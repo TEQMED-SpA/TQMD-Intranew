@@ -10,17 +10,14 @@ return new class extends Migration
     {
         Schema::create('centros_medicos', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('cliente_id')
-                ->nullable()
-                ->constrained('clientes')
-                ->cascadeOnDelete();
+            $table->foreignId('cliente_id')->nullable()->constrained('clientes')->nullOnDelete();
             $table->integer('cod_cliente')->nullable();
             $table->integer('cod_centro_dialisis')->nullable();
-            $table->string('centro_dialisis')->nullable();
-            $table->string('razon_social')->nullable();
-            $table->string('direccion')->nullable();
-            $table->string('region')->nullable();
-            $table->string('telefono', 20)->nullable();
+            $table->string('centro_dialisis', 255)->nullable();
+            $table->string('razon_social', 255)->nullable();
+            $table->string('direccion', 255)->nullable();
+            $table->string('region', 120)->nullable();
+            $table->string('telefono', 30)->nullable();
             $table->timestamps();
         });
     }

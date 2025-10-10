@@ -102,7 +102,7 @@
                         categoría...</option>
                     @foreach ($categorias as $categoria)
                         <option value="{{ $categoria->categoria_id }}" @selected(old('categoria_id', $repuesto->categoria_id ?? '') == $categoria->categoria_id)>
-                            {{ $categoria->categoria_nombre }}
+                            {{ $categoria->nombre }}
                         </option>
                     @endforeach
                     <option value="__nuevo__">Agregar nueva categoría...</option>
@@ -326,7 +326,7 @@
                         url: '{{ route('categorias.ajax-store') }}',
                         method: 'POST',
                         data: {
-                            categoria_nombre: nuevaCategoria,
+                            nombre: nuevaCategoria,
                             _token: '{{ csrf_token() }}'
                         },
                         success: function(response) {

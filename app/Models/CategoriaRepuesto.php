@@ -5,22 +5,22 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Categoria extends Model
+class CategoriaRepuesto extends Model
 {
     use HasFactory;
 
-    protected $table = 'categoria';
-    protected $primaryKey = 'categoria_id';
+    protected $table = 'categorias_repuestos';
+    protected $primaryKey = 'id';
 
     protected $fillable = [
-        'categoria_nombre',
+        'nombre',
         'categoria_subcategoria'
     ];
 
     // Relaciones
     public function repuestos()
     {
-        return $this->hasMany(Repuesto::class, 'categoria_id', 'categoria_id');
+        return $this->hasMany(Repuesto::class, 'categoria_id', 'id');
     }
 
     // Scopes
@@ -31,15 +31,15 @@ class Categoria extends Model
 
     public function scopePorNombre($query, $nombre)
     {
-        return $query->where('categoria_nombre', 'like', "%{$nombre}%");
+        return $query->where('nombre', 'like', "%{$nombre}%");
     }
 
     // Accessors
     public function getNombreCompletoAttribute()
     {
-        return $this->categoria_subcategoria
-            ? $this->categoria_nombre . ' - ' . $this->categoria_subcategoria
-            : $this->categoria_nombre;
+        return $this->subcategoria
+            ? $this->nombre . ' - ' . $this->subcategoria
+            : $this->nombre;
     }
 
     public function getTotalrepuestosAttribute()

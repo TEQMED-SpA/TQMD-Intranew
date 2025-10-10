@@ -61,6 +61,46 @@ select:focus[data-flux-control] {
     @apply outline-hidden ring-2 ring-accent ring-offset-2 ring-offset-accent-foreground;
 }
 
+/* Ajustes básicos para modo oscuro en select2 */
+.select2-container--default .select2-selection--single {
+    background-color: #18181b !important;
+    /* bg-zinc-900 */
+    border-color: #52525b !important;
+    /* border-zinc-600 */
+    color: #f4f4f5 !important;
+    /* text-zinc-100 */
+}
+
+.select2-container--default .select2-selection--single .select2-selection__rendered {
+    color: #f4f4f5 !important;
+    /* text-zinc-100 */
+}
+
+.select2-container--default .select2-selection--single .select2-selection__placeholder {
+    color: #d4d4d8 !important;
+    /* placeholder-zinc-400 */
+}
+
+.select2-container--default .select2-dropdown {
+    background-color: #18181b !important;
+    /* bg-zinc-900 */
+    color: #f4f4f5 !important;
+    /* text-zinc-100 */
+    border-color: #52525b !important;
+    /* border-zinc-600 */
+}
+
+.select2-container--default .select2-results__option {
+    background-color: transparent !important;
+    color: #f4f4f5 !important;
+}
+
+.select2-container--default .select2-results__option--highlighted {
+    background-color: #2563eb !important;
+    /* bg-blue-600 */
+    color: #fff !important;
+}
+
 /* \[:where(&)\]:size-4 {
     @apply size-4;
 } */

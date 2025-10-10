@@ -36,20 +36,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach ($repuestos as $repuesto)
-                            <tr class="{{ $tableRowClass }}">
-                                <td class="p-3 text-zinc-900 dark:text-zinc-100 font-medium">
-                                    {{ $repuesto->nombre }}</td>
-                                <td class="p-3 text-zinc-900 dark:text-zinc-300">{{ $repuesto->modelo }}</td>
-                                <td class="p-3 text-zinc-900 dark:text-zinc-300">{{ $repuesto->marca }}</td>
-                                <td class="p-3 text-zinc-900 dark:text-zinc-300">{{ $repuesto->ubicacion }}
-                                </td>
-                                <td class="p-3 text-zinc-900 dark:text-zinc-300">{{ $repuesto->descripcion }}
-                                </td>
-                                <td class="p-3 text-zinc-900 dark:text-zinc-300">{{ $repuesto->stock }}</td>
-                                <td class="p-3 text-zinc-900 dark:text-zinc-300">
-                                    {{ $repuesto->categoria?->categoria_nombre }}
-                                </td>
+                       
                                 <td class="p-3 text-center">
                                     <div class="flex items-center justify-center gap-2">
                                         <a href="{{ route('repuestos.show', $repuesto) }}"
@@ -63,7 +50,20 @@
                                             <i class="fa fa-pencil text-sm"></i>
                                         </a>
                                         <form action="{{ route('repuestos.destroy', $repuesto) }}" method="POST"
-                                            style="display:inline;" onsubmit="return confirm('¿Eliminar repuesto?');">
+                                            style="display:inline;" onsubmit="return confirm('¿ @foreach ($repuestos as $repuesto)
+                            <tr class="{{ $tableRowClass }}">
+                                <td class="p-3 text-zinc-900 dark:text-zinc-100 font-medium">
+                                    {{ $repuesto->nombre }}</td>
+                                <td class="p-3 text-zinc-900 dark:text-zinc-300">{{ $repuesto->modelo }}</td>
+                                <td class="p-3 text-zinc-900 dark:text-zinc-300">{{ $repuesto->marca }}</td>
+                                <td class="p-3 text-zinc-900 dark:text-zinc-300">{{ $repuesto->ubicacion ?? 'N/A' }}
+                                </td>
+                                <td class="p-3 text-zinc-900 dark:text-zinc-300">{{ $repuesto->descripcion ?? 'N/A' }}
+                                </td>
+                                <td class="p-3 text-zinc-900 dark:text-zinc-300">{{ $repuesto->stock }}</td>
+                                <td class="p-3 text-zinc-900 dark:text-zinc-300">
+                                    {{ $repuesto->categoria?->nombre ?? 'Sin categoría' }}
+                                </td>Eliminar repuesto?');">
                                             @csrf @method('DELETE')
                                             <button type="submit"
                                                 class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-red-500 hover:bg-red-600 text-white transition-colors duration-200"

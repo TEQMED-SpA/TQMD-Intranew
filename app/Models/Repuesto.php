@@ -9,8 +9,8 @@ class Repuesto extends Model
 {
     use HasFactory;
 
-    protected $table = 'repuesto';
-    protected $primaryKey = 'repuesto_id';
+    protected $table = 'repuestos';
+    protected $primaryKey = 'id';
 
     protected $fillable = [
         'serie',
@@ -33,7 +33,7 @@ class Repuesto extends Model
     // Relaciones
     public function categoria()
     {
-        return $this->belongsTo(Categoria::class, 'categoria_id', 'categoria_id');
+        return $this->belongsTo(CategoriaRepuesto::class, 'categoria_id', 'id');
     }
 
     public function usuario()
@@ -43,12 +43,12 @@ class Repuesto extends Model
 
     public function salidas()
     {
-        return $this->hasMany(Salida::class, 'repuesto_id', 'repuesto_id');
+        return $this->hasMany(Salida::class, 'id', 'id');
     }
 
     public function solicitudRepuestos()
     {
-        return $this->hasMany(SolicitudRepuesto::class, 'repuesto_id', 'repuesto_id');
+        return $this->hasMany(SolicitudRepuesto::class, 'id', 'id');
     }
 
     // Scopes

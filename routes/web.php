@@ -8,12 +8,16 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\ClienteController;
 use App\Http\Controllers\CentroMedicoController;
-use App\Http\Controllers\CategoriaController;
+use App\Http\Controllers\CategoriaRepuestoController;
 use App\Http\Controllers\RepuestoController;
 use App\Http\Controllers\SolicitudController;
 use App\Http\Controllers\SalidaController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\PrivilegioController;
+use App\Http\Controllers\LlamadoController;
+use App\Http\Controllers\CategoriaLlamadoController;
+use App\Http\Controllers\TicketController;
+
 
 Route::redirect('/', '/login')->name('home');
 
@@ -32,14 +36,20 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('users', UserController::class);
     Route::resource('clientes', ClienteController::class);
     Route::resource('centros', CentroMedicoController::class);
-    Route::resource('categorias', CategoriaController::class);
+    Route::resource('categorias', CategoriaRepuestoController::class);
     Route::resource('repuestos', RepuestoController::class);
     Route::resource('solicitudes', SolicitudController::class);
     Route::resource('salidas', SalidaController::class);
     Route::resource('roles', RoleController::class);
     Route::resource('privilegios', PrivilegioController::class);
+    Route::resource('tickets', TicketController::class)->except(['create', 'store']);
 });
 
-Route::post('/categorias/ajax-store', [CategoriaController::class, 'ajaxStore'])->name('categorias.ajax-store');
+Route::post('/categorias/ajax-store', [CategoriaRepuestoController::class, 'ajaxStore'])->name('categorias.ajax-store');
+
+// Rutas para Llamados
+Route::resource('llamados', LlamadoController::class);
+Route::resource('categoria_llamados', CategoriaLlamadoController::class);
+Route::get('get-all-categorias', [CategoriaLlamadoController::class, 'getAllCategorias'])->name('get.all.categorias');
 
 require __DIR__ . '/auth.php';

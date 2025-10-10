@@ -30,16 +30,16 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach ($categorias as $categoria)
+                        @foreach ($categorias as $categoria_repuesto)
                             <tr class="{{ $tableRowClass }}">
                                 <td class="p-3 text-zinc-900 dark:text-zinc-100 font-medium">
-                                    {{ $categoria->categoria_nombre }}
+                                    {{ $categoria_repuesto->nombre }}
                                 </td>
                                 <td class="p-3 text-zinc-900 dark:text-zinc-300">
-                                    {{ $categoria->categoria_subcategoria }}</td>
+                                    {{ $categoria_repuesto->subcategoria }}</td>
                                 <td class="p-3">
                                     @php
-                                        $isActive = (int) $categoria->categoria_estado === 1;
+                                        $isActive = (int) $categoria_repuesto->estado === 1;
                                     @endphp
                                     <span
                                         class="inline-block rounded-full px-3 py-1 text-xs font-semibold transition-colors duration-200
@@ -51,17 +51,17 @@
                                 </td>
                                 <td class="p-3 text-center">
                                     <div class="flex items-center justify-center gap-2">
-                                        <a href="{{ route('categorias.show', $categoria) }}"
+                                        <a href="{{ route('categorias.show', $categoria_repuesto) }}"
                                             class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-blue-500 hover:bg-blue-600 text-white transition-colors duration-200"
                                             title="Ver">
                                             <i class="fa fa-eye text-sm"></i>
                                         </a>
-                                        <a href="{{ route('categorias.edit', $categoria) }}"
+                                        <a href="{{ route('categorias.edit', $categoria_repuesto) }}"
                                             class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-green-500 hover:bg-green-600 text-white transition-colors duration-200"
                                             title="Editar">
                                             <i class="fa fa-pencil text-sm"></i>
                                         </a>
-                                        <form action="{{ route('categorias.destroy', $categoria) }}" method="POST"
+                                        <form action="{{ route('categorias.destroy', $categoria_repuesto) }}" method="POST"
                                             style="display:inline;" onsubmit="return confirm('¿Eliminar categoría?');">
                                             @csrf @method('DELETE')
                                             <button type="submit"

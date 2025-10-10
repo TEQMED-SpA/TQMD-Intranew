@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Repuesto;
-use App\Models\Categoria;
+use App\Models\CategoriaRepuesto;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -21,8 +21,7 @@ class RepuestoController extends Controller
 
     public function create()
     {
-        $categorias = Categoria::orderBy('categoria_nombre')->get();
-        // Extrae modelos, marcas y ubicaciones únicos de la tabla Repuesto
+        $categorias = CategoriaRepuesto::orderBy('nombre')->get();
         $modelos = Repuesto::select('modelo')->distinct()->whereNotNull('modelo')->pluck('modelo');
         $marcas = Repuesto::select('marca')->distinct()->whereNotNull('marca')->pluck('marca');
         $ubicaciones = Repuesto::select('ubicacion')->distinct()->whereNotNull('ubicacion')->pluck('ubicacion');
@@ -41,10 +40,10 @@ class RepuestoController extends Controller
             'descripcion' => 'nullable|string|max:200',
             'stock' => 'required|integer|min:0',
             'foto' => 'nullable|file|image|max:2048',
-            'categoria_id' => 'required|exists:categoria,categoria_id',
+            'categoria_id' => 'required|exists:categorias_repuestos,id',
         ]);
         $data = $request->all();
-        $data['usuario_id'] = auth()->id();
+        $data['usuario_id'] = Auth::id();
 
         if ($request->hasFile('foto')) {
             $data['foto'] = $request->file('foto')->store('repuestos', 'public');
@@ -53,27 +52,22 @@ class RepuestoController extends Controller
         return redirect()->route('repuestos.index')->with('success', 'Repuesto creado correctamente');
     }
 
-    public function show(Repuesto $Repuesto)
+    public function show(Repuesto $repuesto)
     {
-        return view('repuestos.show', ['repuesto' => $Repuesto]);
+        $repuesto->load('categoria');
+        return view('repuestos.show', compact('repuesto'));
     }
 
-    public function edit(Repuesto $Repuesto)
+    public function edit(Repuesto $repuesto)
     {
-        $categorias = Categoria::orderBy('categoria_nombre')->get();
+        $categorias = CategoriaRepuesto::orderBy('nombre')->get();
         $modelos = Repuesto::select('modelo')->distinct()->whereNotNull('modelo')->pluck('modelo');
         $marcas = Repuesto::select('marca')->distinct()->whereNotNull('marca')->pluck('marca');
         $ubicaciones = Repuesto::select('ubicacion')->distinct()->whereNotNull('ubicacion')->pluck('ubicacion');
-        return view('repuestos.edit', [
-            'repuesto' => $Repuesto,
-            'categorias' => $categorias,
-            'modelos' => $modelos,
-            'marcas' => $marcas,
-            'ubicaciones' => $ubicaciones,
-        ]);
+        return view('repuestos.edit', compact('repuesto', 'categorias', 'modelos', 'marcas', 'ubicaciones'));
     }
 
-    public function update(Request $request, Repuesto $Repuesto)
+    public function update(Request $request, Repuesto $repuesto)
     {
         $request->validate([
             'nombre' => 'required|string|max:70',
@@ -85,22 +79,24 @@ class RepuestoController extends Controller
             'descripcion' => 'nullable|string|max:200',
             'stock' => 'required|integer|min:0',
             'foto' => 'nullable|file|image|max:2048',
-            'categoria_id' => 'required|exists:categoria,categoria_id',
+            'categoria_id' => 'required|exists:categorias_repuestos,id',
         ]);
         $data = $request->all();
-        $data['usuario_id'] = $producto->usuario_id ?? auth()->id();
+        $data['usuario_id'] = $repuesto->usuario_id ?? Auth::id();
+
         if ($request->hasFile('foto')) {
             $data['foto'] = $request->file('foto')->store('repuestos', 'public');
         } else {
             unset($data['foto']);
         }
-        $Repuesto->update($data);
+
+        $repuesto->update($data);
         return redirect()->route('repuestos.index')->with('success', 'Repuesto actualizado correctamente');
     }
 
-    public function destroy(Repuesto $Repuesto)
+    public function destroy(Repuesto $repuesto)
     {
-        $Repuesto->delete();
+        $repuesto->update(['estado' => 'Inactivo']);
         return redirect()->route('repuestos.index')->with('success', 'Repuesto eliminado correctamente');
     }
 }

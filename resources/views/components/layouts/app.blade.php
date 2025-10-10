@@ -7,8 +7,6 @@
     <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
     <!-- Select2 JS -->
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-    <!-- Alpine.js -->
-    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
     <x-layouts.app.sidebar :title="$title ?? null">
         <flux:main>
             {{ $slot }}

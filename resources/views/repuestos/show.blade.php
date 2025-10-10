@@ -141,8 +141,9 @@
                     </li>
                     <li class="py-3 flex justify-between items-center">
                         <span class="font-semibold text-zinc-700 dark:text-zinc-200">Categoría:</span>
-                        <span
-                            class="text-zinc-900 dark:text-zinc-100">{{ $repuesto->categoria?->categoria_nombre }}</span>
+                        <span class="text-zinc-900 dark:text-zinc-100">
+                            {{ $repuesto->categoria?->nombre ?? 'Sin categoría' }}
+                        </span>
                     </li>
                     <li class="py-3 flex justify-between items-center">
                         <span class="font-semibold text-zinc-700 dark:text-zinc-200">Estado:</span>

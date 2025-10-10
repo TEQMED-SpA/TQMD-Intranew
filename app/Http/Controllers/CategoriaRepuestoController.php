@@ -2,14 +2,14 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Categoria;
+use App\Models\CategoriaRepuesto;
 use Illuminate\Http\Request;
 
-class CategoriaController extends Controller
+class CategoriaRepuestoController extends Controller
 {
     public function index(Request $request)
     {
-        $categorias = Categoria::orderBy('categoria_nombre')->paginate(15);
+        $categorias = CategoriaRepuesto::orderBy('nombre')->paginate(15);
         return view('categorias.index', compact('categorias'));
     }
 
@@ -21,34 +21,34 @@ class CategoriaController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'categoria_nombre' => 'required|string|max:50',
-            'categoria_subcategoria' => 'nullable|string|max:150',
+            'nombre' => 'required|string|max:50',
+            'subcategoria' => 'nullable|string|max:150',
         ]);
-        Categoria::create($request->all());
+        CategoriaRepuesto::create($request->all());
         return redirect()->route('categorias.index')->with('success', 'Categoría creada correctamente');
     }
 
-    public function show(Categoria $categoria)
+    public function show(CategoriaRepuesto $categoria)
     {
         return view('categorias.show', compact('categoria'));
     }
 
-    public function edit(Categoria $categoria)
+    public function edit(CategoriaRepuesto $categoria)
     {
         return view('categorias.edit', compact('categoria'));
     }
 
-    public function update(Request $request, Categoria $categoria)
+    public function update(Request $request, CategoriaRepuesto $categoria)
     {
         $request->validate([
-            'categoria_nombre' => 'required|string|max:50',
-            'categoria_subcategoria' => 'nullable|string|max:150',
+            'nombre' => 'required|string|max:50',
+            'subcategoria' => 'nullable|string|max:150',
         ]);
         $categoria->update($request->all());
         return redirect()->route('categorias.index')->with('success', 'Categoría actualizada correctamente');
     }
 
-    public function destroy(Categoria $categoria)
+    public function destroy(CategoriaRepuesto $categoria)
     {
         $categoria->delete();
         return redirect()->route('categorias.index')->with('success', 'Categoría eliminada correctamente');
@@ -57,16 +57,16 @@ class CategoriaController extends Controller
     public function ajaxStore(Request $request)
     {
         $request->validate([
-            'categoria_nombre' => 'required|string|max:50',
-            'categoria_subcategoria' => 'nullable|string|max:150',
+            'nombre' => 'required|string|max:50',
+            'subcategoria' => 'nullable|string|max:150',
         ]);
-        $categoria = Categoria::create([
-            'categoria_nombre' => $request->categoria_nombre,
-            'categoria_subcategoria' => $request->categoria_subcategoria,
+        $categoria = CategoriaRepuesto::create([
+            'nombre' => $request->nombre,
+            'subcategoria' => $request->subcategoria,
         ]);
         return response()->json([
-            'id' => $categoria->categoria_id,
-            'nombre' => $categoria->categoria_nombre,
+            'id' => $categoria->id,
+            'nombre' => $categoria->nombre,
         ]);
     }
 }
