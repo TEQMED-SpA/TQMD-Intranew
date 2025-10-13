@@ -1,236 +1,212 @@
-<form method="POST" action="{{ route('repuestos.store') }}" enctype="multipart/form-data" class="max-w-4xl mx-auto">
+<form method="POST" action="{{ route('repuestos.store') }}" enctype="multipart/form-data" class="max-w-7xl mx-auto">
     @csrf
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <!-- Columna 1 -->
-        <div class="space-y-4">
-            {{-- Serie --}}
-            <div>
-                <label for="serie" class="block text-zinc-700 dark:text-zinc-200 font-medium mb-2">Serie</label>
-                <input type="text" name="serie" id="serie" placeholder="Ej: ABC123-456"
-                    value="{{ old('serie', $repuesto->serie ?? '') }}"
-                    class="w-full px-4 py-3 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    required>
-                @error('serie')
-                    <div class="text-red-500 text-sm mt-1">{{ $message }}</div>
-                @enderror
-            </div>
 
-            {{-- Nombre --}}
-            <div>
-                <label for="nombre" class="block text-zinc-700 dark:text-zinc-200 font-medium mb-2">Nombre del
-                    Repuesto</label>
-                <input type="text" name="nombre" id="nombre" placeholder="Ej: Bomba de concentrado"
-                    value="{{ old('nombre', $repuesto->nombre ?? '') }}"
-                    class="w-full px-4 py-3 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
-                @error('nombre')
-                    <div class="text-red-500 text-sm mt-1">{{ $message }}</div>
-                @enderror
-            </div>
-
-            {{-- Modelo --}}
-            <div>
-                <label for="modelo" class="block text-zinc-700 dark:text-zinc-200 font-medium mb-2">Modelo</label>
-                <select name="modelo" id="modelo"
-                    class="select2-modelo w-full px-4 py-3 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
-                    <option value="">Seleccionar modelo...</option>
-                    @foreach ($modelos as $modelo)
-                        <option value="{{ $modelo }}" @selected(old('modelo', $repuesto->modelo ?? '') == $modelo)>{{ $modelo }}</option>
-                    @endforeach
-                    <option value="__nuevo__">Agregar nuevo modelo...</option>
-                </select>
-                @error('modelo')
-                    <div class="text-red-500 text-sm mt-1">{{ $message }}</div>
-                @enderror
-            </div>
-
-            {{-- Marca --}}
-            <div>
-                <label for="marca" class="block text-zinc-700 dark:text-zinc-200 font-medium mb-2">Marca</label>
-                <select name="marca" id="marca"
-                    class="select2-marca w-full px-4 py-3 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
-                    <option value="">Seleccionar marca...</option>
-                    @foreach ($marcas as $marca)
-                        <option value="{{ $marca }}">{{ $marca }}</option>
-                    @endforeach
-                    <option value="__nuevo__">Agregar nueva marca...</option>
-                </select>
-                @error('marca')
-                    <div class="text-red-500 text-sm mt-1">{{ $message }}</div>
-                @enderror
-            </div>
-
-            {{-- Stock --}}
-            <div>
-                <label for="stock" class="block text-zinc-700 dark:text-zinc-200 font-medium mb-2">Cantidad en
-                    Stock</label>
-                <input type="number" name="stock" id="stock" min="0" step="1" placeholder="Ej: 25"
-                    value="{{ old('stock', $repuesto->stock ?? '') }}"
-                    class="w-full px-4 py-3 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
-                @error('stock')
-                    <div class="text-red-500 text-sm mt-1">{{ $message }}</div>
-                @enderror
-            </div>
-        </div>
-
-        <!-- Columna 2 -->
-        <div class="space-y-4">
-            {{-- Ubicación --}}
-            <div>
-                <label for="ubicacion" class="block text-zinc-700 dark:text-zinc-200 font-medium mb-2">Ubicación en
-                    Almacén</label>
-                <select name="ubicacion" id="ubicacion"
-                    class="select2-ubicacion w-full px-4 py-3 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
-                    <option value="">Seleccionar ubicación...</option>
-                    @foreach ($ubicaciones as $ubicacion)
-                        <option value="{{ $ubicacion }}" @selected(old('ubicacion', $repuesto->ubicacion ?? '') == $ubicacion)>{{ $ubicacion }}</option>
-                    @endforeach
-                    <option value="__nuevo__">Agregar nueva ubicación...</option>
-                </select>
-                @error('ubicacion')
-                    <div class="text-red-500 text-sm mt-1">{{ $message }}</div>
-                @enderror
-            </div>
-
-            {{-- Categoría --}}
-            <div>
-                <label for="categoria_id"
-                    class="block text-zinc-700 dark:text-zinc-200 font-medium mb-2">Categoría</label>
-                <select name="categoria_id" id="categoria_id" required
-                    class="select2-categoria w-full px-4 py-3 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
-                    <option value="" disabled
-                        {{ !old('categoria_id', $repuesto->categoria_id ?? '') ? 'selected' : '' }}>Seleccionar
-                        categoría...</option>
-                    @foreach ($categorias as $categoria)
-                        <option value="{{ $categoria->categoria_id }}" @selected(old('categoria_id', $repuesto->categoria_id ?? '') == $categoria->categoria_id)>
-                            {{ $categoria->nombre }}
-                        </option>
-                    @endforeach
-                    <option value="__nuevo__">Agregar nueva categoría...</option>
-                </select>
-                @error('categoria_id')
-                    <div class="text-red-500 text-sm mt-1">{{ $message }}</div>
-                @enderror
-            </div>
-
-            {{-- Estado --}}
-            <div>
-                <label for="estado" class="block text-zinc-700 dark:text-zinc-200 font-medium mb-2">Estado</label>
-                <select name="estado" id="estado"
-                    class="w-full px-4 py-3 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
-                    <option value="activo" @selected(old('estado', $repuesto->estado ?? '') === 'activo')>✅ Activo</option>
-                    <option value="inactivo" @selected(old('estado', $repuesto->estado ?? '') === 'inactivo')>❌ Inactivo</option>
-                </select>
-                @error('estado')
-                    <div class="text-red-500 text-sm mt-1">{{ $message }}</div>
-                @enderror
-            </div>
-
-            {{-- Foto --}}
-            <div>
-                <label for="foto" class="block text-zinc-700 dark:text-zinc-200 font-medium mb-2">Fotografía
-                    del Repuesto</label>
-                <input type="file" name="foto" id="foto" accept="image/jpeg,image/jpg,image/png,image/webp"
-                    class="w-full px-4 py-3 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
-                <div class="text-xs text-zinc-500 mt-1">
-                    📁 Formatos permitidos: JPG, JPEG, PNG, WEBP | Tamaño máximo: 2MB | Dimensiones recomendadas:
-                    800x600px
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Columna 1: Información Básica -->
+        <div class="bg-white dark:bg-zinc-800 rounded-lg shadow-md p-6 border border-zinc-200 dark:border-zinc-700">
+            <h3 class="text-lg font-bold text-zinc-800 dark:text-white mb-4 flex items-center gap-2">
+                <i class="fa fa-info-circle text-blue-500"></i>
+                Información Básica
+            </h3>
+            <div class="space-y-4">
+                {{-- Serie --}}
+                <div>
+                    <label for="serie"
+                        class="block text-sm font-semibold text-zinc-700 dark:text-zinc-200 mb-1">Serie</label>
+                    <input type="text" name="serie" id="serie" placeholder="Ej: ABC123-456"
+                        value="{{ old('serie', $repuesto->serie ?? '') }}"
+                        class="w-full px-3 py-2 text-sm border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        required>
+                    @error('serie')
+                        <div class="text-red-500 text-xs mt-1">{{ $message }}</div>
+                    @enderror
                 </div>
-                @error('foto')
-                    <div class="text-red-500 text-sm mt-1">{{ $message }}</div>
-                @enderror
-                @if (!empty($repuesto->foto))
-                    <div class="mt-3 p-3 bg-zinc-50 dark:bg-zinc-800 rounded-lg">
-                        <p class="text-sm text-zinc-600 dark:text-zinc-400 mb-2">Imagen actual:</p>
-                        <img src="{{ asset('storage/' . $repuesto->foto) }}" alt="Foto actual del repuesto"
-                            class="h-20 w-20 object-cover rounded-lg border-2 border-zinc-200 dark:border-zinc-600" />
+
+                {{-- Nombre --}}
+                <div>
+                    <label for="nombre"
+                        class="block text-sm font-semibold text-zinc-700 dark:text-zinc-200 mb-1">Nombre del
+                        Repuesto</label>
+                    <input type="text" name="nombre" id="nombre" placeholder="Ej: Bomba de concentrado"
+                        value="{{ old('nombre', $repuesto->nombre ?? '') }}"
+                        class="w-full px-3 py-2 text-sm border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    @error('nombre')
+                        <div class="text-red-500 text-xs mt-1">{{ $message }}</div>
+                    @enderror
+                </div>
+
+                {{-- Modelo --}}
+                <div>
+                    <label for="modelo"
+                        class="block text-sm font-semibold text-zinc-700 dark:text-zinc-200 mb-1">Modelo</label>
+                    <select name="modelo" id="modelo"
+                        class="select2-modelo w-full px-3 py-2 text-sm border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="">Seleccionar...</option>
+                        @foreach ($modelos as $modelo)
+                            <option value="{{ $modelo }}" @selected(old('modelo', $repuesto->modelo ?? '') == $modelo)>{{ $modelo }}
+                            </option>
+                        @endforeach
+                        <option value="__nuevo__">➕ Agregar nuevo...</option>
+                    </select>
+                    @error('modelo')
+                        <div class="text-red-500 text-xs mt-1">{{ $message }}</div>
+                    @enderror
+                </div>
+
+                {{-- Marca --}}
+                <div>
+                    <label for="marca"
+                        class="block text-sm font-semibold text-zinc-700 dark:text-zinc-200 mb-1">Marca</label>
+                    <select name="marca" id="marca"
+                        class="select2-marca w-full px-3 py-2 text-sm border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="">Seleccionar...</option>
+                        @foreach ($marcas as $marca)
+                            <option value="{{ $marca }}" @selected(old('marca', $repuesto->marca ?? '') == $marca)>{{ $marca }}
+                            </option>
+                        @endforeach
+                        <option value="__nuevo__">➕ Agregar nueva...</option>
+                    </select>
+                    @error('marca')
+                        <div class="text-red-500 text-xs mt-1">{{ $message }}</div>
+                    @enderror
+                </div>
+            </div>
+        </div>
+
+        <!-- Columna 2: Stock y Ubicación -->
+        <div class="bg-white dark:bg-zinc-800 rounded-lg shadow-md p-6 border border-zinc-200 dark:border-zinc-700">
+            <h3 class="text-lg font-bold text-zinc-800 dark:text-white mb-4 flex items-center gap-2">
+                <i class="fa fa-cube text-green-500"></i>
+                Stock y Ubicación
+            </h3>
+            <div class="space-y-4">
+                {{-- Stock --}}
+                <div>
+                    <label for="stock"
+                        class="block text-sm font-semibold text-zinc-700 dark:text-zinc-200 mb-1">Cantidad en
+                        Stock</label>
+                    <input type="number" name="stock" id="stock" min="0" step="1"
+                        placeholder="Ej: 25" value="{{ old('stock', $repuesto->stock ?? '') }}"
+                        class="w-full px-3 py-2 text-sm border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    @error('stock')
+                        <div class="text-red-500 text-xs mt-1">{{ $message }}</div>
+                    @enderror
+                </div>
+
+                {{-- Ubicación --}}
+                <div>
+                    <label for="ubicacion"
+                        class="block text-sm font-semibold text-zinc-700 dark:text-zinc-200 mb-1">Ubicación en
+                        Almacén</label>
+                    <select name="ubicacion" id="ubicacion"
+                        class="select2-ubicacion w-full px-3 py-2 text-sm border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="">Seleccionar...</option>
+                        @foreach ($ubicaciones as $ubicacion)
+                            <option value="{{ $ubicacion }}" @selected(old('ubicacion', $repuesto->ubicacion ?? '') == $ubicacion)>{{ $ubicacion }}
+                            </option>
+                        @endforeach
+                        <option value="__nuevo__">➕ Agregar nueva...</option>
+                    </select>
+                    @error('ubicacion')
+                        <div class="text-red-500 text-xs mt-1">{{ $message }}</div>
+                    @enderror
+                </div>
+
+                {{-- Categoría --}}
+                <div>
+                    <label for="categoria_id"
+                        class="block text-sm font-semibold text-zinc-700 dark:text-zinc-200 mb-1">Categoría</label>
+                    <select name="categoria_id" id="categoria_id" required
+                        class="select2-categoria w-full px-3 py-2 text-sm border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="" disabled
+                            {{ !old('categoria_id', $repuesto->categoria_id ?? '') ? 'selected' : '' }}>Seleccionar...
+                        </option>
+                        @foreach ($categorias as $categoria)
+                            <option value="{{ $categoria->categoria_id }}" @selected(old('categoria_id', $repuesto->categoria_id ?? '') == $categoria->categoria_id)>
+                                {{ $categoria->nombre }}
+                            </option>
+                        @endforeach
+                        <option value="__nuevo__">➕ Agregar nueva...</option>
+                    </select>
+                    @error('categoria_id')
+                        <div class="text-red-500 text-xs mt-1">{{ $message }}</div>
+                    @enderror
+                </div>
+
+                {{-- Estado --}}
+                <div>
+                    <label for="estado"
+                        class="block text-sm font-semibold text-zinc-700 dark:text-zinc-200 mb-1">Estado</label>
+                    <select name="estado" id="estado"
+                        class="w-full px-3 py-2 text-sm border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="activo" @selected(old('estado', $repuesto->estado ?? 'activo') === 'activo')>✅ Activo</option>
+                        <option value="inactivo" @selected(old('estado', $repuesto->estado ?? '') === 'inactivo')>❌ Inactivo</option>
+                    </select>
+                    @error('estado')
+                        <div class="text-red-500 text-xs mt-1">{{ $message }}</div>
+                    @enderror
+                </div>
+            </div>
+        </div>
+
+        <!-- Columna 3: Descripción y Foto -->
+        <div class="bg-white dark:bg-zinc-800 rounded-lg shadow-md p-6 border border-zinc-200 dark:border-zinc-700">
+            <h3 class="text-lg font-bold text-zinc-800 dark:text-white mb-4 flex items-center gap-2">
+                <i class="fa fa-image text-purple-500"></i>
+                Descripción y Foto
+            </h3>
+            <div class="space-y-4">
+                {{-- Descripción --}}
+                <div>
+                    <label for="descripcion"
+                        class="block text-sm font-semibold text-zinc-700 dark:text-zinc-200 mb-1">Descripción</label>
+                    <textarea name="descripcion" id="descripcion" rows="6"
+                        placeholder="Características, especificaciones técnicas, compatibilidad..."
+                        class="w-full px-3 py-2 text-sm border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none">{{ old('descripcion', $repuesto->descripcion ?? '') }}</textarea>
+                    @error('descripcion')
+                        <div class="text-red-500 text-xs mt-1">{{ $message }}</div>
+                    @enderror
+                </div>
+
+                {{-- Foto --}}
+                <div>
+                    <label for="foto"
+                        class="block text-sm font-semibold text-zinc-700 dark:text-zinc-200 mb-1">Fotografía</label>
+                    <input type="file" name="foto" id="foto"
+                        accept="image/jpeg,image/jpg,image/png,image/webp"
+                        class="w-full px-3 py-2 text-sm border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 file:mr-3 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-xs file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 dark:file:bg-blue-900/40 dark:file:text-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <div class="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
+                        JPG, PNG, WEBP • Max 2MB
                     </div>
-                @endif
+                    @error('foto')
+                        <div class="text-red-500 text-xs mt-1">{{ $message }}</div>
+                    @enderror
+                    @if (!empty($repuesto->foto))
+                        <div class="mt-3 p-3 bg-zinc-50 dark:bg-zinc-700/50 rounded-lg">
+                            <p class="text-xs text-zinc-600 dark:text-zinc-400 mb-2">Imagen actual:</p>
+                            <img src="{{ asset('storage/' . $repuesto->foto) }}" alt="Foto actual"
+                                class="h-24 w-24 object-cover rounded-lg border-2 border-zinc-200 dark:border-zinc-600" />
+                        </div>
+                    @endif
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- Descripción - Campo completo ancho -->
-    <div class="mt-6">
-        <label for="descripcion" class="block text-zinc-700 dark:text-zinc-200 font-medium mb-2">Descripción
-            Detallada</label>
-        <textarea name="descripcion" id="descripcion" rows="3"
-            placeholder="Describe las características, especificaciones técnicas, compatibilidad, etc..."
-            class="w-full px-4 py-3 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none">{{ old('descripcion', $repuesto->descripcion ?? '') }}</textarea>
-        @error('descripcion')
-            <div class="text-red-500 text-sm mt-1">{{ $message }}</div>
-        @enderror
-    </div>
+    <!-- Modales (mantenidos iguales pero más compactos) -->
+    @include('repuestos.partials.modales')
 
-    <!-- Modales para agregar nuevo modelo/marca/ubicación/categoría -->
-    <!-- Modal Modelo -->
-    <div id="modalNuevoModelo"
-        class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-        <div class="bg-white dark:bg-zinc-900 rounded-lg shadow-lg w-full max-w-sm p-6">
-            <h3 class="text-lg font-bold mb-4 text-zinc-800 dark:text-white">Agregar nuevo modelo</h3>
-            <input type="text" id="inputNuevoModelo"
-                class="w-full px-4 py-2 border rounded mb-4 bg-zinc-50 dark:bg-zinc-800 text-zinc-800 dark:text-white"
-                placeholder="Nombre del modelo">
-            <div class="flex justify-end gap-2">
-                <button type="button"
-                    class="btn-cancel-modal bg-zinc-200 dark:bg-zinc-700 px-3 py-2 rounded text-zinc-800 dark:text-white">Cancelar</button>
-                <button type="button" id="btnGuardarModelo"
-                    class="bg-blue-600 hover:bg-blue-700 px-3 py-2 rounded text-white font-bold">Guardar</button>
-            </div>
-        </div>
-    </div>
-    <!-- Modal Marca -->
-    <div id="modalNuevaMarca"
-        class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-        <div class="bg-white dark:bg-zinc-900 rounded-lg shadow-lg w-full max-w-sm p-6">
-            <h3 class="text-lg font-bold mb-4 text-zinc-800 dark:text-white">Agregar nueva marca</h3>
-            <input type="text" id="inputNuevaMarca"
-                class="w-full px-4 py-2 border rounded mb-4 bg-zinc-50 dark:bg-zinc-800 text-zinc-800 dark:text-white"
-                placeholder="Nombre de la marca">
-            <div class="flex justify-end gap-2">
-                <button type="button"
-                    class="btn-cancel-modal bg-zinc-200 dark:bg-zinc-700 px-3 py-2 rounded text-zinc-800 dark:text-white">Cancelar</button>
-                <button type="button" id="btnGuardarMarca"
-                    class="bg-blue-600 hover:bg-blue-700 px-3 py-2 rounded text-white font-bold">Guardar</button>
-            </div>
-        </div>
-    </div>
-    <!-- Modal Ubicación -->
-    <div id="modalNuevaUbicacion"
-        class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-        <div class="bg-white dark:bg-zinc-900 rounded-lg shadow-lg w-full max-w-sm p-6">
-            <h3 class="text-lg font-bold mb-4 text-zinc-800 dark:text-white">Agregar nueva ubicación</h3>
-            <input type="text" id="inputNuevaUbicacion"
-                class="w-full px-4 py-2 border rounded mb-4 bg-zinc-50 dark:bg-zinc-800 text-zinc-800 dark:text-white"
-                placeholder="Nombre de la ubicación">
-            <div class="flex justify-end gap-2">
-                <button type="button"
-                    class="btn-cancel-modal bg-zinc-200 dark:bg-zinc-700 px-3 py-2 rounded text-zinc-800 dark:text-white">Cancelar</button>
-                <button type="button" id="btnGuardarUbicacion"
-                    class="bg-blue-600 hover:bg-blue-700 px-3 py-2 rounded text-white font-bold">Guardar</button>
-            </div>
-        </div>
-    </div>
-    <!-- Modal Categoría -->
-    <div id="modalNuevaCategoria"
-        class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-        <div class="bg-white dark:bg-zinc-900 rounded-lg shadow-lg w-full max-w-sm p-6">
-            <h3 class="text-lg font-bold mb-4 text-zinc-800 dark:text-white">Agregar nueva categoría</h3>
-            <input type="text" id="inputNuevaCategoria"
-                class="w-full px-4 py-2 border rounded mb-4 bg-zinc-50 dark:bg-zinc-800 text-zinc-800 dark:text-white"
-                placeholder="Nombre de la categoría">
-            <div class="flex justify-end gap-2">
-                <button type="button"
-                    class="btn-cancel-modal bg-zinc-200 dark:bg-zinc-700 px-3 py-2 rounded text-zinc-800 dark:text-white">Cancelar</button>
-                <button type="button" id="btnGuardarCategoria"
-                    class="bg-blue-600 hover:bg-blue-700 px-3 py-2 rounded text-white font-bold">Guardar</button>
-            </div>
-        </div>
-    </div>
-
-    <div class="mt-8 flex justify-end">
+    <!-- Botones de acción -->
+    <div class="mt-6 flex justify-end gap-3">
+        <a href="{{ route('repuestos.index') }}"
+            class="bg-zinc-600 hover:bg-zinc-700 text-white font-semibold px-6 py-2 rounded-lg transition">
+            <i class="fa fa-arrow-left"></i> Cancelar
+        </a>
         <button type="submit"
-            class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg shadow">Guardar
-            repuesto</button>
+            class="bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600
+            text-zinc-800 dark:text-white font-semibold px-6 py-2 rounded-lg transition">
+            <i class="fa fa-save"></i> Guardar Repuesto
+        </button>
     </div>
 </form>
 
@@ -243,12 +219,13 @@
         function hideModal(id) {
             document.getElementById(id).classList.add('hidden');
         }
+
         $(document).ready(function() {
-            // INICIALIZA SELECT2 EN TODOS LOS SELECTS
-            $('.select2-modelo').select2();
-            $('.select2-marca').select2();
-            $('.select2-ubicacion').select2();
-            $('.select2-categoria').select2();
+            // INICIALIZA SELECT2
+            $('.select2-modelo, .select2-marca, .select2-ubicacion, .select2-categoria').select2({
+                theme: 'default',
+                width: '100%'
+            });
 
             // Modelo
             $('.select2-modelo').on('change', function() {

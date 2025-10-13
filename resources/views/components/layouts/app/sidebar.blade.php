@@ -37,6 +37,10 @@
                         :current="request()->routeIs('privilegios.*')" wire:navigate>
                         {{ __('Privilegios') }}
                     </flux:navlist.item>
+                    <flux:navlist.item icon="ticket" :href="route('tickets.index')"
+                        :current="request()->routeIs('tickets.*')" wire:navigate>
+                        {{ __('Tickets') }}
+                    </flux:navlist.item>
                     <flux:navlist.item icon="users" :href="route('clientes.index')"
                         :current="request()->routeIs('clientes.*')" wire:navigate>
                         {{ __('Clientes') }}

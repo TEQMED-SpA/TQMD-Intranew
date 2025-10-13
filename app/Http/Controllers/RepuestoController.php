@@ -11,11 +11,36 @@ class RepuestoController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Repuesto::with('categoria');
+        $query = Repuesto::query();
+
         if ($request->filled('buscar')) {
-            $query->buscar($request->buscar);
+            $query->where(function ($q) use ($request) {
+                $q->where('nombre', 'like', '%' . $request->buscar . '%')
+                    ->orWhere('modelo', 'like', '%' . $request->buscar . '%')
+                    ->orWhere('marca', 'like', '%' . $request->buscar . '%');
+            });
         }
-        $repuestos = $query->orderBy('nombre')->paginate(15);
+
+        if ($request->filled('categoria')) {
+            $query->where('categoria_id', $request->categoria);
+        }
+
+        if ($request->filled('stock')) {
+            switch ($request->stock) {
+                case 'bajo':
+                    $query->where('stock', '<', 10);
+                    break;
+                case 'medio':
+                    $query->whereBetween('stock', [10, 50]);
+                    break;
+                case 'alto':
+                    $query->where('stock', '>', 50);
+                    break;
+            }
+        }
+
+        $repuestos = $query->paginate(15);
+
         return view('repuestos.index', compact('repuestos'));
     }
 

@@ -26,7 +26,7 @@
                         </select>
                     </div>
                     <button type="submit"
-                        class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2 rounded-lg transition">
+                        class="bg-zinc-100 dark:bg-zinc-600 hover:bg-zinc-400 dark:hover:bg-zinc-800 text-zinc-800 dark:text-white font-semibold px-6 py-2 rounded-lg transition">
                         <i class="fa fa-search"></i> Buscar
                     </button>
                     <a href="{{ route('tickets.index') }}"

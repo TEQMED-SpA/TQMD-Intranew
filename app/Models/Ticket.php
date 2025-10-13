@@ -59,4 +59,86 @@ class Ticket extends Model
             ->orWhere('telefono', 'like', "%{$buscar}%");
     }
 
+    // Relación con el historial
+
+    public function historial()
+    {
+        return $this->hasMany(TicketHistorial::class)->orderBy('fecha', 'desc');
+    }
+
+    /**
+     * Accessor para URL de evidencia (cualquier tipo de archivo)
+     */
+    public function getEvidenciaUrlAttribute()
+    {
+        if (!$this->foto) {
+            return null;
+        }
+
+        // Verificar si es una URL completa
+        if (filter_var($this->foto, FILTER_VALIDATE_URL)) {
+            return $this->foto;
+        }
+
+        // Construir URL completa
+        return "https://llamados.teqmed.cl/uploads/tickets/" . $this->foto;
+    }
+
+    /**
+     * Verificar si tiene evidencia
+     */
+    public function hasEvidencia()
+    {
+        return !empty($this->foto);
+    }
+
+    /**
+     * Obtener el tipo de archivo
+     */
+    public function getTipoEvidenciaAttribute()
+    {
+        if (!$this->foto) {
+            return 'none';
+        }
+
+        $extension = strtolower(pathinfo($this->foto, PATHINFO_EXTENSION));
+
+        $imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'svg'];
+        $videoExtensions = ['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm', 'mkv'];
+        $documentExtensions = ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx'];
+
+        if (in_array($extension, $imageExtensions)) {
+            return 'image';
+        } elseif (in_array($extension, $videoExtensions)) {
+            return 'video';
+        } elseif (in_array($extension, $documentExtensions)) {
+            return 'document';
+        } else {
+            return 'file';
+        }
+    }
+
+    /**
+     * Verificar si es imagen
+     */
+    public function esImagen()
+    {
+        return $this->tipo_evidencia === 'image';
+    }
+
+    /**
+     * Verificar si es video
+     */
+    public function esVideo()
+    {
+        return $this->tipo_evidencia === 'video';
+    }
+
+    /**
+     * Verificar si es documento
+     */
+    public function esDocumento()
+    {
+        return $this->tipo_evidencia === 'document';
+    }
 }

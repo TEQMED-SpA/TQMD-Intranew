@@ -7,6 +7,8 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\TicketAsignado;
+use App\Models\TicketHistorial;
+use Illuminate\Support\Facades\Auth;
 
 class TicketController extends Controller
 {
@@ -28,8 +30,37 @@ class TicketController extends Controller
 
     public function show(Ticket $ticket)
     {
-        $ticket->load('tecnicoAsignado');
-        return view('tickets.show', compact('ticket'));
+        $ticket->load(['historial', 'tecnicoAsignado']);
+
+        return view('tickets.show', [
+            'ticket' => $ticket,
+            'title' => 'Detalle Ticket #' . $ticket->numero_ticket
+        ]);
+    }
+
+    public function agregarComentario(Request $request, Ticket $ticket)
+    {
+        $request->validate([
+            'comentario' => 'required|string|max:1000',
+            'foto' => 'nullable|image|max:2048',
+        ]);
+
+        $fotoPath = null;
+        if ($request->hasFile('foto')) {
+            $fotoPath = $request->file('foto')->store('uploads/tickets', 'public');
+        }
+
+        TicketHistorial::create([
+            'ticket_id' => $ticket->id,
+            'usuario' => Auth::user()->name,
+            'rol' => Auth::user()->roles->first()->name ?? 'usuario',
+            'accion' => 'Comentario agregado',
+            'comentario' => $request->comentario,
+            'foto' => $fotoPath,
+            'fecha' => now(),
+        ]);
+
+        return redirect()->route('tickets.show', $ticket)->with('success', 'Comentario agregado correctamente');
     }
 
     public function edit(Ticket $ticket)
@@ -82,5 +113,10 @@ class TicketController extends Controller
         $ticket->delete();
         return redirect()->route('tickets.index')
             ->with('success', 'Ticket eliminado correctamente');
+    }
+
+    public function getEvidenciaUrlAttribute($filename)
+    {
+        return "https://llamados.teqmed.cl/uploads/tickets/" . $filename;
     }
 }
