@@ -55,7 +55,13 @@ class TicketObserver
             $tecnicoNuevo = optional($ticket->tecnicoAsignado)->name;
 
             if ($tecnicoAnterior || $tecnicoNuevo) {
-                $comentario[] = "Técnico cambiado de '" . ($tecnicoAnterior ?? 'Sin asignar') . "' a '" . ($tecnicoNuevo ?? 'Sin asignar') . "'";
+                if ($tecnicoAnterior === null && $tecnicoNuevo !== null) {
+                    $comentario[] = "Se asignó el técnico {$tecnicoNuevo}";
+                } elseif ($tecnicoAnterior !== null && $tecnicoNuevo === null) {
+                    $comentario[] = "Se removió la asignación del técnico {$tecnicoAnterior}";
+                } else {
+                    $comentario[] = "Técnico cambiado de '{$tecnicoAnterior}' a '{$tecnicoNuevo}'";
+                }
             }
         }
 

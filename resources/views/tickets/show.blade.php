@@ -65,7 +65,8 @@
                             <span
                                 class="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wide block mb-1">Número
                                 de Ticket</span>
-                            <p class="text-lg font-bold text-zinc-900 dark:text-zinc-100">{{ $ticket->numero_ticket }}
+                            <p class="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
+                                {{ $ticket->numero_ticket }}
                             </p>
                         </div>
 
@@ -112,7 +113,8 @@
                         <div class="bg-zinc-100 dark:bg-zinc-700/50 p-3 rounded-lg">
                             <span
                                 class="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wide block mb-1">Cliente</span>
-                            <p class="text-lg font-bold text-zinc-900 dark:text-zinc-100">{{ $ticket->cliente }}</p>
+                            <p class="text-lg font-semibold text-zinc-900 dark:text-zinc-100">{{ $ticket->cliente }}
+                            </p>
                         </div>
 
                         <div class="bg-zinc-100 dark:bg-zinc-700/50 p-3 rounded-lg">
@@ -186,7 +188,7 @@
                         Falla Presentada
                     </h2>
                     <div class="bg-zinc-100 dark:bg-zinc-700/50 p-4 rounded-lg mb-6">
-                        <p class="text-zinc-900 dark:text-zinc-100 leading-relaxed whitespace-pre-line">
+                        <p class="!italic text-zinc-900 dark:text-zinc-100 leading-relaxed whitespace-pre-line">
                             {{ $ticket->falla_presentada }}</p>
                     </div>
 
@@ -233,21 +235,6 @@
                         @endif
                     </div>
                 </div>
-
-                {{-- Acciones realizadas por el Técnico (Placeholder) --}}
-                <div
-                    class="bg-white dark:bg-zinc-800 rounded-lg shadow-md p-6 border border-zinc-200 dark:border-zinc-700">
-                    <h2 class="text-xl font-bold text-zinc-800 dark:text-white mb-4 flex items-center gap-2">
-                        <i class="fa fa-tasks text-purple-500"></i>
-                        Acciones realizadas por el Técnico
-                    </h2>
-                    <div class="bg-zinc-100 dark:bg-zinc-700/50 p-8 rounded-lg text-center">
-                        <i class="fa fa-clipboard text-4xl text-zinc-400 dark:text-zinc-500 mb-3"></i>
-                        <p class="text-zinc-600 dark:text-zinc-400 font-medium">Sin acciones registradas</p>
-                        <p class="text-xs text-zinc-500 dark:text-zinc-500 mt-2">El técnico aún no ha reportado
-                            acciones</p>
-                    </div>
-                </div>
             </div>
 
             {{-- Fila 4: Historial del Ticket (Ancho completo) --}}
@@ -266,14 +253,19 @@
 
                         // Determinar estados completados
                         $estados = [
-                            'creado' => true, // Siempre está creado
+                            'creado' => true,
                             'en_proceso' => in_array($estadoActual, ['en_proceso', 'completado']),
                             'visita' => $fechaVisita !== null,
                             'completado' => $estadoActual === 'completado',
                         ];
 
                         // Detectar si hay reagendación
-                        $reagendado = $ticket->historial->where('accion', 'like', '%reagend%')->count() > 0;
+                        $reagendado =
+                            $ticket->historial
+                                ->filter(function ($item) {
+                                    return str_contains(strtolower($item->accion), 'reagend');
+                                })
+                                ->count() > 0;
 
                         // Obtener fechas de eventos
                         $enProcesoEvento = $ticket->historial->where('estado_nuevo', 'en_proceso')->first();
@@ -305,6 +297,7 @@
                                 {{-- 1. Creado --}}
                                 <div class="flex flex-col items-center group">
                                     <div class="relative">
+                                        {{-- Paso activo o completado --}}
                                         <div
                                             class="w-10 h-10 rounded-full flex items-center justify-center shadow-lg transition-all duration-300 transform group-hover:scale-110 bg-blue-500 dark:bg-blue-400 z-30 relative">
                                             <div
@@ -325,136 +318,235 @@
                                     </div>
                                 </div>
 
-                                {{-- 2. En Proceso --}}
-                                <div class="flex flex-col items-center group">
-                                    <div class="relative">
-                                        <div
-                                            class="w-10 h-10 rounded-full flex items-center justify-center shadow-lg transition-all duration-300 transform group-hover:scale-110 z-20 relative
-                        {{ $estados['en_proceso'] ? 'bg-blue-500 dark:bg-blue-400' : 'bg-gray-300 dark:bg-gray-600' }}">
-                                            @if ($estados['completado'])
-                                                <i class="fa fa-check text-white text-sm"></i>
-                                            @elseif($estados['en_proceso'])
-                                                <div class="relative">
-                                                    <i class="fa fa-cog fa-spin text-white text-sm"></i>
-                                                    <div
-                                                        class="absolute inset-0 rounded-full bg-blue-500 dark:bg-blue-400 animate-pulse opacity-50">
-                                                    </div>
-                                                </div>
-                                            @else
-                                                <span class="text-gray-600 dark:text-gray-300 font-bold">2</span>
-                                            @endif
-                                        </div>
-                                        {{-- Indicador de estado --}}
-                                        @if ($estados['en_proceso'] && !$estados['completado'])
-                                            <div
-                                                class="absolute -top-1 -right-1 w-4 h-4 bg-yellow-400 dark:bg-yellow-300 rounded-full border-2 border-white dark:border-gray-800 z-30 animate-pulse">
-                                            </div>
-                                        @elseif($estados['completado'])
-                                            <div
-                                                class="absolute -top-1 -right-1 w-4 h-4 bg-green-400 dark:bg-green-300 rounded-full border-2 border-white dark:border-gray-800 z-30">
-                                            </div>
-                                        @endif
-                                    </div>
-                                    <div class="mt-3 text-center max-w-20">
-                                        <span class="block text-sm font-semibold text-gray-700 dark:text-gray-300">En
-                                            Proceso</span>
-                                        @if ($estados['completado'])
-                                            <span class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                                {{ $enProcesoEvento ? $enProcesoEvento->fecha->format('d/m/Y') : 'Completado' }}
-                                            </span>
-                                        @elseif($enProcesoEvento)
-                                            <span
-                                                class="text-xs text-gray-500 dark:text-gray-400 mt-1">{{ $enProcesoEvento->fecha->format('d/m/Y') }}</span>
-                                        @else
-                                            <span
-                                                class="text-xs text-gray-400 dark:text-gray-500 mt-1">Pendiente</span>
-                                        @endif
-                                    </div>
-                                </div>
 
-                                {{-- 3. Visita Agendada --}}
+                                {{-- 2. Visita Agendada --}}
+                                @php
+                                    $visitaDone = $estados['completado'] ?? false;
+                                    $visitaActive = !$visitaDone && ($estados['visita'] ?? false);
+
+                                    // Fondo del círculo
+                                    $visitaBg = $visitaDone
+                                        ? 'bg-green-500 dark:bg-green-400'
+                                        : ($visitaActive
+                                            ? 'bg-blue-500 dark:bg-blue-400'
+                                            : 'bg-zinc-200 dark:bg-zinc-700');
+
+                                    // Borde sutil para contraste
+                                    $visitaRing = $visitaDone
+                                        ? 'ring-1 ring-green-500/25 dark:ring-green-400/25 ring-offset-2 ring-offset-white dark:ring-offset-zinc-900'
+                                        : ($visitaActive
+                                            ? 'ring-1 ring-blue-500/25 dark:ring-blue-400/25 ring-offset-2 ring-offset-white dark:ring-offset-zinc-900'
+                                            : 'ring-1 ring-zinc-300 dark:ring-zinc-600 ring-offset-2 ring-offset-white dark:ring-offset-zinc-900');
+
+                                    // Icono
+                                    $visitaIcon = $visitaDone
+                                        ? 'fa fa-check text-white text-sm'
+                                        : ($visitaActive
+                                            ? 'fa fa-calendar text-white text-sm'
+                                            : 'fa fa-calendar-o text-zinc-600 dark:text-zinc-300 text-sm');
+
+                                    // Texto
+                                    $visitaTitle = $visitaDone
+                                        ? 'text-green-700 dark:text-green-300'
+                                        : ($visitaActive
+                                            ? 'text-blue-700 dark:text-blue-300'
+                                            : 'text-zinc-700 dark:text-zinc-300');
+
+                                    $visitaSub = $visitaDone
+                                        ? 'text-green-700/80 dark:text-green-300/80'
+                                        : ($visitaActive
+                                            ? 'text-blue-700/80 dark:text-blue-300/80'
+                                            : 'text-zinc-500 dark:text-zinc-400');
+                                @endphp
+
                                 <div class="flex flex-col items-center group">
                                     <div class="relative">
                                         <div
-                                            class="w-10 h-10 rounded-full flex items-center justify-center shadow-lg transition-all duration-300 transform group-hover:scale-110 z-20 relative
-                        {{ $estados['visita'] ? 'bg-blue-500 dark:bg-blue-400' : 'bg-gray-300 dark:bg-gray-600' }}">
-                                            @if ($estados['completado'] || ($estados['visita'] && $estadoActual === 'completado'))
-                                                <i class="fa fa-check text-white text-sm"></i>
-                                            @elseif($estados['visita'])
-                                                <div class="relative">
-                                                    <i class="fa fa-calendar text-white text-sm"></i>
-                                                    @if ($reagendado)
-                                                        <div
-                                                            class="absolute -top-0.5 -right-0.5 w-2 h-2 bg-orange-400 rounded-full">
-                                                        </div>
-                                                    @endif
-                                                </div>
-                                            @else
-                                                <i
-                                                    class="fa fa-calendar-o text-gray-600 dark:text-gray-300 text-sm"></i>
-                                            @endif
-                                        </div>
-                                        {{-- Indicador de estado --}}
-                                        @if ($estados['visita'] && !$estados['completado'])
-                                            <div
-                                                class="absolute -top-1 -right-1 w-4 h-4 bg-purple-400 dark:bg-purple-300 rounded-full border-2 border-white dark:border-gray-800 z-30">
+                                            class="w-10 h-10 rounded-full flex items-center justify-center shadow-lg transition-all duration-300 transform group-hover:scale-110 z-20 relative {{ $visitaBg }} {{ $visitaRing }}">
+                                            <div class="relative">
+                                                <i class="{{ $visitaIcon }}"></i>
+                                                @if (!$visitaDone && $visitaActive && $reagendado)
+                                                    <div
+                                                        class="absolute -top-0.5 -right-0.5 w-2 h-2 bg-orange-400 rounded-full">
+                                                    </div>
+                                                @endif
                                             </div>
-                                        @elseif($estados['completado'])
+                                        </div>
+
+                                        {{-- Indicador de estado --}}
+                                        @if ($visitaActive)
                                             <div
-                                                class="absolute -top-1 -right-1 w-4 h-4 bg-green-400 dark:bg-green-300 rounded-full border-2 border-white dark:border-gray-800 z-30">
+                                                class="absolute -top-1 -right-1 w-4 h-4 bg-purple-400 dark:bg-purple-300 rounded-full border-2 border-white dark:border-zinc-900 z-30">
+                                            </div>
+                                        @elseif($visitaDone)
+                                            <div
+                                                class="absolute -top-1 -right-1 w-4 h-4 bg-green-400 dark:bg-green-300 rounded-full border-2 border-white dark:border-zinc-900 z-30">
                                             </div>
                                         @endif
                                     </div>
+
                                     <div class="mt-3 text-center max-w-24">
-                                        <span class="block text-sm font-semibold text-gray-700 dark:text-gray-300">
+                                        <span class="block text-sm font-semibold {{ $visitaTitle }}">
                                             {{ $reagendado ? 'Reagendada' : 'Visita' }}
                                         </span>
                                         @if ($fechaVisita)
                                             <span
-                                                class="text-xs text-gray-500 dark:text-gray-400 mt-1">{{ $fechaVisita->format('d/m H:i') }}</span>
+                                                class="text-xs {{ $visitaSub }} mt-1">{{ $fechaVisita->format('d/m H:i') }}</span>
                                         @else
-                                            <span class="text-xs text-gray-400 dark:text-gray-500 mt-1">Sin
-                                                agendar</span>
+                                            <span class="text-xs {{ $visitaSub }} mt-1">Sin agendar</span>
+                                        @endif
+                                    </div>
+                                </div>
+
+                                {{-- 3. En Proceso --}}
+                                @php
+                                    $procDone = $estados['completado'] ?? false;
+                                    $procActive = !$procDone && ($estados['en_proceso'] ?? false);
+
+                                    // Fondo del círculo
+                                    $procBg = $procDone
+                                        ? 'bg-green-500 dark:bg-green-400'
+                                        : ($procActive
+                                            ? 'bg-blue-500 dark:bg-blue-400'
+                                            : 'bg-zinc-200 dark:bg-zinc-700');
+
+                                    // Borde sutil
+                                    $procRing = $procDone
+                                        ? 'ring-1 ring-green-500/25 dark:ring-green-400/25 ring-offset-2 ring-offset-white dark:ring-offset-zinc-900'
+                                        : ($procActive
+                                            ? 'ring-1 ring-blue-500/25 dark:ring-blue-400/25 ring-offset-2 ring-offset-white dark:ring-offset-zinc-900'
+                                            : 'ring-1 ring-zinc-300 dark:ring-zinc-600 ring-offset-2 ring-offset-white dark:ring-offset-zinc-900');
+
+                                    // Icono
+                                    $procIcon = $procDone
+                                        ? 'fa fa-check text-white text-sm'
+                                        : ($procActive
+                                            ? 'fa fa-cog fa-spin text-white text-sm'
+                                            : 'fa fa-clock text-zinc-600 dark:text-zinc-300 text-sm');
+
+                                    // Texto
+                                    $procTitle = $procDone
+                                        ? 'text-green-700 dark:text-green-300'
+                                        : ($procActive
+                                            ? 'text-blue-700 dark:text-blue-300'
+                                            : 'text-zinc-700 dark:text-zinc-300');
+
+                                    $procSub = $procDone
+                                        ? 'text-green-700/80 dark:text-green-300/80'
+                                        : ($procActive
+                                            ? 'text-blue-700/80 dark:text-blue-300/80'
+                                            : 'text-zinc-500 dark:text-zinc-400');
+                                @endphp
+
+                                <div class="flex flex-col items-center group">
+                                    <div class="relative">
+                                        <div
+                                            class="w-10 h-10 rounded-full flex items-center justify-center shadow-lg transition-all duration-300 transform group-hover:scale-110 z-20 relative {{ $procBg }} {{ $procRing }}">
+                                            <div class="relative">
+                                                <i class="{{ $procIcon }}"></i>
+                                                @if ($procActive)
+                                                    <div
+                                                        class="absolute inset-0 rounded-full bg-blue-500 dark:bg-blue-400 animate-pulse opacity-0">
+                                                    </div>
+                                                @endif
+                                            </div>
+                                        </div>
+
+                                        {{-- Indicador de estado --}}
+                                        @if ($procActive)
+                                            <div
+                                                class="absolute -top-1 -right-1 w-4 h-4 bg-yellow-400 dark:bg-yellow-300 rounded-full border-2 border-white dark:border-zinc-900 z-30 animate-pulse">
+                                            </div>
+                                        @elseif($procDone)
+                                            <div
+                                                class="absolute -top-1 -right-1 w-4 h-4 bg-green-400 dark:bg-green-300 rounded-full border-2 border-white dark:border-zinc-900 z-30">
+                                            </div>
+                                        @endif
+                                    </div>
+
+                                    <div class="mt-3 text-center max-w-20">
+                                        <span class="block text-sm font-semibold {{ $procTitle }}">En
+                                            Proceso</span>
+
+                                        @if ($procDone)
+                                            <span class="text-xs {{ $procSub }} mt-1">
+                                                {{ $enProcesoEvento ? $enProcesoEvento->fecha->format('d/m/Y H:i') : 'Completado' }}
+                                            </span>
+                                        @elseif($enProcesoEvento)
+                                            <span
+                                                class="text-xs {{ $procSub }} mt-1">{{ $enProcesoEvento->fecha->format('d/m/Y H:i') }}</span>
+                                        @else
+                                            <span class="text-xs {{ $procSub }} mt-1">Pendiente</span>
                                         @endif
                                     </div>
                                 </div>
 
                                 {{-- 4. Completado --}}
+                                @php
+                                    $isDone = $estados['completado'] ?? false;
+
+                                    // Fondo del círculo
+                                    $bgCircle = $isDone
+                                        ? 'bg-green-500 dark:bg-green-400'
+                                        : 'bg-zinc-200 dark:bg-zinc-700';
+
+                                    // Color del ícono
+                                    $iconClass = $isDone ? 'text-white' : 'text-zinc-600 dark:text-zinc-300';
+
+                                    // Borde sutil para contraste
+                                    $ringClass = $isDone
+                                        ? 'ring-1 ring-green-500/25 dark:ring-green-400/25 ring-offset-2 ring-offset-white dark:ring-offset-zinc-900'
+                                        : 'ring-1 ring-zinc-300 dark:ring-zinc-600 ring-offset-2 ring-offset-white dark:ring-offset-zinc-900';
+
+                                    // Texto
+                                    $titleText = $isDone
+                                        ? 'text-green-700 dark:text-green-300'
+                                        : 'text-zinc-700 dark:text-zinc-300';
+
+                                    $subText = $isDone
+                                        ? 'text-green-700/80 dark:text-green-300/80'
+                                        : 'text-zinc-500 dark:text-zinc-400';
+                                @endphp
+
                                 <div class="flex flex-col items-center group">
                                     <div class="relative">
                                         <div
-                                            class="w-10 h-10 rounded-full flex items-center justify-center shadow-lg transition-all duration-300 transform group-hover:scale-110 z-20 relative
-                        {{ $estados['completado'] ? 'bg-green-500 dark:bg-green-400' : 'bg-gray-300 dark:bg-gray-600' }}">
-                                            @if ($estados['completado'])
+                                            class="w-10 h-10 rounded-full flex items-center justify-center shadow-lg transition-all duration-300 transform group-hover:scale-110 z-20 relative {{ $bgCircle }} {{ $ringClass }}">
+                                            @if ($isDone)
                                                 <div class="relative">
-                                                    <i class="fa fa-check-circle text-white text-lg"></i>
+                                                    <i
+                                                        class="fa-solid fa-circle-check {{ $iconClass }} text-lg"></i>
                                                     <div
                                                         class="absolute inset-0 rounded-full animate-pulse opacity-75">
                                                     </div>
                                                 </div>
                                             @else
-                                                <i class="fa fa-flag-o text-gray-600 dark:text-gray-300 text-sm"></i>
+                                                <i
+                                                    class="fa-solid fa-circle-check {{ $iconClass }} text-sm opacity-70"></i>
                                             @endif
                                         </div>
+
                                         {{-- Indicador de completado --}}
-                                        @if ($estados['completado'])
+                                        @if ($isDone)
                                             <div
-                                                class="absolute -top-1 -right-1 w-4 h-4 bg-green-400 dark:bg-green-300 rounded-full border-2 border-white dark:border-gray-800 z-30">
+                                                class="absolute -top-1 -right-1 w-4 h-4 bg-green-400 dark:bg-green-300 rounded-full border-2 border-white dark:border-zinc-900 z-30">
                                                 <div
                                                     class="w-full h-full rounded-full bg-green-400 dark:bg-green-300 animate-ping opacity-75">
                                                 </div>
                                             </div>
                                         @endif
                                     </div>
+
                                     <div class="mt-3 text-center max-w-20">
                                         <span
-                                            class="block text-sm font-semibold text-gray-700 dark:text-gray-300">Completado</span>
+                                            class="block text-sm font-semibold {{ $titleText }}">Completado</span>
+
                                         @if ($completadoEvento)
-                                            <span
-                                                class="text-xs text-gray-500 dark:text-gray-400 mt-1">{{ $completadoEvento->fecha->format('d/m H:i') }}</span>
+                                            <span class="text-xs {{ $subText }} mt-1">
+                                                {{ $completadoEvento->fecha->format('d/m H:i') }}
+                                            </span>
                                         @else
-                                            <span
-                                                class="text-xs text-gray-400 dark:text-gray-500 mt-1">Pendiente</span>
+                                            <span class="text-xs {{ $subText }} mt-1">Pendiente</span>
                                         @endif
                                     </div>
                                 </div>
@@ -501,7 +593,7 @@
                                                 ];
                                                 $config = $iconConfig[$evento->accion] ?? [
                                                     'icon' => 'fa-circle',
-                                                    'class' => 'bg-gray-500',
+                                                    'class' => 'bg-blue-500',
                                                 ];
                                             @endphp
                                             <div

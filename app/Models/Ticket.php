@@ -17,6 +17,7 @@ class Ticket extends Model
         'telefono',
         'cargo',
         'email',
+        'estado',
         'id_numero_equipo',
         'modelo_maquina',
         'falla_presentada',

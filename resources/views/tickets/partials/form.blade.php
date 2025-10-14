@@ -54,12 +54,13 @@
                 <option value="pendiente" {{ old('estado', $ticket->estado) == 'pendiente' ? 'selected' : '' }}>
                     Pendiente
                 </option>
-                <option value="en_proceso" {{ old('estado', $ticket->estado) == 'en_proceso' ? 'selected' : '' }}>
-                    En Proceso
+                <option value="reagendar" {{ old('estado', $ticket->estado) == 'reagendar' ? 'selected' : '' }}>
+                    Reagendar Visita
                 </option>
                 <option value="completado" {{ old('estado', $ticket->estado) == 'completado' ? 'selected' : '' }}>
                     Completado
                 </option>
+                <!-- Removido "en_proceso" para evitar cambios automáticos -->
             </select>
             @error('estado')
                 <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
@@ -86,10 +87,15 @@
             @enderror
         </div>
 
-        <!-- Fecha de Visita -->
+        <!-- Fecha de Visita - Mejorada para reagendamiento -->
         <div class="md:col-span-2">
             <label for="fecha_visita" class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
                 Fecha y Hora de Visita
+                @if ($ticket->fecha_visita)
+                    <span class="text-xs text-zinc-500 ml-2">
+                        (Actual: {{ $ticket->fecha_visita->format('d/m/Y H:i') }})
+                    </span>
+                @endif
             </label>
             <input type="datetime-local" name="fecha_visita" id="fecha_visita"
                 value="{{ old('fecha_visita', $ticket->fecha_visita ? $ticket->fecha_visita->format('Y-m-d\TH:i') : '') }}"
@@ -97,6 +103,23 @@
             @error('fecha_visita')
                 <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
             @enderror
+
+            <!-- Mensaje informativo para reagendamiento -->
+            <p class="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+                💡 Si cambias la fecha y seleccionas "Reagendar Visita", se registrará automáticamente en el historial
+                del ticket.
+            </p>
+        </div>
+
+        <!-- Motivo del Reagendamiento (aparece solo cuando se selecciona reagendar) -->
+        <div class="md:col-span-2" id="motivo_reagendamiento" style="display: none;">
+            <label for="motivo_reagendamiento_texto"
+                class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+                Motivo del Reagendamiento
+            </label>
+            <textarea name="motivo_reagendamiento" id="motivo_reagendamiento_texto" rows="2"
+                class="w-full px-4 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+                placeholder="Explique el motivo del reagendamiento (ej: Cliente no disponible, técnico enfermo, etc.)">{{ old('motivo_reagendamiento') }}</textarea>
         </div>
 
         <!-- Acciones Realizadas -->
@@ -113,16 +136,35 @@
         </div>
     </div>
 
-
     <div class="flex justify-end gap-3 mt-6">
         <a href="{{ route('tickets.index') }}"
             class="bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600 text-zinc-800 dark:text-white font-semibold px-6 py-2 rounded-lg transition">
             Cancelar
         </a>
         <button type="submit"
-            class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2 rounded-lg transition flex items-center gap-2">
+            class="bg-zinc-600 hover:bg-zinc-700 text-white font-semibold px-6 py-2 rounded-lg transition">
             <i class="fa fa-save"></i>
             Actualizar Ticket
         </button>
     </div>
 </form>
+
+<script>
+    // Mostrar/ocultar campo de motivo según el estado seleccionado
+    document.getElementById('estado').addEventListener('change', function() {
+        const motivoDiv = document.getElementById('motivo_reagendamiento');
+        if (this.value === 'reagendar') {
+            motivoDiv.style.display = 'block';
+        } else {
+            motivoDiv.style.display = 'none';
+        }
+    });
+
+    // Ejecutar al cargar la página si ya está seleccionado "reagendar"
+    document.addEventListener('DOMContentLoaded', function() {
+        const estadoSelect = document.getElementById('estado');
+        if (estadoSelect.value === 'reagendar') {
+            document.getElementById('motivo_reagendamiento').style.display = 'block';
+        }
+    });
+</script>
