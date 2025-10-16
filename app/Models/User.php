@@ -7,10 +7,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Str;
+use App\Models\Concerns\HasRolesAndPrivileges;
 
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, HasRolesAndPrivileges;
 
     protected $fillable = [
         'name',
@@ -35,61 +36,26 @@ class User extends Authenticatable
         ];
     }
 
-    // Relaciones
+    // Relación alternativa usada en vistas/controladores existentes
     public function rol()
     {
         return $this->belongsTo(Role::class, 'rol_id');
     }
 
-    public function repuestos()
-    {
-        return $this->hasMany(Repuesto::class);
-    }
-
-    public function solicitudes()
-    {
-        return $this->hasMany(Solicitud::class, 'tecnico_id');
-    }
-
-    public function salidasPedidas()
-    {
-        return $this->hasMany(Salida::class, 'usuario_pedido_id');
-    }
-
-    public function salidasRequeridas()
-    {
-        return $this->hasMany(Salida::class, 'usuario_requiere_id');
-    }
-
-    public function historial()
-    {
-        return $this->hasMany(Historial::class);
-    }
-
-    public function historialSesiones()
-    {
-        #return $this->hasMany(HistorialSesion::class, 'id_usuario');
-    }
-
-    public function historialUsuarios()
-    {
-        #return $this->hasMany(HistorialUsuario::class);
-    }
-
-    // Métodos de verificación de roles
+    // Proxies compatibles en español (usan el trait)
     public function tienePrivilegio($privilegio)
     {
-        return $this->rol && $this->rol->tienePrivilegio($privilegio);
+        return $this->hasPrivilege($privilegio);
     }
 
     public function esAdmin()
     {
-        return $this->rol && $this->rol->nombre === 'Administrador';
+        return $this->hasRole('admin');
     }
 
     public function esTecnico()
     {
-        return $this->rol && $this->rol->nombre === 'Técnico';
+        return $this->hasRole('tecnico');
     }
 
     // Métodos existentes

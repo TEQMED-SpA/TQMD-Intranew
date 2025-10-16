@@ -21,9 +21,11 @@ class PrivilegioController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'nombre' => 'required|string|max:50|unique:privilegios',
+            'nombre' => 'required|string|max:80|unique:privilegios,nombre',
         ]);
-        Privilegio::create($request->all());
+
+        Privilegio::create(['nombre' => $request->nombre]);
+
         return redirect()->route('privilegios.index')->with('success', 'Privilegio creado correctamente');
     }
 
@@ -40,15 +42,18 @@ class PrivilegioController extends Controller
     public function update(Request $request, Privilegio $privilegio)
     {
         $request->validate([
-            'nombre' => 'required|string|max:50|unique:privilegios,nombre,' . $privilegio->id,
+            'nombre' => 'required|string|max:80|unique:privilegios,nombre,' . $privilegio->id,
         ]);
-        $privilegio->update($request->all());
+
+        $privilegio->update(['nombre' => $request->nombre]);
+
         return redirect()->route('privilegios.show', $privilegio)->with('success', 'Privilegio actualizado correctamente');
     }
 
     public function destroy(Privilegio $privilegio)
     {
         $privilegio->delete();
+
         return redirect()->route('privilegios.index')->with('success', 'Privilegio eliminado correctamente');
     }
 }

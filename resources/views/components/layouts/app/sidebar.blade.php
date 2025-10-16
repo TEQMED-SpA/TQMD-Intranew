@@ -23,53 +23,80 @@
 
         <flux:navlist variant="outline">
             @if (auth()->check())
-                <!-- Grupo: Gestión -->
+                <!-- Grupo: Gestión (solo admin) -->
+                @role('admin')
+                    <flux:navlist.group :heading="__('Gestión')" class="grid">
+                        <flux:navlist.item icon="users" :href="route('users.index')"
+                            :current="request()->routeIs('users.*')" wire:navigate>
+                            {{ __('Usuarios') }}
+                        </flux:navlist.item>
+
+                        <flux:navlist.item icon="shield-check" :href="route('roles.index')"
+                            :current="request()->routeIs('roles.*')" wire:navigate>
+                            {{ __('Roles') }}
+                        </flux:navlist.item>
+
+                        <flux:navlist.item icon="key" :href="route('privilegios.index')"
+                            :current="request()->routeIs('privilegios.*')" wire:navigate>
+                            {{ __('Privilegios') }}
+                        </flux:navlist.item>
+                    </flux:navlist.group>
+                @endrole
+
+                <!-- Grupo: Gestión general -->
                 <flux:navlist.group :heading="__('Gestión')" class="grid">
-                    <flux:navlist.item icon="users" :href="route('users.index')"
-                        :current="request()->routeIs('users.*')" wire:navigate>
-                        {{ __('Usuarios') }}
-                    </flux:navlist.item>
-                    <flux:navlist.item icon="shield-check" :href="route('roles.index')"
-                        :current="request()->routeIs('roles.*')" wire:navigate>
-                        {{ __('Roles') }}
-                    </flux:navlist.item>
-                    <flux:navlist.item icon="key" :href="route('privilegios.index')"
-                        :current="request()->routeIs('privilegios.*')" wire:navigate>
-                        {{ __('Privilegios') }}
-                    </flux:navlist.item>
                     <flux:navlist.item icon="ticket" :href="route('tickets.index')"
                         :current="request()->routeIs('tickets.*')" wire:navigate>
                         {{ __('Tickets') }}
                     </flux:navlist.item>
+
                     <flux:navlist.item icon="users" :href="route('clientes.index')"
                         :current="request()->routeIs('clientes.*')" wire:navigate>
                         {{ __('Clientes') }}
                     </flux:navlist.item>
+
                     <flux:navlist.item icon="building-office-2" :href="route('centros.index')"
                         :current="request()->routeIs('centros.*')" wire:navigate>
                         {{ __('Centros Médicos') }}
                     </flux:navlist.item>
                 </flux:navlist.group>
 
-                <!-- Grupo: Inventario -->
-                <flux:navlist.group :heading="__('Inventario')" class="grid">
-                    <flux:navlist.item icon="archive-box" :href="route('repuestos.index')"
-                        :current="request()->routeIs('repuestos.*')" wire:navigate>
-                        {{ __('Repuestos') }}
-                    </flux:navlist.item>
-                    <flux:navlist.item icon="tag" :href="route('categorias.index')"
-                        :current="request()->routeIs('categorias.*')" wire:navigate>
-                        {{ __('Categorías') }}
-                    </flux:navlist.item>
-                    <flux:navlist.item icon="arrow-right-start-on-rectangle" :href="route('salidas.index')"
-                        :current="request()->routeIs('salidas.*')" wire:navigate>
-                        {{ __('Salidas') }}
-                    </flux:navlist.item>
-                    <flux:navlist.item icon="clipboard-document-list" :href="route('solicitudes.index')"
-                        :current="request()->routeIs('solicitudes.*')" wire:navigate>
-                        {{ __('Solicitudes') }}
-                    </flux:navlist.item>
-                </flux:navlist.group>
+                @php
+                    $u = auth()->user();
+                    $mostrarInventario =
+                        $u && method_exists($u, 'hasAnyPrivilege')
+                            ? $u->hasAnyPrivilege(['ver_repuestos', 'editar_repuestos', 'ver_solicitudes'])
+                            : false;
+                @endphp
+
+                @if ($mostrarInventario)
+                    <!-- Grupo: Inventario (según privilegios) -->
+                    <flux:navlist.group :heading="__('Inventario')" class="grid">
+                        @privilegio('ver_repuestos')
+                            <flux:navlist.item icon="archive-box" :href="route('repuestos.index')"
+                                :current="request()->routeIs('repuestos.*')" wire:navigate>
+                                {{ __('Repuestos') }}
+                            </flux:navlist.item>
+
+                            <flux:navlist.item icon="tag" :href="route('categorias.index')"
+                                :current="request()->routeIs('categorias.*')" wire:navigate>
+                                {{ __('Categorías') }}
+                            </flux:navlist.item>
+                        @endprivilegio
+
+                        <flux:navlist.item icon="arrow-right-start-on-rectangle" :href="route('salidas.index')"
+                            :current="request()->routeIs('salidas.*')" wire:navigate>
+                            {{ __('Salidas') }}
+                        </flux:navlist.item>
+
+                        @privilegio('ver_solicitudes')
+                            <flux:navlist.item icon="clipboard-document-list" :href="route('solicitudes.index')"
+                                :current="request()->routeIs('solicitudes.*')" wire:navigate>
+                                {{ __('Solicitudes') }}
+                            </flux:navlist.item>
+                        @endprivilegio
+                    </flux:navlist.group>
+                @endif
 
                 <!-- Grupo: Utilidades -->
                 <flux:navlist.group :heading="__('Utilidades')" class="grid">

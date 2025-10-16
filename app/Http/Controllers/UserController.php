@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\Role;
 use Illuminate\Http\Request;
@@ -9,6 +10,7 @@ use Illuminate\Support\Facades\Hash;
 
 class UserController extends Controller
 {
+
     public function index(Request $request)
     {
         $users = User::with('rol')->orderBy('name')->paginate(10);
@@ -32,7 +34,7 @@ class UserController extends Controller
         ]);
         $data = $request->all();
         $data['password'] = Hash::make($data['password']);
-        $data['activo'] = 1; // Activo por defecto
+        $data['activo'] = 1;
 
         User::create($data);
 

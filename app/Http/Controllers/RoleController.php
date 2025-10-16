@@ -2,53 +2,80 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Controller;
 use App\Models\Role;
+use App\Models\Privilegio;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class RoleController extends Controller
 {
     public function index()
     {
-        $roles = Role::orderBy('nombre')->paginate(15);
-        return view('roles.index', compact('roles'));
+        $roles = Role::with('privilegios')->orderBy('nombre')->get();
+        return view('admin.roles.index', compact('roles'));
     }
 
     public function create()
     {
-        return view('roles.create');
+        $privilegios = Privilegio::orderBy('nombre')->get();
+        return view('admin.roles.create', compact('privilegios'));
     }
 
     public function store(Request $request)
     {
-        $request->validate([
-            'nombre' => 'required|string|max:255|unique:roles',
+        $data = $request->validate([
+            'nombre' => ['required', 'string', 'max:80', 'unique:roles,nombre'],
+            'privilegios' => ['array'],
+            'privilegios.*' => ['exists:privilegios,id'],
         ]);
-        Role::create($request->all());
-        return redirect()->route('roles.index')->with('success', 'Rol creado correctamente');
-    }
 
-    public function show(Role $role)
-    {
-        return view('roles.show', compact('role'));
+        $role = Role::create(['nombre' => $data['nombre']]);
+        $role->privilegios()->sync($data['privilegios'] ?? []);
+
+        return redirect()->route('roles.index')->with('status', 'Rol creado correctamente.');
     }
 
     public function edit(Role $role)
     {
-        return view('roles.edit', compact('role'));
+        $privilegios = Privilegio::orderBy('nombre')->get();
+        $seleccionados = $role->privilegios()->pluck('privilegios.id')->toArray();
+
+        return view('admin.roles.edit', compact('role', 'privilegios', 'seleccionados'));
     }
 
     public function update(Request $request, Role $role)
     {
-        $request->validate([
-            'nombre' => 'required|string|max:255|unique:roles,nombre,' . $role->id,
+        $data = $request->validate([
+            'nombre' => [
+                'required',
+                'string',
+                'max:80',
+                Rule::unique('roles', 'nombre')->ignore($role->id),
+            ],
+            'privilegios' => ['array'],
+            'privilegios.*' => ['exists:privilegios,id'],
         ]);
-        $role->update($request->all());
-        return redirect()->route('roles.show', $role)->with('success', 'Rol actualizado correctamente');
+
+        $role->update(['nombre' => $data['nombre']]);
+        $role->privilegios()->sync($data['privilegios'] ?? []);
+
+        return redirect()->route('roles.index')->with('status', 'Rol actualizado correctamente.');
     }
 
     public function destroy(Role $role)
     {
+        if ($role->nombre === 'admin') {
+            return back()->with('error', 'No se puede eliminar el rol admin.');
+        }
+
+        if ($role->users()->exists()) {
+            return back()->with('error', 'No se puede eliminar un rol con usuarios asignados.');
+        }
+
+        $role->privilegios()->detach();
         $role->delete();
-        return redirect()->route('roles.index')->with('success', 'Rol eliminado correctamente');
+
+        return redirect()->route('roles.index')->with('status', 'Rol eliminado.');
     }
 }
