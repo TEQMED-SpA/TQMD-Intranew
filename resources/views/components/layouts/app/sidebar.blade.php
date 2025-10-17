@@ -55,7 +55,7 @@
                         {{ __('Clientes') }}
                     </flux:navlist.item>
 
-                    <flux:navlist.item icon="building-office-2" :href="route('centros.index')"
+                    <flux:navlist.item icon="building-office-2" :href="route('centros_medicos.index')"
                         :current="request()->routeIs('centros.*')" wire:navigate>
                         {{ __('Centros Médicos') }}
                     </flux:navlist.item>

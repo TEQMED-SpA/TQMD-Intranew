@@ -15,7 +15,7 @@ class CentroMedicoController extends Controller
             $query->buscar($request->buscar);
         }
         $centros = $query->orderBy('centro_dialisis')->paginate(15);
-        return view('centros.index', compact('centros'));
+        return view('centros_medicos.index', compact('centros'));
     }
 
     public function create()
@@ -37,7 +37,7 @@ class CentroMedicoController extends Controller
             'telefono' => 'nullable|string|max:20'
         ]);
         CentroMedico::create($request->all());
-        return redirect()->route('centros.index')->with('success', 'Centro médico creado correctamente');
+        return redirect()->route('centros_medicos.index')->with('success', 'Centro médico creado correctamente');
     }
 
     public function show(CentroMedico $centroMedico)
@@ -70,6 +70,6 @@ class CentroMedicoController extends Controller
     public function destroy(CentroMedico $centroMedico)
     {
         $centroMedico->delete();
-        return redirect()->route('centros.index')->with('success', 'Centro médico eliminado correctamente');
+        return redirect()->route('centros_medicos.index')->with('success', 'Centro médico eliminado correctamente');
     }
 }

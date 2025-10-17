@@ -18,6 +18,7 @@ use App\Http\Controllers\CategoriaLlamadoController;
 use App\Http\Controllers\TicketController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\PrivilegioController;
+use App\Models\CentroMedico;
 
 Route::redirect('/', '/login')->name('home');
 
@@ -33,15 +34,13 @@ Route::middleware(['auth'])->group(function () {
     Route::get('settings/appearance', Appearance::class)->name('settings.appearance');
 
     // Roles y Privilegios: solo admin, conservando nombres roles.* y privilegios.*
-    Route::resource('roles', RoleController::class)->except(['show'])->middleware(['role:admin']);
-    Route::resource('privilegios', PrivilegioController::class)->except(['show'])->middleware(['role:admin']);
-
+    Route::resource('roles', RoleController::class)->middleware(['role:admin']);
+    Route::resource('privilegios', PrivilegioController::class);
     // USERS: SOLO ADMIN
     Route::resource('users', \App\Http\Controllers\UserController::class)
         ->middleware(['role:admin']);
     // CLIENTES y CENTROS (ajusta si también deben ser solo admin)
     Route::resource('clientes', ClienteController::class);
-    Route::resource('centros', CentroMedicoController::class);
 
     // CATEGORÍAS DE REPUESTOS
     Route::resource('categorias', CategoriaRepuestoController::class)
@@ -83,6 +82,14 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('categoria_llamados', CategoriaLlamadoController::class);
     Route::get('get-all-categorias', [CategoriaLlamadoController::class, 'getAllCategorias'])
         ->name('get.all.categorias');
+
+    // CENTROS MÉDICOS
+    Route::resource('centros_medicos', CentroMedicoController::class)
+        ->only(['index', 'show'])
+        ->middleware(['privilege:ver_centros_medicos']);
+    Route::resource('centros_medicos', CentroMedicoController::class)
+        ->only(['create', 'store', 'edit', 'update', 'destroy'])
+        ->middleware(['privilege:editar_centros_medicos']);
 });
 
 require __DIR__ . '/auth.php';
