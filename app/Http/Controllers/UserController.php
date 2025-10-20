@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\Role;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\NuevoUsuarioMail;
 use Illuminate\Support\Facades\Hash;
 
 class UserController extends Controller
@@ -32,14 +34,27 @@ class UserController extends Controller
             'rol_id'   => 'nullable|exists:roles,id',
             'avatar'   => 'nullable|string|max:255',
         ]);
+
+        // Keep the plain password to include in the welcome email
+        $plainPassword = $request->input('password');
+
         $data = $request->all();
-        $data['password'] = Hash::make($data['password']);
+        $data['password'] = Hash::make($plainPassword);
         $data['activo'] = 1;
 
-        User::create($data);
+        // Create the user and capture the model instance
+        $user = User::create($data);
+
+        // Enviar correo al nuevo usuario
+        try {
+            Mail::to($user->email)->send(new NuevoUsuarioMail($user, $plainPassword));
+        } catch (\Exception $e) {
+            \Log::error('Error enviando correo de nuevo usuario: ' . $e->getMessage());
+        }
 
         return redirect()->route('users.index')->with('success', 'Usuario creado correctamente');
     }
+
 
     public function show(User $user)
     {
