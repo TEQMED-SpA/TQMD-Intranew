@@ -1,11 +1,11 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Log;
 
 use App\Livewire\Settings\Appearance;
 use App\Livewire\Settings\Password;
 use App\Livewire\Settings\Profile;
-
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\ClienteController;
 use App\Http\Controllers\CentroMedicoController;
@@ -43,6 +43,11 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('clientes', ClienteController::class);
 
     // CATEGORÍAS DE REPUESTOS
+    Route::get('repuestos/create', function () {
+        \Log::info('HIT /repuestos/create (ruta de prueba)');
+        return 'HIT /repuestos/create';
+    })->withoutMiddleware(['auth', 'privilege']);
+
     Route::resource('categorias', CategoriaRepuestoController::class)
         ->only(['index', 'show'])
         ->middleware(['privilege:ver_repuestos']);
@@ -57,6 +62,9 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('repuestos', RepuestoController::class)
         ->only(['create', 'store', 'edit', 'update', 'destroy'])
         ->middleware(['privilege:editar_repuestos']);
+    Route::get('repuestos-baja', [RepuestoController::class, 'baja'])
+        ->name('repuestos.baja')
+        ->middleware(['privilege:ver_repuestos']);
 
     // SOLICITUDES
     Route::resource('solicitudes', SolicitudController::class)

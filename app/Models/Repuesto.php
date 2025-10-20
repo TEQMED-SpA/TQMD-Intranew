@@ -17,7 +17,7 @@ class Repuesto extends Model
         'nombre',
         'modelo',
         'marca',
-        'estado',
+        'estado_id',
         'ubicacion',
         'descripcion',
         'stock',
@@ -40,6 +40,12 @@ class Repuesto extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    public function estado()
+    {
+        return $this->belongsTo(EstadoRepuesto::class, 'estado_id');
+    }
+
 
     public function salidas()
     {

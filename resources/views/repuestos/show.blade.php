@@ -147,16 +147,9 @@
                     </li>
                     <li class="py-3 flex justify-between items-center">
                         <span class="font-semibold text-zinc-700 dark:text-zinc-200">Estado:</span>
-                        @php
-                            $isActive = ($repuesto->estado ?? '') === 'Nuevo';
-                        @endphp
-                        <span
-                            class="inline-block rounded-full px-3 py-1 text-xs font-semibold transition-colors duration-200
-                            {{ $isActive
-                                ? 'bg-green-200 dark:bg-green-800 text-green-900 dark:text-zinc-800'
-                                : 'bg-red-200 dark:bg-red-800 text-red-900 dark:text-zinc-800' }}">
-                            {{ $isActive ? 'Nuevo' : 'Usado' }}
-                        </span>
+                        <td class="p-3 text-zinc-900 dark:text-zinc-300">
+                            {{ $repuesto->estado?->nombre ?? 'Desconocido' }}
+                        </td>
                     </li>
                     <li class="py-3 flex justify-between items-center">
                         <span class="font-semibold text-zinc-700 dark:text-zinc-200">Creado:</span>
@@ -173,7 +166,7 @@
                         </button>
                     </a>
                     <form action="{{ route('repuestos.destroy', $repuesto) }}" method="POST"
-                        onsubmit="return confirm('¿Eliminar repuesto?');">
+                        onsubmit="return confirm('¿Desea dar de baja el repuesto?');">
                         @csrf @method('DELETE')
                         <button type="submit"
                             class="bg-red-500 hover:bg-red-600 text-white font-semibold px-4 py-2 rounded-lg transition flex items-center gap-2">

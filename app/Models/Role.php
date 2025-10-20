@@ -7,7 +7,10 @@ use Illuminate\Database\Eloquent\Model;
 class Role extends Model
 {
     protected $table = 'roles';
-    protected $fillable = ['nombre'];
+    protected $fillable = ['nombre', 'descripcion', 'activo'];
+    protected $casts = [
+        'activo' => 'boolean',
+    ];
 
     public function privilegios()
     {

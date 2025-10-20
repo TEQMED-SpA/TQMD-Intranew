@@ -44,12 +44,18 @@
                         </select>
                     </div>
                     <button type="submit"
-                        class="bg-zinc-100 dark:bg-zinc-600 hover:bg-zinc-400 dark:hover:bg-zinc-800 text-zinc-800 dark:text-white font-semibold px-6 py-2 rounded-lg transition">
-                        <i class="fa fa-search"></i> Buscar
+                        class="bg-blue-500 dark:bg-zinc-600 hover:bg-zinc-400 dark:hover:bg-zinc-800 text-zinc-300 dark:text-white font-semibold px-6 py-2 rounded-lg transition"
+                        title="buscar">
+                        <i class="fa fa-search"></i>
                     </button>
                     <a href="{{ route('repuestos.index') }}"
-                        class="bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600 text-zinc-800 dark:text-white font-semibold px-6 py-2 rounded-lg transition">
-                        <i class="fa fa-refresh"></i> Limpiar
+                        class="bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600 text-zinc-800 dark:text-white font-semibold px-6 py-2 rounded-lg transition"
+                        title="limpiar">
+                        <i class="fa fa-refresh"></i>
+                    </a>
+                    <a href="{{ route('repuestos.baja') }}"
+                        class="bg-red-500 hover:bg-red-700 text-white font-semibold px-6 py-2 rounded-lg transition">
+                        <i class="fa fa-exclamation-triangle"></i> De Baja
                     </a>
                 </form>
             </div>
@@ -71,7 +77,7 @@
                             <th class="p-3 text-zinc-700 dark:text-white font-semibold">Modelo</th>
                             <th class="p-3 text-zinc-700 dark:text-white font-semibold">Marca</th>
                             <th class="p-3 text-zinc-700 dark:text-white font-semibold">Ubicación</th>
-                            <th class="p-3 text-zinc-700 dark:text-white font-semibold">Descripción</th>
+                            <th class="p-3 text-zinc-700 dark:text-white font-semibold">Estado</th>
                             <th class="p-3 text-zinc-700 dark:text-white font-semibold">Stock</th>
                             <th class="p-3 text-zinc-700 dark:text-white font-semibold">Categoría</th>
                             <th class="p-3 text-center text-zinc-700 dark:text-white font-semibold">Acciones</th>
@@ -88,7 +94,7 @@
                                 <td class="p-3 text-zinc-900 dark:text-zinc-300">{{ $repuesto->ubicacion ?? 'N/A' }}
                                 </td>
                                 <td class="p-3 text-zinc-900 dark:text-zinc-300">
-                                    {{ Str::limit($repuesto->descripcion ?? 'N/A', 40) }}
+                                    {{ $repuesto->estado?->nombre ?? 'Desconocido' }}
                                 </td>
                                 <td class="p-3">
                                     @php

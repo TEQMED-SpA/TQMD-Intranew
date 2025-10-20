@@ -1,36 +1,41 @@
-<x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-            {{ __('Detalle del Rol') }}
-        </h2>
-    </x-slot>
-
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="p-6 text-gray-900 dark:text-gray-100">
-
-                    <div class="flex justify-between items-center mb-6">
-                        <div>
-                            <h1 class="text-3xl font-bold">{{ $rol->nombre }}</h1>
-                            <p class="text-gray-600 dark:text-gray-400 mt-2">
-                                {{ $rol->descripcion ?? __('Sin descripción') }}</p>
-                        </div>
-                        <div class="text-right">
-                            @if (isset($rol->activo))
-                                @if ($rol->activo)
-                                    <span
-                                        class="px-3 py-1 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 rounded-full text-sm font-semibold">
-                                        <i class="fas fa-check-circle"></i> {{ __('Activo') }}
-                                    </span>
-                                @else
-                                    <span
-                                        class="px-3 py-1 bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 rounded-full text-sm font-semibold">
-                                        <i class="fas fa-times-circle"></i> {{ __('Inactivo') }}
-                                    </span>
-                                @endif
+<x-layouts.app :title="$title ?? 'Detalle Rol'">
+    <div class="min-h-screen px-4 py-8 bg-zinc-50 dark:bg-zinc-800 transition-all">
+        <div class="max-w-2xl mx-auto">
+            <div class="flex justify-between items-center mb-6">
+                <h1 class="text-2xl font-bold text-zinc-800 dark:text-white">Detalle Rol</h1>
+                <a href="{{ route('roles.index') }}">
+                    <button type="button"
+                        class="bg-zinc-200 dark:bg-zinc-500 text-zinc-800 dark:text-zinc-100 font-semibold px-4 py-2 rounded-lg hover:bg-zinc-300 dark:hover:bg-zinc-600 transition flex items-center gap-2">
+                        <i class="fa fa-arrow-left"></i>
+                        Volver
+                    </button>
+                </a>
+            </div>
+        </div>
+        {{-- Detalles del Rol --}}
+        <div class="max-w-4xl mx-auto">
+            <div class="mb-6 gap-6">
+                <div
+                    class="bg-white dark:bg-zinc-800 rounded-lg shadow-md p-6 border border-zinc-200 dark:border-zinc-700">
+                    <div>
+                        <h1 class="text-3xl font-bold">{{ $rol->nombre }}</h1>
+                        <p class="text-gray-600 dark:text-gray-400 mt-2">
+                            {{ $rol->descripcion ?? __('Sin descripción') }}</p>
+                    </div>
+                    <div class="text-right">
+                        @if (isset($rol->activo))
+                            @if ($rol->activo)
+                                <span
+                                    class="px-3 py-1 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 rounded-full text-sm font-semibold">
+                                    <i class="fas fa-check-circle"></i> {{ __('Activo') }}
+                                </span>
+                            @else
+                                <span
+                                    class="px-3 py-1 bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 rounded-full text-sm font-semibold">
+                                    <i class="fas fa-times-circle"></i> {{ __('Inactivo') }}
+                                </span>
                             @endif
-                        </div>
+                        @endif
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
@@ -76,44 +81,52 @@
                             </div>
                         </div>
                     </div>
+                </div>
+            </div>
+            {{-- Privilegios Asignados --}}
+            <div class="mb-6 gap-6">
+                <div
+                    class="bg-white dark:bg-zinc-800 rounded-lg shadow-md p-6 border border-zinc-200 dark:border-zinc-700">
+                    <h2 class="text-2lg font-bold mb-4">
+                        <i class="fas fa-list-check"></i> {{ __('Privilegios Asignados') }}
+                    </h2>
 
-                    <div class="mb-6">
-                        <h2 class="text-2xl font-bold mb-4">
-                            <i class="fas fa-list-check"></i> {{ __('Privilegios Asignados') }}
-                        </h2>
-
-                        @if ($privilegiosPorModulo->count() > 0)
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                @foreach ($privilegiosPorModulo as $modulo => $privs)
-                                    <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
-                                        <h3 class="font-semibold text-lg mb-3 text-indigo-600 dark:text-indigo-400">
-                                            <i class="fas fa-folder"></i> {{ ucfirst($modulo) }}
-                                        </h3>
-                                        <ul class="space-y-2">
-                                            @foreach ($privs as $privilegio)
-                                                <li class="flex items-center text-sm">
-                                                    <i class="fas fa-check text-green-500 mr-2"></i>
-                                                    <span>{{ $privilegio->nombre }}</span>
-                                                </li>
-                                            @endforeach
-                                        </ul>
-                                    </div>
-                                @endforeach
-                            </div>
-                        @else
-                            <div
-                                class="bg-yellow-50 dark:bg-yellow-900 border border-yellow-200 dark:border-yellow-700 p-4 rounded-lg">
-                                <p class="text-yellow-800 dark:text-yellow-200">
-                                    <i class="fas fa-exclamation-triangle"></i>
-                                    {{ __('Este rol no tiene privilegios asignados.') }}
-                                </p>
-                            </div>
-                        @endif
-                    </div>
-
+                    @if ($privilegiosPorModulo->count() > 0)
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            @foreach ($privilegiosPorModulo as $modulo => $privs)
+                                <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                                    <h3 class="font-semibold text-lg mb-3 text-indigo-600 dark:text-indigo-400">
+                                        <i class="fas fa-folder"></i> {{ ucfirst($modulo) }}
+                                    </h3>
+                                    <ul class="space-y-2">
+                                        @foreach ($privs as $privilegio)
+                                            <li class="flex items-center text-sm">
+                                                <i class="fas fa-check text-green-500 mr-2"></i>
+                                                <span>{{ $privilegio->nombre }}</span>
+                                            </li>
+                                        @endforeach
+                                    </ul>
+                                </div>
+                            @endforeach
+                        </div>
+                    @else
+                        <div
+                            class="bg-yellow-50 dark:bg-yellow-900 border border-yellow-200 dark:border-yellow-700 p-4 rounded-lg">
+                            <p class="text-yellow-800 dark:text-yellow-200">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                {{ __('Este rol no tiene privilegios asignados.') }}
+                            </p>
+                        </div>
+                    @endif
+                </div>
+            </div>
+            {{-- Usuarios con este rol --}}
+            <div class="mb-6 gap-6">
+                <div
+                    class="bg-white dark:bg-zinc-800 rounded-lg shadow-md p-6 border border-zinc-200 dark:border-zinc-700">
                     @if ($rol->users->count() > 0)
                         <div class="mb-6">
-                            <h2 class="text-2xl font-bold mb-4">
+                            <h2 class="text-2lg font-bold mb-4">
                                 <i class="fas fa-user-friends"></i> {{ __('Usuarios con este Rol') }}
                             </h2>
                             <div class="overflow-x-auto">
@@ -165,7 +178,7 @@
                         @role('admin')
                             <div class="flex space-x-2">
                                 <a href="{{ route('roles.edit', $rol->id) }}"
-                                    class="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white font-semibold rounded-lg">
+                                    class="bg-green-500 hover:bg-green-600 text-white font-semibold px-6 py-3 rounded-lg transition flex items-center gap-2 shadow-md">
                                     <i class="fas fa-edit"></i> {{ __('Editar') }}
                                 </a>
                                 @if ($rol->usuarios_count == 0 && $rol->nombre !== 'admin')
@@ -174,7 +187,7 @@
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit"
-                                            class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg">
+                                            class="bg-red-500 hover:bg-red-600 text-white font-semibold px-6 py-3 rounded-lg transition flex items-center gap-2 shadow-md">
                                             <i class="fas fa-trash"></i> {{ __('Eliminar') }}
                                         </button>
                                     </form>
@@ -186,4 +199,4 @@
             </div>
         </div>
     </div>
-</x-app-layout>
+    </x-app-layout>
