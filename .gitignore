@@ -44,3 +44,9 @@ bootstrap/compiled.php
 app/storage/
 node_modules
 database/schema/mysql-schema.sql
+scripts/Sync-Fields.ps1
+scripts/Create-Project-Fields-2.ps1
+scripts/Create-Project-Fields-1.ps1
+scripts/Create-Planning.ps1
+scripts/Create-Milestones.ps1
+scripts/Create-issues.ps1

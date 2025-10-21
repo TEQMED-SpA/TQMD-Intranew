@@ -96,7 +96,7 @@ class Solicitud extends Model
 
         static::creating(function ($solicitud) {
             if (!$solicitud->numero_solicitud) {
-                $solicitud->numero_solicitud = 'SOL-' . date('Ym') . '-' .
+                $solicitud->numero_solicitud = 'SLR-' . date('Ym') . '-' .
                     str_pad(static::whereYear('created_at', date('Y'))->count() + 1, 4, '0', STR_PAD_LEFT);
             }
         });
