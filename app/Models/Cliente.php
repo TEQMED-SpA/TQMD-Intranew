@@ -13,7 +13,8 @@ class Cliente extends Model
         'nombre',
         'telefono',
         'email',
-        'rut'
+        'rut',
+        'razon_social',
     ];
 
     // Relaciones
@@ -22,11 +23,21 @@ class Cliente extends Model
         return $this->hasMany(CentroMedico::class);
     }
 
+    public function centros_medicos()
+    {
+        return $this->hasMany(\App\Models\CentroMedico::class, 'cliente_id');
+    }
+
+    public function centros()
+    {
+        return $this->centros_medicos();
+    }
+
     // Accessors
     public function getRutFormateadoAttribute()
     {
         if (!$this->rut) return null;
-        
+
         $rut = preg_replace('/[^0-9kK]/', '', $this->rut);
         if (strlen($rut) > 1) {
             return substr($rut, 0, -1) . '-' . substr($rut, -1);
@@ -47,10 +58,11 @@ class Cliente extends Model
 
     public function scopeBuscar($query, $termino)
     {
-        return $query->where(function($q) use ($termino) {
+        return $query->where(function ($q) use ($termino) {
             $q->where('nombre', 'like', "%{$termino}%")
-              ->orWhere('email', 'like', "%{$termino}%")
-              ->orWhere('rut', 'like', "%{$termino}%");
+                ->orWhere('email', 'like', "%{$termino}%")
+                ->orWhere('rut', 'like', "%{$termino}%")
+                ->orWhere('razon_social', 'like', "%{$termino}%");
         });
     }
 }

@@ -15,15 +15,15 @@
         </a>
 
         <flux:navlist.group :heading="__('Bienvenid@') . ' ' . auth()->user()->name" class="grid">
-            <flux:navlist.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')"
-                wire:navigate>
+            <flux:navlist.item :content="__('Dashboard')" icon="home" :href="route('dashboard')"
+                :current="request()->routeIs('dashboard')" wire:navigate>
                 {{ __('Dashboard') }}
             </flux:navlist.item>
         </flux:navlist.group>
 
         <flux:navlist variant="outline">
             @if (auth()->check())
-                <!-- Grupo: Gestión (solo admin) -->
+                {{-- Grupo: Gestión (solo admin) --}}
                 @role('admin')
                     <flux:navlist.group :heading="__('Gestión')" class="grid">
                         <flux:navlist.item icon="users" :href="route('users.index')"
@@ -43,7 +43,7 @@
                     </flux:navlist.group>
                 @endrole
 
-                <!-- Grupo: Gestión general -->
+                {{-- Grupo: Gestión general --}}
                 <flux:navlist.group :heading="__('Gestión')" class="grid">
                     <flux:navlist.item icon="ticket" :href="route('tickets.index')"
                         :current="request()->routeIs('tickets.*')" wire:navigate>
@@ -56,28 +56,88 @@
                     </flux:navlist.item>
 
                     <flux:navlist.item icon="building-office-2" :href="route('centros_medicos.index')"
-                        :current="request()->routeIs('centros.*')" wire:navigate>
+                        :current="request()->routeIs('centros_medicos.*')" wire:navigate>
                         {{ __('Centros Médicos') }}
                     </flux:navlist.item>
+
+                    @php
+                        $u = auth()->user();
+
+                        // Condición robusta: si tienes spatie, intenta roles conocidos;
+                        // si no, o si hay diferencias de nombre/acentos, cae en autenticado.
+                        $tieneRolEquipos = false;
+                        if ($u && method_exists($u, 'hasAnyRole')) {
+                            $tieneRolEquipos = $u->hasAnyRole([
+                                'admin',
+                                'auditor',
+                                'tecnico',
+                                'Administrador',
+                                'Auditor',
+                                'Técnico',
+                            ]);
+                        } elseif ($u && method_exists($u, 'hasRole')) {
+                            $tieneRolEquipos = $u->hasRole('admin') || $u->hasRole('auditor') || $u->hasRole('tecnico');
+                        }
+
+                        // Si nada de lo anterior funciona, al menos muéstralo a autenticados
+                        $mostrarEquipos = $tieneRolEquipos || auth()->check();
+                    @endphp
+
+                    @if ($mostrarEquipos)
+                        <flux:navlist.item icon="cpu-chip" :href="route('equipos.index')"
+                            :current="request()->routeIs('equipos.*')" wire:navigate>
+                            {{ __('Máquinas') }}
+                        </flux:navlist.item>
+                    @endif
                 </flux:navlist.group>
 
                 @php
                     $u = auth()->user();
+
+                    // Mostrar grupo Inventario si tiene alguno de estos privilegios
                     $mostrarInventario =
                         $u && method_exists($u, 'hasAnyPrivilege')
-                            ? $u->hasAnyPrivilege(['ver_repuestos', 'editar_repuestos', 'ver_solicitudes'])
+                            ? $u->hasAnyPrivilege([
+                                'ver_repuestos',
+                                'editar_repuestos',
+                                'ver_solicitudes',
+                                'ver_inventario_tecnico', // agregado
+                                'gestionar_inventario_tecnico', // agregado
+                            ])
                             : false;
+
+                    // Fallback por rol si no existe hasAnyPrivilege en el usuario
+                    if (!$mostrarInventario && $u && method_exists($u, 'hasRole')) {
+                        $mostrarInventario = $u->hasRole('tecnico') || $u->hasRole('auditor') || $u->hasRole('admin');
+                    }
                 @endphp
 
                 @if ($mostrarInventario)
-                    <!-- Grupo: Inventario (según privilegios) -->
+                    {{-- Grupo: Inventario (según privilegios) --}}
                     <flux:navlist.group :heading="__('Inventario')" class="grid">
                         @privilegio('ver_repuestos')
                             <flux:navlist.item icon="archive-box" :href="route('repuestos.index')"
                                 :current="request()->routeIs('repuestos.*')" wire:navigate>
                                 {{ __('Repuestos') }}
                             </flux:navlist.item>
+                        @endprivilegio
 
+                        {{-- Inventario Técnicos: NO depender de ver_repuestos --}}
+                        @php
+                            $puedeVerInvTecnico =
+                                $u && method_exists($u, 'hasAnyPrivilege')
+                                    ? $u->hasAnyPrivilege(['ver_inventario_tecnico', 'gestionar_inventario_tecnico'])
+                                    : method_exists($u, 'hasRole') &&
+                                        ($u->hasRole('tecnico') || $u->hasRole('auditor') || $u->hasRole('admin'));
+                        @endphp
+                        @if ($puedeVerInvTecnico)
+                            <flux:navlist.item icon="archive-box-arrow-down" :href="route('invtecnico.index')"
+                                :current="request()->routeIs('invtecnico.*')" wire:navigate>
+                                {{ __('Inventario') }}
+                            </flux:navlist.item>
+                        @endif
+
+                        @privilegio('ver_repuestos')
                             <flux:navlist.item icon="tag" :href="route('categorias.index')"
                                 :current="request()->routeIs('categorias.*')" wire:navigate>
                                 {{ __('Categorías') }}
@@ -98,35 +158,22 @@
                     </flux:navlist.group>
                 @endif
 
-                <!-- Grupo: Utilidades -->
+                {{-- Grupo: Utilidades --}}
                 <flux:navlist.group :heading="__('Utilidades')" class="grid">
                     <flux:navlist.item icon="document-text" href="#" :current="false">
                         {{ __('Reportes') }}
                     </flux:navlist.item>
-                    <flux:navlist.item icon="wrench-screwdriver" href="#" :current="false">
-                        {{ __('Máquinas') }}
-                    </flux:navlist.item>
                 </flux:navlist.group>
+
             @endif
         </flux:navlist>
 
         <flux:spacer />
 
-        <flux:navlist variant="outline">
-            <flux:navlist.item icon="folder-git-2" href="#" target="_blank">
-                {{ __('Repository') }}
-            </flux:navlist.item>
-
-            <flux:navlist.item icon="book-open-text" href="#" target="_blank">
-                {{ __('Documentation') }}
-            </flux:navlist.item>
-        </flux:navlist>
-
-        <!-- Desktop User Menu -->
+        {{-- Desktop User Menu --}}
         <flux:dropdown class="hidden lg:block" position="bottom" align="start">
             <flux:profile :name="auth()->user()->name" :initials="auth()->user()->initials()"
                 icon:trailing="chevrons-up-down" />
-
             <flux:menu class="w-[220px]">
                 <flux:menu.radio.group>
                     <div class="p-0 text-sm font-normal">
@@ -137,7 +184,6 @@
                                     {{ auth()->user()->initials() }}
                                 </span>
                             </span>
-
                             <div class="grid flex-1 text-start text-sm leading-tight">
                                 <span class="truncate font-semibold">{{ auth()->user()->name }}</span>
                                 <span class="truncate text-xs">{{ auth()->user()->email }}</span>
@@ -153,6 +199,7 @@
                         {{ __('Ajustes') }}
                     </flux:menu.item>
                 </flux:menu.radio.group>
+
                 <flux:menu.separator />
 
                 <form method="POST" action="{{ route('logout') }}" class="w-full">
@@ -165,15 +212,12 @@
         </flux:dropdown>
     </flux:sidebar>
 
-    <!-- Mobile User Menu -->
+    {{-- Mobile User Menu --}}
     <flux:header class="lg:hidden">
         <flux:sidebar.toggle class="lg:hidden" icon="bars-2" inset="left" />
-
         <flux:spacer />
-
         <flux:dropdown position="top" align="end">
             <flux:profile :initials="auth()->user()->initials()" icon-trailing="chevron-down" />
-
             <flux:menu>
                 <flux:menu.radio.group>
                     <div class="p-0 text-sm font-normal">
@@ -184,7 +228,6 @@
                                     {{ auth()->user()->initials() }}
                                 </span>
                             </span>
-
                             <div class="grid flex-1 text-start text-sm leading-tight">
                                 <span class="truncate font-semibold">{{ auth()->user()->name }}</span>
                                 <span class="truncate text-xs">{{ auth()->user()->email }}</span>

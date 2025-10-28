@@ -28,19 +28,27 @@ class ClienteController extends Controller
             'nombre' => 'required|string|max:255',
             'telefono' => 'nullable|string|max:20',
             'email' => 'nullable|email|max:255',
-            'rut' => 'required|string|max:12|unique:clientes'
+            'rut' => 'required|string|max:12|unique:clientes',
+            'razon_social' => 'nullable|string|max:255',
         ]);
         Cliente::create($request->all());
         return redirect()->route('clientes.index')->with('success', 'Cliente creado correctamente');
     }
 
-    public function show(Cliente $cliente)
+    public function show(\App\Models\Cliente $cliente)
     {
+        $cliente->load([
+            'centros_medicos' => fn($q) => $q->orderBy('nombre'),
+        ]);
+
         return view('clientes.show', compact('cliente'));
     }
 
-    public function edit(Cliente $cliente)
+    public function edit(\App\Models\Cliente $cliente)
     {
+        $cliente->load([
+            'centros_medicos' => fn($q) => $q->orderBy('nombre'),
+        ]);
         return view('clientes.edit', compact('cliente'));
     }
 
@@ -50,7 +58,8 @@ class ClienteController extends Controller
             'nombre' => 'required|string|max:255',
             'telefono' => 'nullable|string|max:20',
             'email' => 'nullable|email|max:255',
-            'rut' => 'required|string|max:12|unique:clientes,rut,' . $cliente->id
+            'rut' => 'required|string|max:12|unique:clientes,rut,' . $cliente->id,
+            'razon_social' => 'nullable|string|max:255',
         ]);
         $cliente->update($request->all());
         return redirect()->route('clientes.show', $cliente)->with('success', 'Cliente actualizado correctamente');

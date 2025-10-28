@@ -2,75 +2,103 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Salida;
+use App\Models\Solicitud;
 use App\Models\Repuesto;
-use App\Models\User;
-use App\Models\CentroMedico;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 
 class SalidaController extends Controller
 {
-    public function index(Request $request)
+    /**
+     * Entrega (aprobación) de un repuesto solicitado: crea 'salidas' y descuenta stock.
+     */
+    public function entregarItemDeSolicitud(Request $request, Solicitud $solicitud, Repuesto $repuesto)
     {
-        $query = Salida::with(['repuesto', 'usuarioPedido', 'usuarioRequiere', 'centroMedico']);
-        $salidas = $query->orderBy('fecha_hora', 'desc')->paginate(15);
-        return view('salidas.index', compact('salidas'));
-    }
-
-    public function create()
-    {
-        $repuestos = Repuesto::orderBy('nombre')->get();
-        $usuarios = User::orderBy('name')->get();
-        $centros = CentroMedico::orderBy('centro_dialisis')->get();
-        return view('salidas.create', compact('repuestos', 'usuarios', 'centros'));
-    }
-
-    public function store(Request $request)
-    {
-        $request->validate([
-            'solicitud_id' => 'nullable|exists:solicitudes,id',
-            'repuesto_id' => 'required|exists:repuestos,id',
-            'usuario_pedido_id' => 'required|exists:users,id',
-            'usuario_requiere_id' => 'required|exists:users,id',
+        $data = $request->validate([
             'cantidad' => 'required|integer|min:1',
-            'centro_medico_id' => 'required|exists:centros_medicos,id',
-            'fecha_hora' => 'required|date'
         ]);
-        Salida::create($request->all());
-        return redirect()->route('salidas.index')->with('success', 'Salida registrada correctamente');
-    }
 
-    public function show(Salida $salida)
-    {
-        return view('salidas.show', compact('salida'));
-    }
+        // Verifica que el repuesto exista en el detalle de la solicitud (pivot)
+        $pivot = $solicitud->repuestos()->where('repuesto_id', $repuesto->id)->first();
+        if (!$pivot) {
+            return back()->with('error', 'El repuesto no pertenece a esta solicitud.');
+        }
 
-    public function edit(Salida $salida)
-    {
-        $repuestos = Repuesto::orderBy('nombre')->get();
-        $usuarios = User::orderBy('name')->get();
-        $centros = CentroMedico::orderBy('centro_dialisis')->get();
-        return view('salidas.edit', compact('salida', 'repuestos', 'usuarios', 'centros'));
-    }
+        // Cantidad solicitada
+        $solicitado = (int) $pivot->pivot->cantidad;
 
-    public function update(Request $request, Salida $salida)
-    {
-        $request->validate([
-            'solicitud_id' => 'nullable|exists:solicitudes,id',
-            'repuesto_id' => 'required|exists:repuestos,id',
-            'usuario_pedido_id' => 'required|exists:users,id',
-            'usuario_requiere_id' => 'required|exists:users,id',
-            'cantidad' => 'required|integer|min:1',
-            'centro_medico_id' => 'required|exists:centros_medicos,id',
-            'fecha_hora' => 'required|date'
-        ]);
-        $salida->update($request->all());
-        return redirect()->route('salidas.show', $salida)->with('success', 'Salida actualizada correctamente');
-    }
+        // Ya entregado (acumulado en salidas)
+        $yaEntregado = (int) DB::table('salidas')
+            ->where('solicitud_id', $solicitud->id)
+            ->where('repuesto_id', $repuesto->id)
+            ->sum('cantidad');
 
-    public function destroy(Salida $salida)
-    {
-        $salida->delete();
-        return redirect()->route('salidas.index')->with('success', 'Salida eliminada correctamente');
+        $restante = max(0, $solicitado - $yaEntregado);
+        if ($restante <= 0) {
+            return back()->with('error', 'Este repuesto ya fue entregado por completo.');
+        }
+
+        $aEntregar = (int) $data['cantidad'];
+        if ($aEntregar > $restante) {
+            return back()->with('error', "Cantidad excede lo restante por entregar ({$restante}).");
+        }
+
+        // Stock disponible
+        $stockDisponible = (int) $repuesto->stock;
+        if ($aEntregar > $stockDisponible) {
+            return back()->with('error', "Stock insuficiente. Disponible: {$stockDisponible}.");
+        }
+
+        DB::beginTransaction();
+        try {
+            $salidaId = DB::table('salidas')->insertGetId([
+                'solicitud_id'      => $solicitud->id,
+                'repuesto_id'       => $repuesto->id,
+                'usuario_pedido_id' => $solicitud->tecnico_id,          // quien pidió (técnico)
+                'usuario_requiere_id' => Auth::id(),  // quien aprueba/entrega
+                'cantidad'          => $aEntregar,
+                'cantidad'          => $aEntregar,
+                'centro_medico_id'  => $solicitud->clinica_id,
+                'fecha_hora'        => now(),
+                'created_at'        => now(),
+                'updated_at'        => now(),
+            ]);
+
+            // 2) Descontar stock del repuesto
+            DB::table('repuestos')
+                ->where('id', $repuesto->id)
+                ->update(['stock' => DB::raw("GREATEST(stock - {$aEntregar}, 0)"), 'updated_at' => now()]);
+
+            // 3) (Opcional) Kardex / movimientos_stock si existe
+            try {
+                if (DB::getSchemaBuilder()->hasTable('movimientos_stock')) {
+                    DB::table('movimientos_stock')->insert([
+                        'repuesto_id'     => $repuesto->id,
+                        'tipo'            => 'salida',             // salida
+                        'cantidad'        => $aEntregar,
+                        'centro_medico_id' => $solicitud->clinica_id,
+                        'referencia_tipo' => 'salida',
+                        'referencia_id'   => $salidaId,
+                        'fecha_hora'      => now(),
+                        'created_at'      => now(),
+                        'updated_at'      => now(),
+                    ]);
+                }
+            } catch (\Throwable $e) {
+                // si no existe la tabla o hay diferencia de columnas, no romper la entrega
+            }
+
+            // 4) (Opcional) si todo el repuesto quedó entregado, puedes actualizar estado global
+            //    Ej.: estado_id = 2 (aprobada) cuando TODOS los ítems estén completos
+            //    Aquí solo verificamos este repuesto; si quieres estado global, revisa todos los ítems.
+            //    Lo dejamos a tu criterio de negocio.
+
+            DB::commit();
+            return back()->with('success', "Se entregaron {$aEntregar} unidad(es) de '{$repuesto->nombre}'. Restante ahora: " . ($restante - $aEntregar));
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            return back()->with('error', 'Error al registrar la salida: ' . $e->getMessage());
+        }
     }
 }

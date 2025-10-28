@@ -14,23 +14,34 @@ class CentroMedico extends Model
     protected $fillable = [
         'cliente_id',
         'cod_cliente',
-        'cod_centro_dialisis',
-        'centro_dialisis',
-        'razon_social',
+        'cod_centro_medico',
+        'nombre',
         'direccion',
+        'ciudad',
         'region',
-        'telefono'
+        'telefono',
+        'activo'
     ];
 
     protected $casts = [
         'cod_cliente' => 'integer',
-        'cod_centro_dialisis' => 'integer'
+        'cod_centro_medico' => 'integer',
+        'activo' => 'boolean'
+    ];
+
+    protected $attributes = [
+        'activo' => 1,
     ];
 
     // Relaciones
     public function cliente()
     {
-        return $this->belongsTo(Cliente::class);
+        return $this->belongsTo(\App\Models\Cliente::class, 'cliente_id');
+    }
+
+    public function equipos()
+    {
+        return $this->hasMany(\App\Models\Equipo::class, 'centro_medico_id');
     }
 
     public function solicitudes()
@@ -56,10 +67,10 @@ class CentroMedico extends Model
 
     public function scopeBuscar($query, $termino)
     {
-        return $query->where(function($q) use ($termino) {
-            $q->where('centro_dialisis', 'like', "%{$termino}%")
-              ->orWhere('razon_social', 'like', "%{$termino}%")
-              ->orWhere('region', 'like', "%{$termino}%");
+        return $query->where(function ($q) use ($termino) {
+            $q->where('nombre', 'like', "%{$termino}%")
+                ->orWhere('region', 'like', "%{$termino}%")
+                ->orWhere('ciudad', 'like', "%{$termino}%");
         });
     }
 

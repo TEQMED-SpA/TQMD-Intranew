@@ -7,6 +7,13 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use App\Models\User;
+use App\Models\CentroMedico;
+use App\Models\EstadoSolicitud;
+use App\Models\Repuesto;
+use App\Models\Audit;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class Solicitud extends Model
 {
@@ -27,7 +34,7 @@ class Solicitud extends Model
     ];
 
     protected $casts = [
-        'fecha_solicitud' => 'date',
+        'fecha_solicitud' => 'datetime:Y-m-d',
         'aprobado_en' => 'datetime',
     ];
 
@@ -52,40 +59,72 @@ class Solicitud extends Model
         return $this->belongsTo(User::class, 'aprobado_por');
     }
 
-    public function repuestos(): BelongsToMany
+    public function repuestos()
     {
-        return $this->belongsToMany(Repuesto::class, 'solicitud_repuesto')
-            ->withPivot(['cantidad', 'observacion', 'orden'])
+        return $this->belongsToMany(\App\Models\Repuesto::class, 'solicitud_repuesto')
+            ->withPivot(['cantidad', 'observacion', 'usado', 'destino_devolucion', 'fecha_uso'])
             ->withTimestamps();
     }
 
     // Métodos para manejo de estados
     public function aprobar(User $aprobador): bool
     {
-        if ($this->estado_id !== 1) { // Asumiendo que 1 es 'pendiente'
+        if ($this->estado_id !== 1) {
             return false;
         }
 
-        $this->update([
-            'estado_id' => 2, // Asumiendo que 2 es 'aprobada'
-            'aprobado_por' => $aprobador->id,
-            'aprobado_en' => now(),
-        ]);
+        DB::transaction(function () use ($aprobador) {
+            $this->update([
+                'estado_id' => 2,
+                'aprobado_por' => $aprobador->id,
+                'aprobado_en' => now(),
+            ]);
+
+            Audit::create([
+                'user_id' => $aprobador->id,
+                'entity_type' => get_class($this),
+                'entity_id' => $this->id,
+                'action' => 'approved',
+                'before_changes' => json_encode(['estado_id' => 1]),
+                'after_changes' => json_encode([
+                    'estado_id' => 2,
+                    'aprobado_por' => $aprobador->id,
+                    'aprobado_en' => now()
+                ]),
+                'ip' => request()->ip(),
+                'user_agent' => request()->userAgent()
+            ]);
+        });
 
         return true;
     }
 
+
     public function rechazar(string $motivo): bool
     {
-        if ($this->estado_id !== 1) { // Asumiendo que 1 es 'pendiente'
+        if ($this->estado_id !== 1) {
             return false;
         }
 
-        $this->update([
-            'estado_id' => 3, // Asumiendo que 3 es 'rechazada'
-            'motivo_rechazo' => $motivo,
-        ]);
-
+        DB::transaction(function () use ($motivo) {
+            $this->update([
+                'estado_id' => 3,
+                'motivo_rechazo' => $motivo,
+            ]);
+            Audit::create([
+                'user_id' => Auth::id(),
+                'entity_type' => get_class($this),
+                'entity_id' => $this->id,
+                'action' => 'rejected',
+                'before_changes' => json_encode(['estado_id' => 1]),
+                'after_changes' => json_encode([
+                    'estado_id' => 3,
+                    'motivo_rechazo' => $motivo
+                ]),
+                'ip' => request()->ip(),
+                'user_agent' => request()->userAgent()
+            ]);
+        });
         return true;
     }
 
