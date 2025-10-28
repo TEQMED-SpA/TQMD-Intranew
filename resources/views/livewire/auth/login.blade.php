@@ -29,10 +29,4 @@
         </div>
     </form>
 
-    @if (Route::has('register'))
-        <div class="space-x-1 rtl:space-x-reverse text-center text-sm text-zinc-600 dark:text-zinc-400">
-            <span>{{ __('¿No tienes una cuenta?') }}</span>
-            <flux:link :href="route('register')" wire:navigate>{{ __('Regístrate') }}</flux:link>
-        </div>
-    @endif
 </div>

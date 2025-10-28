@@ -6,11 +6,13 @@ use Illuminate\Support\Facades\Log;
 use App\Livewire\Settings\Appearance;
 use App\Livewire\Settings\Password;
 use App\Livewire\Settings\Profile;
+
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\ClienteController;
 use App\Http\Controllers\CentroMedicoController;
 use App\Http\Controllers\CategoriaRepuestoController;
 use App\Http\Controllers\RepuestoController;
+use App\Http\Controllers\EquipoController;
 use App\Http\Controllers\SolicitudController;
 use App\Http\Controllers\SalidaController;
 use App\Http\Controllers\LlamadoController;
@@ -18,86 +20,222 @@ use App\Http\Controllers\CategoriaLlamadoController;
 use App\Http\Controllers\TicketController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\PrivilegioController;
-use App\Models\CentroMedico;
+use App\Http\Controllers\InventarioTecnicoController;
 
+// ---------------------------------------------------------
+// Redirección inicial
+// ---------------------------------------------------------
 Route::redirect('/', '/login')->name('home');
 
+// ---------------------------------------------------------
+// Dashboard
+// ---------------------------------------------------------
 Route::view('dashboard', 'dashboard')
     ->middleware(['auth', 'verified'])
     ->name('dashboard');
 
+// ---------------------------------------------------------
+// PATRONES GLOBALES (evitan choques tipo /recurso/create vs /recurso/{id})
+// ---------------------------------------------------------
+Route::pattern('user', '[0-9]+');
+Route::pattern('cliente', '[0-9]+');
+Route::pattern('centros_medico', '[0-9]+'); // nombre del parámetro singular de resource('centros_medicos', ...)
+Route::pattern('equipo', '[0-9]+');
+Route::pattern('repuesto', '[0-9]+');
+Route::pattern('categoria', '[0-9]+');
+Route::pattern('ticket', '[0-9]+');
+Route::pattern('salida', '[0-9]+');
+Route::pattern('llamado', '[0-9]+');
+Route::pattern('categoria_llamado', '[0-9]+');
+Route::pattern('solicitud', '[0-9]+');
+
+// ---------------------------------------------------------
+// ZONA PRIVADA
+// ---------------------------------------------------------
 Route::middleware(['auth'])->group(function () {
+
     // Settings
     Route::redirect('settings', 'settings/profile');
     Route::get('settings/profile', Profile::class)->name('settings.profile');
     Route::get('settings/password', Password::class)->name('settings.password');
     Route::get('settings/appearance', Appearance::class)->name('settings.appearance');
 
-    // Roles y Privilegios: solo admin, conservando nombres roles.* y privilegios.*
-    Route::resource('roles', RoleController::class)->middleware(['role:admin']);
-    Route::resource('privilegios', PrivilegioController::class);
-    // USERS: SOLO ADMIN
-    Route::resource('users', \App\Http\Controllers\UserController::class)
+    // Endpoints JSON (selects dependientes)
+    Route::get('/api/clientes/{cliente}/centros', [\App\Http\Controllers\Api\LookupController::class, 'centrosPorCliente'])
+        ->whereNumber('cliente')
+        ->name('api.clientes.centros');
+
+    Route::get('/api/centros/{centro}/equipos', [\App\Http\Controllers\Api\LookupController::class, 'equiposPorCentro'])
+        ->whereNumber('centro')
+        ->name('api.centros.equipos');
+
+    // -----------------------------------------------------
+    // Roles y Privilegios
+    // -----------------------------------------------------
+    Route::resource('roles', RoleController::class)
         ->middleware(['role:admin']);
-    // CLIENTES y CENTROS (ajusta si también deben ser solo admin)
-    Route::resource('clientes', ClienteController::class);
 
-    // CATEGORÍAS DE REPUESTOS
-    Route::get('repuestos/create', function () {
-        \Log::info('HIT /repuestos/create (ruta de prueba)');
-        return 'HIT /repuestos/create';
-    })->withoutMiddleware(['auth', 'privilege']);
+    Route::resource('privilegios', PrivilegioController::class);
 
-    Route::resource('categorias', CategoriaRepuestoController::class)
-        ->only(['index', 'show'])
-        ->middleware(['privilege:ver_repuestos']);
+    // -----------------------------------------------------
+    // Usuarios (solo admin)
+    // -----------------------------------------------------
+    Route::resource('users', UserController::class)
+        ->middleware(['role:admin']);
+
+    // -----------------------------------------------------
+    // Clientes (separado por privilegio de edición)
+    // -----------------------------------------------------
+    // Acciones de escritura (primero)
+    Route::resource('clientes', ClienteController::class)
+        ->only(['create', 'store', 'edit', 'update', 'destroy'])
+        ->middleware(['privilege:editar_clientes']);
+
+    // Lectura (después)
+    Route::resource('clientes', ClienteController::class)
+        ->only(['index', 'show']); // si tienes 'ver_clientes' puedes agregarlo aquí
+
+    // -----------------------------------------------------
+    // Categorías de repuestos
+    // -----------------------------------------------------
     Route::resource('categorias', CategoriaRepuestoController::class)
         ->only(['create', 'store', 'edit', 'update', 'destroy'])
         ->middleware(['privilege:editar_repuestos']);
 
-    // REPUESTOS
-    Route::resource('repuestos', RepuestoController::class)
+    Route::resource('categorias', CategoriaRepuestoController::class)
         ->only(['index', 'show'])
         ->middleware(['privilege:ver_repuestos']);
-    Route::resource('repuestos', RepuestoController::class)
-        ->only(['create', 'store', 'edit', 'update', 'destroy'])
-        ->middleware(['privilege:editar_repuestos']);
-    Route::get('repuestos-baja', [RepuestoController::class, 'baja'])
-        ->name('repuestos.baja')
-        ->middleware(['privilege:ver_repuestos']);
-
-    // SOLICITUDES
-    Route::resource('solicitudes', SolicitudController::class)
-        ->only(['index', 'show'])
-        ->middleware(['privilege:ver_solicitudes']);
-    Route::resource('solicitudes', SolicitudController::class)
-        ->only(['create', 'store', 'edit', 'update', 'destroy'])
-        ->middleware(['privilege:aprobar_solicitudes']);
-
-    // SALIDAS
-    Route::resource('salidas', SalidaController::class);
-
-    // TICKETS (sin create/store)
-    Route::resource('tickets', TicketController::class)->except(['create', 'store']);
 
     // AJAX categorías (crear rápida)
     Route::post('/categorias/ajax-store', [CategoriaRepuestoController::class, 'ajaxStore'])
         ->name('categorias.ajax-store')
         ->middleware(['privilege:editar_repuestos']);
 
-    // LLAMADOS y CATEGORÍAS DE LLAMADOS
+    // -----------------------------------------------------
+    // Repuestos
+    // -----------------------------------------------------
+    Route::resource('repuestos', RepuestoController::class)
+        ->only(['create', 'store', 'edit', 'update', 'destroy'])
+        ->middleware(['privilege:editar_repuestos']);
+
+    Route::resource('repuestos', RepuestoController::class)
+        ->only(['index', 'show'])
+        ->middleware(['privilege:ver_repuestos']);
+
+    Route::get('repuestos-baja', [RepuestoController::class, 'baja'])
+        ->name('repuestos.baja')
+        ->middleware(['privilege:ver_repuestos']);
+
+    // -----------------------------------------------------
+    // Solicitudes
+    // -----------------------------------------------------
+    Route::prefix('solicitudes')->name('solicitudes.')->group(function () {
+        // Crear
+        Route::get('/create', [SolicitudController::class, 'create'])
+            ->name('create')
+            ->middleware('privilege:crear_solicitudes');
+
+        Route::post('/', [SolicitudController::class, 'store'])
+            ->name('store')
+            ->middleware('privilege:crear_solicitudes');
+
+        // Listado / Detalle
+        Route::get('/', [SolicitudController::class, 'index'])
+            ->name('index')
+            ->middleware('privilege:ver_solicitudes');
+
+        Route::get('/{solicitud}', [SolicitudController::class, 'show'])
+            ->whereNumber('solicitud')
+            ->name('show')
+            ->middleware('privilege:ver_solicitudes');
+
+        // Aprobaciones
+        Route::put('/{solicitud}/aprobar', [SolicitudController::class, 'aprobar'])
+            ->whereNumber('solicitud')
+            ->name('aprobar')
+            ->middleware('privilege:aprobar_solicitudes');
+
+        Route::put('/{solicitud}/rechazar', [SolicitudController::class, 'rechazar'])
+            ->whereNumber('solicitud')
+            ->name('rechazar')
+            ->middleware('privilege:aprobar_solicitudes');
+
+        // Entregar ítem de solicitud
+        Route::post('/{solicitud}/repuestos/{repuesto}/entregar', [SalidaController::class, 'entregarItemDeSolicitud'])
+            ->whereNumber('solicitud')
+            ->whereNumber('repuesto')
+            ->name('repuestos.entregar')
+            ->middleware('privilege:aprobar_solicitudes');
+    });
+
+    // -----------------------------------------------------
+    // Salidas
+    // -----------------------------------------------------
+    Route::resource('salidas', SalidaController::class);
+
+    // -----------------------------------------------------
+    // Inventario Técnico
+    // -----------------------------------------------------
+    Route::prefix('inventario-tecnico')->name('invtecnico.')->group(function () {
+        Route::get('/', [InventarioTecnicoController::class, 'index'])
+            ->name('index')
+            ->middleware('privilege:ver_inventario_tecnico');
+
+        Route::post('/{item}/devolver', [InventarioTecnicoController::class, 'devolver'])
+            ->whereNumber('item')
+            ->name('devolver')
+            ->middleware('privilege:gestionar_inventario_tecnico');
+    });
+
+    // -----------------------------------------------------
+    // Equipos (máquinas)
+    // -----------------------------------------------------
+    // Escritura (primero) para evitar choque con {equipo}
+    Route::middleware(['role:admin|auditor|tecnico'])->group(function () {
+        Route::get('/equipos/create', [EquipoController::class, 'create'])->name('equipos.create');
+        Route::post('/equipos',       [EquipoController::class, 'store'])->name('equipos.store');
+    });
+
+    // Lectura
+    Route::get('/equipos', [EquipoController::class, 'index'])->name('equipos.index');
+
+    Route::get('/equipos/{equipo}', [EquipoController::class, 'show'])
+        ->whereNumber('equipo')
+        ->name('equipos.show');
+
+    // Edición/Eliminación
+    Route::middleware(['role:admin|auditor'])->group(function () {
+        Route::get('/equipos/{equipo}/edit',  [EquipoController::class, 'edit'])->whereNumber('equipo')->name('equipos.edit');
+        Route::put('/equipos/{equipo}',       [EquipoController::class, 'update'])->whereNumber('equipo')->name('equipos.update');
+        Route::delete('/equipos/{equipo}',    [EquipoController::class, 'destroy'])->whereNumber('equipo')->name('equipos.destroy');
+    });
+
+    // -----------------------------------------------------
+    // Tickets (sin create/store)
+    // -----------------------------------------------------
+    Route::resource('tickets', TicketController::class)->except(['create', 'store']);
+
+    // -----------------------------------------------------
+    // Llamados y categorías de llamados
+    // -----------------------------------------------------
     Route::resource('llamados', LlamadoController::class);
     Route::resource('categoria_llamados', CategoriaLlamadoController::class);
     Route::get('get-all-categorias', [CategoriaLlamadoController::class, 'getAllCategorias'])
         ->name('get.all.categorias');
 
-    // CENTROS MÉDICOS
-    Route::resource('centros_medicos', CentroMedicoController::class)
-        ->only(['index', 'show'])
-        ->middleware(['privilege:ver_centros_medicos']);
+    // -----------------------------------------------------
+    // Centros Médicos (separado por privilegios) - OJO al orden
+    // -----------------------------------------------------
     Route::resource('centros_medicos', CentroMedicoController::class)
         ->only(['create', 'store', 'edit', 'update', 'destroy'])
         ->middleware(['privilege:editar_centros_medicos']);
+
+    Route::resource('centros_medicos', CentroMedicoController::class)
+        ->only(['index', 'show'])
+        ->middleware(['privilege:ver_centros_medicos']);
 });
 
+// ---------------------------------------------------------
+// Auth scaffolding
+// ---------------------------------------------------------
 require __DIR__ . '/auth.php';

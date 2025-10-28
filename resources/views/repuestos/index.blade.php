@@ -130,6 +130,13 @@
                                             title="Editar">
                                             <i class="fa fa-pencil text-sm"></i>
                                         </a>
+                                        @if (auth()->user() && auth()->user()->tienePrivilegio('crear_solicitudes'))
+                                            <a href="{{ route('solicitudes.create', ['repuesto_id' => $repuesto->id]) }}"
+                                                class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-yellow-500 hover:bg-yellow-600 text-white transition-colors duration-200"
+                                                title="Solicitar repuesto">
+                                                <i class="fa fa-paper-plane text-sm"></i>
+                                            </a>
+                                        @endif
                                         <form action="{{ route('repuestos.destroy', $repuesto) }}" method="POST"
                                             style="display:inline;" onsubmit="return confirm('¿Eliminar repuesto?');">
                                             @csrf @method('DELETE')

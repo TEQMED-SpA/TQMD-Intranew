@@ -24,31 +24,21 @@
                     <thead>
                         <tr class="bg-white dark:bg-zinc-700">
                             <th class="p-3 text-zinc-900 dark:text-white font-semibold">Nombre</th>
-                            <th class="p-3 text-zinc-900 dark:text-white font-semibold">Email</th>
+                            <th class="p-3 text-zinc-900 dark:text-white font-semibold">Razon Social</th>
+                            <th class="p-3 text-zinc-900 dark:text-white font-semibold">RUT</th>
                             <th class="p-3 text-zinc-900 dark:text-white font-semibold">Teléfono</th>
-                            <th class="p-3 text-zinc-900 dark:text-white font-semibold">Estado</th>
                             <th class="p-3 text-center text-zinc-900 dark:text-white font-semibold">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach ($clientes as $cliente)
                             <tr class="{{ $tableRowClass }}">
-                                <td class="p-3 text-zinc-900 dark:text-zinc-100 font-medium">{{ $cliente->name }}</td>
-                                <td class="p-3 text-zinc-700 dark:text-zinc-300">{{ $cliente->email }}</td>
+                                <td class="p-3 text-zinc-900 dark:text-zinc-100 font-medium">
+                                    {{ $cliente->nombre }}</td>
+                                <td class="p-3 text-zinc-700 dark:text-zinc-300">{{ $cliente->razon_social }}</td>
+                                <td class="p-3 text-zinc-700 dark:text-zinc-300">{{ $cliente->rut }}</td>
                                 <td class="p-3 text-zinc-700 dark:text-zinc-300">{{ $cliente->telefono }}</td>
-                                <td class="p-3">
-                                    @if ($cliente->status === 'activo')
-                                        <span
-                                            class="inline-block rounded-full px-3 py-1 text-xs font-semibold
-                                            bg-green-100 dark:bg-green-900/40
-                                            text-green-800 dark:text-green-200">Activo</span>
-                                    @else
-                                        <span
-                                            class="inline-block rounded-full px-3 py-1 text-xs font-semibold
-                                            bg-red-100 dark:bg-red-900/40
-                                            text-red-800 dark:text-red-200">Inactivo</span>
-                                    @endif
-                                </td>
+
                                 <td class="p-3 text-center">
                                     <div class="flex items-center justify-center gap-2">
                                         <a href="{{ route('clientes.show', $cliente) }}"

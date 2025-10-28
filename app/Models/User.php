@@ -7,11 +7,10 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Str;
-use App\Models\Concerns\HasRolesAndPrivileges;
 
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable, HasRolesAndPrivileges;
+    use HasFactory, Notifiable;
 
     protected $fillable = [
         'name',
@@ -36,26 +35,40 @@ class User extends Authenticatable
         ];
     }
 
-    // Relación alternativa usada en vistas/controladores existentes
-    public function rol()
+    // Relación principal con Role
+    public function role()
     {
         return $this->belongsTo(Role::class, 'rol_id');
     }
 
-    // Proxies compatibles en español (usan el trait)
-    public function tienePrivilegio($privilegio)
+    // Métodos para verificar privilegios
+    public function tienePrivilegio($privilegios)
     {
-        return $this->hasPrivilege($privilegio);
+        $privilegios = is_array($privilegios) ? $privilegios : [$privilegios];
+        $userPrivs = $this->role ? $this->role->privilegios->pluck('nombre')->toArray() : [];
+        $intersect = array_intersect($userPrivs, $privilegios);
+
+        \Log::info('TienePrivilegio', [
+            'user_id' => $this->id,
+            'user_name' => $this->name,
+            'user_role' => $this->role ? $this->role->nombre : null,
+            'user_privs' => $userPrivs,
+            'checking' => $privilegios,
+            'intersect' => $intersect,
+            'result' => count($intersect) > 0,
+        ]);
+
+        return count($intersect) > 0;
     }
 
     public function esAdmin()
     {
-        return $this->hasRole('admin');
+        return $this->role && $this->role->nombre === 'admin';
     }
 
     public function esTecnico()
     {
-        return $this->hasRole('tecnico');
+        return $this->role && $this->role->nombre === 'tecnico';
     }
 
     // Métodos existentes
