@@ -43,11 +43,13 @@
                             <label for="centro_medico_id"
                                 class="block text-zinc-700 dark:text-zinc-200 font-semibold mb-1">Centro médico /
                                 Sucursal</label>
+
                             <select id="centro_medico_id" name="centro_medico_id"
                                 class="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring focus:border-blue-400"
                                 required>
                                 <option value="">Seleccione un cliente primero</option>
                             </select>
+
                             @error('centro_medico_id')
                                 <div class="text-red-500 text-sm mt-1">{{ $message }}</div>
                             @enderror
@@ -67,20 +69,34 @@
                             @enderror
                         </div>
 
+                        <label for="estado"
+                            class="block text-zinc-700 dark:text-zinc-200 font-semibold mb-1">Estado</label>
+                        <select name="estado" id="estado"
+                            class="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring focus:border-blue-400">
+                            <option value="">—</option>
+                            @foreach (['Operativo', 'En observacion', 'Fuera de servicio', 'Baja'] as $e)
+                                <option value="{{ $e }}" @selected(old('estado', $equipo->estado ?? '') === $e)>{{ $e }}
+                                </option>
+                            @endforeach
+                        </select>
+                        @error('estado')
+                            <div class="text-red-500 text-sm mt-1">{{ $message }}</div>
+                        @enderror
+
                         <div>
-                            <label for="estado"
-                                class="block text-zinc-700 dark:text-zinc-200 font-semibold mb-1">Estado</label>
-                            <select name="estado" id="estado"
+                            <label for="cant_dias_fuera_serv"
+                                class="block text-zinc-700 dark:text-zinc-200 font-semibold mb-1">
+                                Días fuera de servicio
+                            </label>
+                            <input type="number" min="0" max="365" name="cant_dias_fuera_serv"
+                                id="cant_dias_fuera_serv"
+                                value="{{ old('cant_dias_fuera_serv', $equipo->cant_dias_fuera_serv ?? '') }}"
                                 class="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring focus:border-blue-400">
-                                <option value="">—</option>
-                                <option value="operativo" @selected(old('estado') === 'operativo')>Operativo</option>
-                                <option value="mantenimiento" @selected(old('estado') === 'mantenimiento')>Mantenimiento</option>
-                                <option value="baja" @selected(old('estado') === 'baja')>Baja</option>
-                            </select>
-                            @error('estado')
+                            @error('cant_dias_fuera_serv')
                                 <div class="text-red-500 text-sm mt-1">{{ $message }}</div>
                             @enderror
                         </div>
+
                     </div>
 
                     {{-- Marca / Modelo / SKU --}}
@@ -104,14 +120,17 @@
                             @enderror
                         </div>
                         <div>
-                            <label for="sku" class="block text-zinc-700 dark:text-zinc-200 font-semibold mb-1">SKU
-                                (interno)</label>
-                            <input name="sku" id="sku" value="{{ old('sku') }}"
-                                class="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring focus:border-blue-400">
-                            @error('sku')
+                            <label for="codigo" class="block text-zinc-700 dark:text-zinc-200 font-semibold mb-1">
+                                Código (interno)
+                            </label>
+                            <input name="codigo" id="codigo" value="{{ old('codigo', $equipo->codigo ?? '') }}"
+                                class="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring focus:border-blue-400"
+                                maxlength="80" required>
+                            @error('codigo')
                                 <div class="text-red-500 text-sm mt-1">{{ $message }}</div>
                             @enderror
                         </div>
+
                     </div>
 
                     {{-- ID máquina / Nº serie / Horas uso --}}
@@ -127,7 +146,8 @@
                         </div>
                         <div>
                             <label for="numero_serie"
-                                class="block text-zinc-700 dark:text-zinc-200 font-semibold mb-1">Nº serie</label>
+                                class="block text-zinc-700 dark:text-zinc-200 font-semibold mb-1">Nº
+                                serie</label>
                             <input name="numero_serie" id="numero_serie" value="{{ old('numero_serie') }}"
                                 class="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring focus:border-blue-400">
                             @error('numero_serie')
@@ -136,7 +156,8 @@
                         </div>
                         <div>
                             <label for="horas_uso"
-                                class="block text-zinc-700 dark:text-zinc-200 font-semibold mb-1">Horas de uso</label>
+                                class="block text-zinc-700 dark:text-zinc-200 font-semibold mb-1">Horas de
+                                uso</label>
                             <input type="number" min="0" name="horas_uso" id="horas_uso"
                                 value="{{ old('horas_uso', 0) }}"
                                 class="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring focus:border-blue-400">
@@ -170,32 +191,15 @@
                                 <div class="text-red-500 text-sm mt-1">{{ $message }}</div>
                             @enderror
                         </div>
-                        <div>
-                            <label for="tipo_mantencion"
-                                class="block text-zinc-700 dark:text-zinc-200 font-semibold mb-1">Tipo
-                                mantención</label>
-                            <select name="tipo_mantencion" id="tipo_mantencion"
-                                class="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring focus:border-blue-400">
-                                <option value="">—</option>
-                                @foreach (['T1', 'T2', 'T3', 'T4'] as $t)
-                                    <option value="{{ $t }}" @selected(old('tipo_mantencion') === $t)>
-                                        {{ $t }}</option>
-                                @endforeach
-                            </select>
-                            @error('tipo_mantencion')
-                                <div class="text-red-500 text-sm mt-1">{{ $message }}</div>
-                            @enderror
-                        </div>
-                    </div>
-
-                    {{-- Imagen --}}
-                    <div>
-                        <label for="imagen" class="block text-zinc-700 dark:text-zinc-200 font-semibold mb-1">Imagen
-                            (URL)</label>
-                        <input name="imagen" id="imagen" value="{{ old('imagen') }}"
-                            class="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring focus:border-blue-400"
-                            placeholder="https://...">
-                        @error('imagen')
+                        <select name="tipo_mantencion" id="tipo_mantencion"
+                            class="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring focus:border-blue-400">
+                            <option value="">—</option>
+                            @foreach (['T1', 'T2', 'T3'] as $t)
+                                <option value="{{ $t }}" @selected(old('tipo_mantencion', $equipo->tipo_mantencion ?? '') === $t)>{{ $t }}
+                                </option>
+                            @endforeach
+                        </select>
+                        @error('tipo_mantencion')
                             <div class="text-red-500 text-sm mt-1">{{ $message }}</div>
                         @enderror
                     </div>
@@ -230,25 +234,29 @@
                 const clienteSel = document.getElementById('cliente_id');
                 const centroSel = document.getElementById('centro_medico_id');
 
-                function resetSelect(sel, ph) {
+                function resetSelect(sel, placeholder) {
                     sel.innerHTML = '';
                     const o = document.createElement('option');
                     o.value = '';
-                    o.textContent = ph;
+                    o.textContent = placeholder;
                     sel.appendChild(o);
                 }
 
-                // Cargar centros según cliente
-                clienteSel?.addEventListener('change', async () => {
-                    resetSelect(centroSel, '-- Selecciona centro --');
-                    if (!clienteSel.value) return;
+                async function cargarCentros(clienteId) {
+                    resetSelect(centroSel, '— Seleccione un centro —');
+                    if (!clienteId) return;
 
                     try {
                         const url = `{{ route('api.clientes.centros', ['cliente' => 'CID']) }}`.replace('CID',
-                            clienteSel.value);
-                        const res = await fetch(url);
-                        const data = await res.json();
+                            clienteId);
+                        const res = await fetch(url, {
+                            headers: {
+                                'Accept': 'application/json'
+                            }
+                        });
+                        if (!res.ok) throw new Error('Error de red');
 
+                        const data = await res.json();
                         data.forEach(c => {
                             const o = document.createElement('option');
                             o.value = c.id;
@@ -257,24 +265,32 @@
                         });
                     } catch (e) {
                         console.error(e);
+                        resetSelect(centroSel, 'No se pudieron cargar centros');
                     }
+                }
+
+                // Cambio de cliente => cargar centros
+                clienteSel?.addEventListener('change', async () => {
+                    await cargarCentros(clienteSel.value);
                 });
 
-                // Si hubo old('cliente_id'), dispara el change para repoblar centros
-                @if (old('cliente_id'))
-                    document.addEventListener('DOMContentLoaded', () => {
-                        const evt = new Event('change');
-                        clienteSel.dispatchEvent(evt);
-                        // Luego selecciona old('centro_medico_id') si existe
-                        const oldCentro = "{{ old('centro_medico_id') }}";
+                // Re-llenado si venimos de validación fallida
+                document.addEventListener('DOMContentLoaded', async () => {
+                    const oldCliente = "{{ old('cliente_id') }}";
+                    const oldCentro = "{{ old('centro_medico_id') }}";
+
+                    if (oldCliente) {
+                        // Carga y luego selecciona el centro viejo si existe
+                        await cargarCentros(oldCliente);
                         if (oldCentro) {
-                            // pequeño delay para esperar el fetch
-                            setTimeout(() => {
-                                centroSel.value = oldCentro;
-                            }, 300);
+                            centroSel.value = oldCentro;
+                            // Si no existe en la lista (cambio de datos), deja placeholder
+                            if (!centroSel.value) {
+                                resetSelect(centroSel, '— Seleccione un centro —');
+                            }
                         }
-                    });
-                @endif
+                    }
+                });
             })();
         </script>
     @endpush

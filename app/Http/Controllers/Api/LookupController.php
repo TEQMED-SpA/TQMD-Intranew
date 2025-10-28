@@ -13,8 +13,8 @@ class LookupController extends Controller
     public function centrosPorCliente(Request $request, Cliente $cliente)
     {
         $centros = CentroMedico::where('cliente_id', $cliente->id)
-            ->orderBy('centro_dialisis')
-            ->get(['id as id', 'centro_dialisis as nombre']);
+            ->orderBy('nombre')
+            ->get(['id as id', 'nombre as nombre']);
         return response()->json($centros);
     }
 
