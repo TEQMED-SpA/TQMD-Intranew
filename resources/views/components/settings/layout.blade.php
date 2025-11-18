@@ -7,6 +7,10 @@
             <flux:navlist.item icon="lock-closed" :href="route('settings.password')" wire:navigate>{{ __('Contraseña') }}
             </flux:navlist.item>
             <flux:menu.separator />
+            <flux:navlist.item icon="shield-check" :href="route('settings.security')" wire:navigate>
+                {{ __('Seguridad') }}
+            </flux:navlist.item>
+            <flux:menu.separator />
             <flux:navlist.item icon="paint-brush" :href="route('settings.appearance')" wire:navigate>
                 {{ __('Apariencia') }}
             </flux:navlist.item>

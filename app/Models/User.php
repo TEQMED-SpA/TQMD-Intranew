@@ -7,10 +7,12 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Str;
+use Laragear\WebAuthn\WebAuthnAuthentication;
+use App\Models\Passkey;
 
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, WebAuthnAuthentication;
 
     protected $fillable = [
         'name',
@@ -18,12 +20,18 @@ class User extends Authenticatable
         'password',
         'rol_id',
         'avatar',
-        'activo'
+        'activo',
+        'two_factor_secret',
+        'two_factor_recovery_codes',
+        'two_factor_confirmed_at',
+        'last_passkey_at',
     ];
 
     protected $hidden = [
         'password',
         'remember_token',
+        'two_factor_secret',
+        'two_factor_recovery_codes',
     ];
 
     protected function casts(): array
@@ -31,8 +39,25 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
-            'activo' => 'boolean'
+            'activo' => 'boolean',
+            'two_factor_confirmed_at' => 'datetime',
+            'last_passkey_at' => 'datetime',
         ];
+    }
+
+    public function passkeys()
+    {
+        return $this->hasMany(Passkey::class);
+    }
+
+    public function hasTwoFactorEnabled(): bool
+    {
+        return ! is_null($this->two_factor_confirmed_at) && ! empty($this->two_factor_secret);
+    }
+
+    public function markTwoFactorAsVerified(): void
+    {
+        $this->forceFill(['two_factor_confirmed_at' => now()])->save();
     }
 
     // Relación principal con Role
