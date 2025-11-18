@@ -160,8 +160,9 @@
 
                 {{-- Grupo: Utilidades --}}
                 <flux:navlist.group :heading="__('Utilidades')" class="grid">
-                    <flux:navlist.item icon="document-text" href="#" :current="false">
-                        {{ __('Reportes') }}
+                    <flux:navlist.item icon="document-text" href="{{ route('informes.index') }}"
+                        :current="request()->routeIs('informes.*')" wire:navigate>
+                        {{ __('Informes') }}
                     </flux:navlist.item>
                 </flux:navlist.group>
 

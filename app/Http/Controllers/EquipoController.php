@@ -12,7 +12,7 @@ class EquipoController extends Controller
 {
     public function index(Request $r)
     {
-        $query = \App\Models\Equipo::query();
+        $query = Equipo::query();
 
         if ($r->filled('tipo_mantencion')) {
             $query->where('tipo_mantencion', $r->tipo_mantencion);
@@ -29,8 +29,7 @@ class EquipoController extends Controller
             }
         }
 
-        // 👇 NO usar 'cliente' directo
-        $q = \App\Models\Equipo::with(['centro', 'centro.cliente'])
+        $q = Equipo::with(['centro', 'centro.cliente'])
             ->when(
                 $r->filled('cliente_id'),
                 fn($qq) =>
@@ -55,13 +54,12 @@ class EquipoController extends Controller
             })
             ->orderByDesc('id');
 
-        $equipos  = $q->paginate(20)->withQueryString();
-        $clientes = \App\Models\Cliente::orderBy('nombre')->get(['id', 'nombre']);
-        $centros_medicos = \App\Models\CentroMedico::orderBy('nombre')->get(['id', 'nombre', 'cliente_id']);
+        $equipos         = $q->paginate(20)->withQueryString();
+        $clientes        = Cliente::orderBy('nombre')->get(['id', 'nombre']);
+        $centros_medicos = CentroMedico::orderBy('nombre')->get(['id', 'nombre', 'cliente_id']);
 
         return view('equipos.index', compact('equipos', 'clientes', 'centros_medicos'));
     }
-
 
     public function show(Equipo $equipo)
     {
@@ -71,7 +69,7 @@ class EquipoController extends Controller
 
     public function create()
     {
-        $clientes = Cliente::orderBy('nombre')->get(['id', 'nombre']);
+        $clientes        = Cliente::orderBy('nombre')->get(['id', 'nombre']);
         $centros_medicos = CentroMedico::orderBy('nombre')->get(['id', 'nombre', 'cliente_id']);
         return view('equipos.create', compact('clientes', 'centros_medicos'));
     }
@@ -79,68 +77,68 @@ class EquipoController extends Controller
     public function store(Request $r)
     {
         $data = $r->validate([
-            'cliente_id'         => 'required|exists:clientes,id',         // Solo para validar coherencia
-            'centro_medico_id'   => 'required|exists:centros_medicos,id',
-            'codigo'             => ['required', 'string', 'max:80', Rule::unique('equipos', 'codigo')],
-            'nombre'             => 'required|string|max:150',
-            'modelo'             => 'nullable|string|max:100',
-            'marca'              => 'nullable|string|max:100',
-            'id_maquina'         => 'nullable|string|max:100',
-            'numero_serie'       => 'nullable|string|max:120',
-            'horas_uso'          => 'nullable|integer|min:0',
-            'estado'             => ['nullable', Rule::in(['Operativo', 'En observacion', 'Fuera de servicio', 'Baja'])],
+            'cliente_id'           => 'required|exists:clientes,id', // Solo para validar coherencia
+            'centro_medico_id'     => 'required|exists:centros_medicos,id',
+            'codigo'               => ['required', 'string', 'max:80', Rule::unique('equipos', 'codigo')],
+            'nombre'               => 'required|string|max:150',
+            'modelo'               => 'nullable|string|max:100',
+            'marca'                => 'nullable|string|max:100',
+            'id_maquina'           => 'nullable|string|max:100',
+            'numero_serie'         => 'nullable|string|max:120',
+            'horas_uso'            => 'nullable|integer|min:0',
+            'estado'               => ['nullable', Rule::in(['Operativo', 'En observacion', 'Fuera de servicio', 'Baja'])],
             'cant_dias_fuera_serv' => 'nullable|integer|min:0|max:365',
-            'descripcion'        => 'nullable|string',
-            'ultima_mantencion'  => 'nullable|date',
-            'proxima_mantencion' => 'nullable|date|after_or_equal:ultima_mantencion',
-            'tipo_mantencion'    => ['nullable', Rule::in(['T1', 'T2', 'T3'])],
+            'descripcion'          => 'nullable|string',
+            'ultima_mantencion'    => 'nullable|date',
+            'proxima_mantencion'   => 'nullable|date|after_or_equal:ultima_mantencion',
+            'tipo_mantencion'      => ['nullable', Rule::in(['T1', 'T2', 'T3'])],
         ]);
 
-        // Coherencia: el centro pertenece al cliente
         $centro = CentroMedico::findOrFail($data['centro_medico_id']);
-        if ((int)$centro->cliente_id !== (int)$data['cliente_id']) {
+        if ((int) $centro->cliente_id !== (int) $data['cliente_id']) {
             return back()->withInput()->with('error', 'El centro seleccionado no pertenece al cliente.');
         }
 
-        unset($data['cliente_id']); // no existe en la tabla
+        unset($data['cliente_id']); // no existe en la tabla equipos
 
         Equipo::create($data);
 
         return redirect()->route('equipos.index')->with('success', 'Equipo creado');
     }
 
-    public function edit(\App\Models\Equipo $equipo)
+    public function edit(Equipo $equipo)
     {
-        $equipo->load(['centro', 'centro.cliente']); // opcional
-        $clientes = \App\Models\Cliente::orderBy('nombre')->get(['id', 'nombre']);
-        $centros_medicos = \App\Models\CentroMedico::where('cliente_id', optional($equipo->centro)->cliente_id)
-            ->orderBy('nombre')->get(['id', 'nombre']);
+        $equipo->load(['centro', 'centro.cliente']);
+        $clientes        = Cliente::orderBy('nombre')->get(['id', 'nombre']);
+        $centros_medicos = CentroMedico::where('cliente_id', optional($equipo->centro)->cliente_id)
+            ->orderBy('nombre')
+            ->get(['id', 'nombre']);
+
         return view('equipos.edit', compact('equipo', 'clientes', 'centros_medicos'));
     }
-
 
     public function update(Request $r, Equipo $equipo)
     {
         $data = $r->validate([
-            'cliente_id'         => 'required|exists:clientes,id',
-            'centro_medico_id'   => 'required|exists:centros_medicos,id',
-            'codigo'             => ['required', 'string', 'max:80', Rule::unique('equipos', 'codigo')->ignore($equipo->id)],
-            'nombre'             => 'required|string|max:150',
-            'modelo'             => 'nullable|string|max:100',
-            'marca'              => 'nullable|string|max:100',
-            'id_maquina'         => 'nullable|string|max:100',
-            'numero_serie'       => 'nullable|string|max:120',
-            'horas_uso'          => 'nullable|integer|min:0',
-            'estado'             => ['nullable', Rule::in(['Operativo', 'En observacion', 'Fuera de servicio', 'Baja'])],
+            'cliente_id'           => 'required|exists:clientes,id',
+            'centro_medico_id'     => 'required|exists:centros_medicos,id',
+            'codigo'               => ['required', 'string', 'max:80', Rule::unique('equipos', 'codigo')->ignore($equipo->id)],
+            'nombre'               => 'required|string|max:150',
+            'modelo'               => 'nullable|string|max:100',
+            'marca'                => 'nullable|string|max:100',
+            'id_maquina'           => 'nullable|string|max:100',
+            'numero_serie'         => 'nullable|string|max:120',
+            'horas_uso'            => 'nullable|integer|min:0',
+            'estado'               => ['nullable', Rule::in(['Operativo', 'En observacion', 'Fuera de servicio', 'Baja'])],
             'cant_dias_fuera_serv' => 'nullable|integer|min:0|max:365',
-            'descripcion'        => 'nullable|string',
-            'ultima_mantencion'  => 'nullable|date',
-            'proxima_mantencion' => 'nullable|date|after_or_equal:ultima_mantencion',
-            'tipo_mantencion'    => ['nullable', Rule::in(['T1', 'T2', 'T3'])],
+            'descripcion'          => 'nullable|string',
+            'ultima_mantencion'    => 'nullable|date',
+            'proxima_mantencion'   => 'nullable|date|after_or_equal:ultima_mantencion',
+            'tipo_mantencion'      => ['nullable', Rule::in(['T1', 'T2', 'T3'])],
         ]);
 
         $centro = CentroMedico::findOrFail($data['centro_medico_id']);
-        if ((int)$centro->cliente_id !== (int)$data['cliente_id']) {
+        if ((int) $centro->cliente_id !== (int) $data['cliente_id']) {
             return back()->withInput()->with('error', 'El centro seleccionado no pertenece al cliente.');
         }
 
@@ -149,6 +147,43 @@ class EquipoController extends Controller
         $equipo->update($data);
 
         return redirect()->route('equipos.show', $equipo)->with('success', 'Equipo actualizado');
+    }
+
+    /**
+     * ==========================================
+     *  EQUIPOS POR CENTRO (para selects AJAX)
+     *  GET /centros/{centro}/equipos
+     * ==========================================
+     */
+    public function porCentro(CentroMedico $centro)
+    {
+        $equipos = $centro->equipos()
+            ->orderBy('nombre')
+            ->get()
+            ->map(function ($e) {
+                return [
+                    'id'           => $e->id,
+                    'nombre'       => $e->nombre,
+                    'codigo'       => $e->codigo,
+                    'modelo'       => $e->modelo,
+                    'marca'        => $e->marca,
+                    'horas_uso'    => $e->horas_uso,
+                    'numero_serie' => $e->numero_serie,
+                ];
+            });
+
+        return response()->json($equipos);
+    }
+
+    /**
+     * Horas de uso (AJAX)
+     * GET /equipos/{equipo}/horas-uso
+     */
+    public function horasUso(Equipo $equipo)
+    {
+        return response()->json([
+            'horas_uso' => $equipo->horas_uso,
+        ]);
     }
 
     public function destroy(Equipo $equipo)

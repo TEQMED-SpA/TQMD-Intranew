@@ -51,8 +51,9 @@
                         </div>
 
                         <div class="grid grid-cols-2 gap-4">
-                            <h3 class="text-lg font-bold text-zinc-800 dark:text-white mb-4 flex items-center gap-2 mt-2">
-                                <i class="fa fa-phone text-green-500"></i>  Datos de Contacto
+                            <h3
+                                class="text-lg font-bold text-zinc-800 dark:text-white mb-4 flex items-center gap-2 mt-2">
+                                <i class="fa fa-phone text-green-500"></i> Datos de Contacto
                             </h3>
                             <div class="mb-4">
                                 <label class="block text-zinc-700 dark:text-zinc-200 font-semibold mb-1">Email</label>
@@ -73,9 +74,6 @@
                                 @enderror
                             </div>
                         </div>
-
-
-
 
                         <div class="mt-6 flex justify-end gap-3">
                             <button

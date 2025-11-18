@@ -85,18 +85,29 @@
                     </thead>
                     <tbody>
                         @forelse($repuestos as $repuesto)
-                            <tr class="{{ $tableRowClass }}">
-                                <td class="p-3 text-zinc-900 dark:text-zinc-100 font-medium">
+                            <tr
+                                class="even:bg-zinc-100 odd:bg-white dark:even:bg-zinc-800 dark:odd:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-700 transition-all hover:bg-zinc-200/40 dark:hover:bg-zinc-700/30">
+                                <td
+                                    class="p-3 border-r border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 font-medium">
                                     {{ $repuesto->nombre }}
                                 </td>
-                                <td class="p-3 text-zinc-900 dark:text-zinc-300">{{ $repuesto->modelo }}</td>
-                                <td class="p-3 text-zinc-900 dark:text-zinc-300">{{ $repuesto->marca }}</td>
-                                <td class="p-3 text-zinc-900 dark:text-zinc-300">{{ $repuesto->ubicacion ?? 'N/A' }}
+                                <td
+                                    class="p-3 border-r border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-300">
+                                    {{ $repuesto->modelo }}
                                 </td>
-                                <td class="p-3 text-zinc-900 dark:text-zinc-300">
+                                <td
+                                    class="p-3 border-r border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-300">
+                                    {{ $repuesto->marca }}
+                                </td>
+                                <td
+                                    class="p-3 border-r border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-300">
+                                    {{ $repuesto->ubicacion ?? 'N/A' }}
+                                </td>
+                                <td
+                                    class="p-3 border-r border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-300">
                                     {{ $repuesto->estado?->nombre ?? 'Desconocido' }}
                                 </td>
-                                <td class="p-3">
+                                <td class="p-3 border-r border-zinc-200 dark:border-zinc-700">
                                     @php
                                         $stockClass = '';
                                         if ($repuesto->stock < 10) {
@@ -115,11 +126,13 @@
                                         {{ $repuesto->stock }} uds.
                                     </span>
                                 </td>
-                                <td class="p-3 text-zinc-900 dark:text-zinc-300">
+                                <td
+                                    class="p-3 border-r border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-300">
                                     {{ $repuesto->categoria?->nombre ?? 'Sin categoría' }}
                                 </td>
                                 <td class="p-3 text-center">
                                     <div class="flex items-center justify-center gap-2">
+                                        {{-- Botones de acción igual que antes --}}
                                         <a href="{{ route('repuestos.show', $repuesto) }}"
                                             class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-blue-500 hover:bg-blue-600 text-white transition-colors duration-200"
                                             title="Ver">

@@ -21,6 +21,8 @@ use App\Http\Controllers\TicketController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\PrivilegioController;
 use App\Http\Controllers\InventarioTecnicoController;
+use App\Http\Controllers\InformesController;
+
 
 // ---------------------------------------------------------
 // Redirección inicial
@@ -233,7 +235,51 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('centros_medicos', CentroMedicoController::class)
         ->only(['index', 'show'])
         ->middleware(['privilege:ver_centros_medicos']);
+
+    // -----------------------------------------------------
+    // Informes
+    // -----------------------------------------------------
+
+    Route::get('/informes', [InformesController::class, 'index'])
+        ->name('informes.index');
+
+    Route::get('/informes/create', [InformesController::class, 'create'])
+        ->name('informes.create');
+
+    // Correctivo
+    Route::post('/informes/correctivo', [InformesController::class, 'storeCorrectivo'])
+        ->name('informes.correctivo.store');
+
+    Route::get('/informes/correctivo/{id}', [InformesController::class, 'showCorrectivo'])
+        ->name('informes.correctivo.show');
+
+    // Preventivo
+    Route::post('/informes/preventivo', [InformesController::class, 'storePreventivo'])
+        ->name('informes.preventivo.store');
+
+    Route::get('/informes/preventivo/{id}', [InformesController::class, 'showPreventivo'])
+        ->name('informes.preventivo.show');
+
+    // ---------- RUTAS UNIFICADAS PARA PDF ----------
+    // tipo = 'correctivo' o 'preventivo'
+    Route::get('/informes/{tipo}/{id}/download', [InformesController::class, 'downloadPdf'])
+        ->name('informes.download');
+
+    Route::get('/informes/{tipo}/{id}/print', [InformesController::class, 'printPdf'])
+        ->name('informes.print');
+
+    Route::get('/clientes/{cliente}/centros', [CentroMedicoController::class, 'porCliente']);
+    Route::get('/centros-medicos/{centro}/equipos', [EquipoController::class, 'porCentro'])
+        ->name('centros-medicos.equipos');
+    Route::get('/equipos/{equipo}/horas-uso', [EquipoController::class, 'horasUso'])
+        ->name('equipos.horas-uso');
+    Route::get('/clientes/{cliente}/centros', [CentroMedicoController::class, 'porCliente'])
+        ->name('clientes.centros');
+    Route::get('/centros/{centro}/equipos', [EquipoController::class, 'porCentro'])
+        ->name('centros.equipos');
 });
+
+
 
 // ---------------------------------------------------------
 // Auth scaffolding
