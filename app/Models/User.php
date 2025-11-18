@@ -18,7 +18,12 @@ class User extends Authenticatable
         'password',
         'rol_id',
         'avatar',
-        'activo'
+        'activo',
+        'two_factor_secret',
+        'two_factor_recovery_codes',
+        'two_factor_confirmed_at',
+        'two_factor_enabled',
+        'passkey_preferred',
     ];
 
     protected $hidden = [
@@ -31,8 +36,18 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
-            'activo' => 'boolean'
+            'activo' => 'boolean',
+            'two_factor_confirmed_at' => 'datetime',
+            'two_factor_enabled' => 'boolean',
+            'passkey_preferred' => 'boolean',
+            'two_factor_secret' => 'encrypted',
+            'two_factor_recovery_codes' => 'encrypted',
         ];
+    }
+
+    public function passkeys()
+    {
+        return $this->hasMany(Passkey::class);
     }
 
     // Relación principal con Role
@@ -84,5 +99,10 @@ class User extends Authenticatable
     public function sendPasswordResetNotification($token)
     {
         $this->notify(new ResetPasswordNotification($token));
+    }
+
+    public function hasEnabledTwoFactor(): bool
+    {
+        return (bool) $this->two_factor_enabled && ! empty($this->two_factor_secret);
     }
 }

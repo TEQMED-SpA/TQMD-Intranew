@@ -43,6 +43,14 @@ class Login extends Component
         RateLimiter::clear($this->throttleKey());
         Session::regenerate();
 
+        if (Auth::user()?->hasEnabledTwoFactor()) {
+            Session::put('two_factor_passed', false);
+
+            $this->redirectIntended(default: route('two-factor.challenge', absolute: false), navigate: true);
+
+            return;
+        }
+
         $this->redirectIntended(default: route('dashboard', absolute: false), navigate: true);
     }
 

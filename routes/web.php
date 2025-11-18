@@ -20,6 +20,9 @@ use App\Http\Controllers\CategoriaLlamadoController;
 use App\Http\Controllers\TicketController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\PrivilegioController;
+use App\Http\Controllers\SecurityController;
+use App\Http\Controllers\PasskeyController;
+use App\Http\Controllers\Auth\TwoFactorController;
 use App\Http\Controllers\InventarioTecnicoController;
 
 // ---------------------------------------------------------
@@ -52,13 +55,23 @@ Route::pattern('solicitud', '[0-9]+');
 // ---------------------------------------------------------
 // ZONA PRIVADA
 // ---------------------------------------------------------
-Route::middleware(['auth'])->group(function () {
+Route::middleware(['auth', 'twofactor'])->group(function () {
 
     // Settings
     Route::redirect('settings', 'settings/profile');
     Route::get('settings/profile', Profile::class)->name('settings.profile');
     Route::get('settings/password', Password::class)->name('settings.password');
     Route::get('settings/appearance', Appearance::class)->name('settings.appearance');
+    Route::get('settings/security', SecurityController::class)->name('settings.security');
+
+    // Seguridad: Passkeys y 2FA
+    Route::post('two-factor/enable', [TwoFactorController::class, 'enable'])->name('two-factor.enable');
+    Route::post('two-factor/recovery', [TwoFactorController::class, 'regenerateRecoveryCodes'])->name('two-factor.recovery');
+    Route::delete('two-factor/disable', [TwoFactorController::class, 'disable'])->name('two-factor.disable');
+
+    Route::post('passkeys/options', [PasskeyController::class, 'options'])->name('passkeys.options');
+    Route::post('passkeys', [PasskeyController::class, 'store'])->name('passkeys.store');
+    Route::delete('passkeys/{passkey}', [PasskeyController::class, 'destroy'])->name('passkeys.destroy');
 
     // Endpoints JSON (selects dependientes)
     Route::get('/api/clientes/{cliente}/centros', [\App\Http\Controllers\Api\LookupController::class, 'centrosPorCliente'])
