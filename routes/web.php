@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Log;
 use App\Livewire\Settings\Appearance;
 use App\Livewire\Settings\Password;
 use App\Livewire\Settings\Profile;
+use App\Livewire\Settings\Security;
 
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\ClienteController;
@@ -21,6 +22,7 @@ use App\Http\Controllers\TicketController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\PrivilegioController;
 use App\Http\Controllers\InventarioTecnicoController;
+use App\Http\Controllers\Security\PasskeyController;
 
 // ---------------------------------------------------------
 // Redirección inicial
@@ -52,13 +54,20 @@ Route::pattern('solicitud', '[0-9]+');
 // ---------------------------------------------------------
 // ZONA PRIVADA
 // ---------------------------------------------------------
-Route::middleware(['auth'])->group(function () {
+Route::middleware(['auth', 'twofactor'])->group(function () {
 
     // Settings
     Route::redirect('settings', 'settings/profile');
     Route::get('settings/profile', Profile::class)->name('settings.profile');
     Route::get('settings/password', Password::class)->name('settings.password');
     Route::get('settings/appearance', Appearance::class)->name('settings.appearance');
+    Route::get('settings/security', Security::class)->name('settings.security');
+
+    // Passkeys
+    Route::post('/passkeys/options', [PasskeyController::class, 'options'])->name('passkeys.options');
+    Route::post('/passkeys', [PasskeyController::class, 'store'])->name('passkeys.store');
+    Route::get('/passkeys', [PasskeyController::class, 'index'])->name('passkeys.index');
+    Route::delete('/passkeys/{passkey}', [PasskeyController::class, 'destroy'])->name('passkeys.destroy');
 
     // Endpoints JSON (selects dependientes)
     Route::get('/api/clientes/{cliente}/centros', [\App\Http\Controllers\Api\LookupController::class, 'centrosPorCliente'])

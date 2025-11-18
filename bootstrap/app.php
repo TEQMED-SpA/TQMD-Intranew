@@ -16,6 +16,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'role' => \App\Http\Middleware\RoleMiddleware::class,
             'privilege' => \App\Http\Middleware\PrivilegeMiddleware::class,
+            'twofactor' => \App\Http\Middleware\EnsureTwoFactorConfirmed::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
