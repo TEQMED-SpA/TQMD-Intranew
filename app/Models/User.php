@@ -67,6 +67,12 @@ class User extends Authenticatable
         return $this->belongsTo(Role::class, 'rol_id');
     }
 
+    // Alias para compatibilidad con consultas que esperan "rol"
+    public function rol()
+    {
+        return $this->role();
+    }
+
     public function tienePrivilegio($privilegios)
     {
         $privilegios = is_array($privilegios) ? $privilegios : [$privilegios];
@@ -86,14 +92,33 @@ class User extends Authenticatable
         return count($intersect) > 0;
     }
 
+    public function hasRole($roles): bool
+    {
+        if (! $this->role) {
+            return false;
+        }
+
+        $roles = is_array($roles) ? $roles : func_get_args();
+
+        return collect($roles)
+            ->filter()
+            ->map(fn($role) => strtolower($role))
+            ->contains(strtolower($this->role->nombre));
+    }
+
+    public function isAdmin(): bool
+    {
+        return $this->hasRole('admin');
+    }
+
     public function esAdmin()
     {
-        return $this->role && $this->role->nombre === 'admin';
+        return $this->isAdmin();
     }
 
     public function esTecnico()
     {
-        return $this->role && $this->role->nombre === 'tecnico';
+        return $this->hasRole('tecnico');
     }
 
     // Métodos existentes
