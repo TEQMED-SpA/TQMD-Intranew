@@ -1,4 +1,4 @@
-name: linter
+name: Quality
 
 on:
   push:
@@ -17,29 +17,53 @@ jobs:
   quality:
     runs-on: ubuntu-latest
     environment: Testing
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.4'
+          php-version: '8.4' # usa la que necesites: 8.2 / 8.3 / 8.4
+          extensions: mbstring, intl, pdo, pdo_mysql, bcmath
+          coverage: none
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 'lts/*'
 
       - name: Add Flux Credentials Loaded From ENV
         run: composer config http-basic.composer.fluxui.dev "${{ secrets.FLUX_USERNAME }}" "${{ secrets.FLUX_LICENSE_KEY }}"
 
-      - name: Install Dependencies
+      - name: Install PHP Dependencies
         run: |
           composer install -q --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist
+
+      - name: Install Node Dependencies
+        run: |
           npm install
+
+      # Opcional pero MUY recomendable para correr tests de Laravel
+      - name: Prepare Laravel Environment
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+          touch database/database.sqlite
+          php artisan migrate --force
 
       - name: Run Pint
         run: vendor/bin/pint
 
+      - name: Run Tests
+        run: php artisan test
+
+      # Si quieres auto-commit de Pint, descomenta esto:
       # - name: Commit Changes
       #   uses: stefanzweifel/git-auto-commit-action@v5
       #   with:
-      #     commit_message: fix code style
+      #     commit_message: "chore: fix code style by Pint"
       #     commit_options: '--no-verify'
       #     file_pattern: |
       #       **/*
