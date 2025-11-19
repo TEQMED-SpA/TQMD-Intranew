@@ -102,7 +102,9 @@
 
     {{ $slot }}
 
-    @fluxScripts
+    @once('flux:assets')
+        @fluxScripts
+    @endonce
 </body>
 
 </html>

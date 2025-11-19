@@ -239,6 +239,7 @@ class InformesController extends Controller
             'condicion_equipo'    => 'required|in:operativo,en_observacion,fuera_de_servicio',
             'cliente_id'          => 'required|exists:clientes,id',
             'firma'               => 'required|string',
+            'firma_cliente'       => 'nullable|string',
             'horas_uso'           => 'required|integer|min:0',
         ], [
             'hora_cierre.after'         => 'La hora de cierre debe ser posterior a la hora de inicio.',
@@ -279,6 +280,7 @@ class InformesController extends Controller
                 'condicion_equipo'   => $request->condicion_equipo,
                 'usuario_id'         => Auth::id(),
                 'firma'              => $request->firma,
+                'firma_cliente'      => $request->firma_cliente,
             ]);
 
             // Actualizar horas de uso
@@ -348,6 +350,7 @@ class InformesController extends Controller
             'comentarios'           => 'nullable|string|max:500',
             'fecha_proximo_control' => 'nullable|date',
             'firma_tecnico'         => 'required|string',
+            'firma_cliente'         => 'nullable|string',
         ]);
 
         // Validar horas de operación
@@ -376,6 +379,7 @@ class InformesController extends Controller
                 'comentarios'             => $request->comentarios,
                 'fecha_proximo_control'   => $request->fecha_proximo_control,
                 'firma_tecnico'           => $request->firma_tecnico,
+                'firma_cliente'           => $request->firma_cliente,
             ]);
 
             // Actualizar horas de uso

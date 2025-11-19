@@ -137,9 +137,10 @@
                         {{ old('centro_medico_id') ? '' : 'disabled' }} {{-- deshabilitado si no hay centro --}} required>
                         <option value="">Selecciona un equipo…</option>
                         @foreach ($equipos as $equipo)
-                            <option value="{{ $equipo->id }}" @selected(old('equipo_id') == $equipo->id)>
+                            <option value="{{ $equipo->id }}" data-numero-serie="{{ $equipo->numero_serie ?? '' }}"
+                                data-horas-uso="{{ $equipo->horas_uso ?? '' }}" @selected(old('equipo_id') == $equipo->id)>
                                 ({{ $equipo->codigo }})
-                                - {{ $equipo->numero_serie }}
+                                - {{ $equipo->numero_serie ?? '—' }}
                             </option>
                         @endforeach
                     </select>
@@ -150,21 +151,25 @@
             </div>
 
             @php
-                // Valor por defecto para horas_operacion:
-                // 1) old('horas_operacion') si existe
-                // 2) si no, y hay old('equipo_id'), usar horas_uso del equipo seleccionado
+                // Valores por defecto para campos dependientes del equipo seleccionado
                 $horasOperacionValue = old('horas_operacion');
+                $numeroSerieValue = old('numero_serie');
 
-                if ($horasOperacionValue === null && old('equipo_id')) {
+                if (old('equipo_id')) {
                     $equipoSeleccionado = $equipos->firstWhere('id', old('equipo_id'));
-                    if ($equipoSeleccionado && !is_null($equipoSeleccionado->horas_uso)) {
-                        $horasOperacionValue = (int) $equipoSeleccionado->horas_uso;
+                    if ($equipoSeleccionado) {
+                        if ($horasOperacionValue === null && !is_null($equipoSeleccionado->horas_uso)) {
+                            $horasOperacionValue = (int) $equipoSeleccionado->horas_uso;
+                        }
+                        if ($numeroSerieValue === null) {
+                            $numeroSerieValue = $equipoSeleccionado->numero_serie;
+                        }
                     }
                 }
             @endphp
 
-            {{-- N° Inventario + Horas operación --}}
-            <div class="grid md:grid-cols-2 gap-4 mt-4">
+            {{-- N° Inventario + N° serie + Horas operación --}}
+            <div class="grid md:grid-cols-3 gap-4 mt-4">
                 {{-- N° inventario --}}
                 <div>
                     <label for="numero_inventario"
@@ -182,44 +187,18 @@
                     @enderror
                 </div>
 
-                {{-- Equipo --}}
-                <div>
-                    <label for="equipo_id"
-                        class="block text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase mb-1.5">
-                        Equipo
-                    </label>
-                    <select id="equipo_id" name="equipo_id"
-                        class="w-full px-3 py-2.5 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-zinc-50
-               dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 text-sm focus:outline-none
-               focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                        {{ old('centro_medico_id') ? '' : 'disabled' }} required>
-                        <option value="">Selecciona un equipo…</option>
-                        @foreach ($equipos as $equipo)
-                            <option value="{{ $equipo->id }}" data-numero-serie="{{ $equipo->numero_serie }}"
-                                @selected(old('equipo_id') == $equipo->id)>
-                                ({{ $equipo->codigo }})
-                                - {{ $equipo->numero_serie }}
-                            </option>
-                        @endforeach
-                    </select>
-                    @error('equipo_id')
-                        <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                    @enderror
-                </div>
-
-
                 {{-- Numero de serie --}}
                 <div>
-                    <label for="numero_serie"
+                    <label for="numero_serie_preventivo"
                         class="block text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase mb-1.5">
                         N° de Serie
                     </label>
-                    <input id="numero_serie" type="text" name="numero_serie" value="{{ old('numero_serie') }}"
-                        readonly
+                    <input id="numero_serie_preventivo" type="text" name="numero_serie"
+                        value="{{ $numeroSerieValue }}" readonly
                         class="w-full px-3 py-2.5 border border-zinc-300 dark:border-zinc-700 rounded-lg
                bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-sm
                focus:outline-none cursor-not-allowed"
-                        required>
+                        placeholder="Se completa al seleccionar el equipo">
                     @error('numero_serie')
                         <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                     @enderror
@@ -421,6 +400,55 @@
             @error('firma_tecnico')
                 <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
             @enderror
+        </div>
+
+        {{-- Firma cliente (opcional) --}}
+        @php
+            $mostrarFirmaCliente = old('firma_cliente');
+        @endphp
+        <div class="space-y-2">
+            <div class="flex items-center justify-between gap-3">
+                <h4 class="text-sm font-semibold text-zinc-700 dark:text-zinc-200 flex items-center gap-2">
+                    <span class="w-1 h-4 rounded-full bg-amber-500"></span>
+                    Firma del cliente (opcional)
+                </h4>
+                <button type="button" id="btn-toggle-firma-cliente"
+                    class="inline-flex items-center px-3 py-1.5 bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-200 text-xs font-semibold rounded-lg gap-2 transition hover:bg-amber-200 dark:hover:bg-amber-900/60"
+                    data-label-show="Agregar firma del cliente" data-label-hide="Ocultar firma del cliente">
+                    <i class="fa fa-user-pen text-[11px]"></i>
+                    <span id="btn-toggle-firma-cliente-text">
+                        {{ $mostrarFirmaCliente ? 'Ocultar firma del cliente' : 'Agregar firma del cliente' }}
+                    </span>
+                </button>
+            </div>
+
+            <div id="firma-cliente-wrapper" class="{{ $mostrarFirmaCliente ? '' : 'hidden' }}"
+                data-visible="{{ $mostrarFirmaCliente ? '1' : '0' }}">
+                <div
+                    class="border border-dashed border-zinc-300 dark:border-zinc-600 rounded-lg p-4 bg-zinc-50 dark:bg-zinc-900">
+                    <p class="text-xs text-zinc-600 dark:text-zinc-300 mb-2">
+                        La firma del representante del cliente es opcional. Úsala cuando corresponda.
+                    </p>
+                    <canvas id="signature-pad-preventivo-cliente"
+                        class="border border-zinc-200 dark:border-zinc-700 rounded bg-white"
+                        style="height: 160px; width: 100%;"></canvas>
+                    <div class="mt-3 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                        <button type="button" id="clear-signature-preventivo-cliente"
+                            class="inline-flex items-center px-3 py-1.5 bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300
+                                   dark:hover:bg-zinc-600 text-zinc-800 dark:text-zinc-50 text-xs font-medium rounded-lg transition">
+                            <i class="fa fa-eraser mr-2"></i> Limpiar firma
+                        </button>
+                        <p class="text-[11px] text-zinc-500 dark:text-zinc-400" id="firma-help-preventivo-cliente">
+                            La firma del cliente es opcional. Dibuja si corresponde.
+                        </p>
+                    </div>
+                </div>
+                <input type="hidden" name="firma_cliente" id="firma-input-preventivo-cliente"
+                    value="{{ old('firma_cliente') }}">
+                @error('firma_cliente')
+                    <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                @enderror
+            </div>
         </div>
 
         {{-- Acciones --}}
