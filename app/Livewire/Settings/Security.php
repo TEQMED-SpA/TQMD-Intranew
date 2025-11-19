@@ -4,6 +4,7 @@ namespace App\Livewire\Settings;
 
 use App\Services\TwoFactorService;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Session;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
@@ -24,8 +25,18 @@ class Security extends Component
         $this->twoFactorEnabled = $user->hasTwoFactorEnabled();
 
         if ($user->two_factor_secret) {
-            $this->secret = decrypt($user->two_factor_secret);
-            $this->qrCode = $twoFactor->qrcodeUrl($user, $this->secret);
+            try {
+                $this->secret = Crypt::decryptString($user->two_factor_secret);
+            } catch (\Throwable $e) {
+                // Si falla, dejamos el secreto en null y evitamos romper la vista
+                $this->secret = null;
+            }
+
+            if ($this->secret) {
+                $this->qrCode = $twoFactor->qrcodeUrl($user, $this->secret);
+            }
+
+            // Esto ya usa Crypt::decryptString internamente
             $this->recoveryCodes = $twoFactor->recoveryCodes($user);
         }
 
@@ -60,7 +71,12 @@ class Security extends Component
             return;
         }
 
-        $secret = decrypt($user->two_factor_secret);
+        try {
+            $secret = Crypt::decryptString($user->two_factor_secret);
+        } catch (\Throwable $e) {
+            $this->addError('code', __('No se pudo leer tu secreto 2FA, vuelve a generarlo.'));
+            return;
+        }
 
         if (! $twoFactor->verify($secret, $this->code)) {
             $this->addError('code', __('El código TOTP no es válido.'));
@@ -84,12 +100,21 @@ class Security extends Component
 
     public function regenerateRecoveryCodes(TwoFactorService $twoFactor): void
     {
-        if (! Auth::user()->two_factor_secret) {
+        $user = Auth::user();
+
+        if (! $user->two_factor_secret) {
+            return;
+        }
+
+        try {
+            $secret = Crypt::decryptString($user->two_factor_secret);
+        } catch (\Throwable $e) {
+            // No se puede regenerar si el secreto está corrupto
             return;
         }
 
         $codes = $twoFactor->generateRecoveryCodes();
-        $twoFactor->storeForUser(Auth::user(), decrypt(Auth::user()->two_factor_secret), $codes);
+        $twoFactor->storeForUser($user, $secret, $codes);
         $this->recoveryCodes = $codes;
     }
 

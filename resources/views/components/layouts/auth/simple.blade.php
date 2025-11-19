@@ -17,7 +17,6 @@
                 </div>
             </div>
         </div>
-        @fluxScripts
         @stack('scripts')
     </body>
 </html>

@@ -9,6 +9,7 @@ use App\Livewire\Settings\Profile;
 use App\Livewire\Settings\Security;
 
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\Auth\PasskeyLoginController;
 use App\Http\Controllers\ClienteController;
 use App\Http\Controllers\CentroMedicoController;
 use App\Http\Controllers\CategoriaRepuestoController;
@@ -23,6 +24,7 @@ use App\Http\Controllers\RoleController;
 use App\Http\Controllers\PrivilegioController;
 use App\Http\Controllers\InventarioTecnicoController;
 use App\Http\Controllers\Security\PasskeyController;
+
 
 // ---------------------------------------------------------
 // Redirección inicial
@@ -242,7 +244,65 @@ Route::middleware(['auth', 'twofactor'])->group(function () {
     Route::resource('centros_medicos', CentroMedicoController::class)
         ->only(['index', 'show'])
         ->middleware(['privilege:ver_centros_medicos']);
+
+    // -----------------------------------------------------
+    // Informes
+    // -----------------------------------------------------
+
+    Route::get('/informes', [\App\Http\Controllers\InformesController::class, 'index'])->name('informes.index');
+
+    Route::get('/informes/create', 'App\Http\Controllers\InformesController@create')
+        ->name('informes.create');
+
+    // Correctivo
+    Route::post('/informes/correctivo', 'App\Http\Controllers\InformesController@storeCorrectivo')
+        ->name('informes.correctivo.store');
+
+    Route::get('/informes/correctivo/{id}', 'App\Http\Controllers\InformesController@showCorrectivo')
+        ->name('informes.correctivo.show');
+
+    // Preventivo
+    Route::post('/informes/preventivo', 'App\Http\Controllers\InformesController@storePreventivo')
+        ->name('informes.preventivo.store');
+
+    Route::get('/informes/preventivo/{id}', 'App\Http\Controllers\InformesController@showPreventivo')
+        ->name('informes.preventivo.show');
+
+    // ---------- RUTAS UNIFICADAS PARA PDF ----------
+    // tipo = 'correctivo' o 'preventivo'
+    Route::get('/informes/{tipo}/{id}/download', 'App\Http\Controllers\InformesController@downloadPdf')
+        ->name('informes.download');
+
+    Route::get('/informes/{tipo}/{id}/print', 'App\Http\Controllers\InformesController@printPdf')
+        ->name('informes.print');
+    Route::get('/clientes/{cliente}/centros', [CentroMedicoController::class, 'porCliente']);
+    Route::get('/centros-medicos/{centro}/equipos', [EquipoController::class, 'porCentro'])
+        ->name('centros-medicos.equipos');
+    Route::get('/equipos/{equipo}/horas-uso', [EquipoController::class, 'horasUso'])
+        ->name('equipos.horas-uso');
+    Route::get('/clientes/{cliente}/centros', [CentroMedicoController::class, 'porCliente'])
+        ->name('clientes.centros');
+    Route::get('/centros/{centro}/equipos', [EquipoController::class, 'porCentro'])
+        ->name('centros.equipos');
+
+    // Estas sí las vi (registro/listado/borrado), dentro de auth + twofactor
+    Route::post('/passkeys/options', [PasskeyController::class, 'options'])->name('passkeys.options');
+    Route::post('/passkeys', [PasskeyController::class, 'store'])->name('passkeys.store');
+    Route::get('/passkeys', [PasskeyController::class, 'index'])->name('passkeys.index');
+    Route::delete('/passkeys/{passkey}', [PasskeyController::class, 'destroy'])->name('passkeys.destroy');
 });
+
+
+Route::post('/passkeys/login/options', [PasskeyLoginController::class, 'options'])
+    ->name('passkeys.login.options');
+
+Route::post('/passkeys/login', [PasskeyLoginController::class, 'login'])
+    ->name('passkeys.login');
+
+
+
+
+
 
 // ---------------------------------------------------------
 // Auth scaffolding

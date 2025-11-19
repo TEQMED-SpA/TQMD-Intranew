@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Log;
 use Laragear\WebAuthn\WebAuthnAuthentication;
 use App\Models\Passkey;
 
@@ -66,14 +67,13 @@ class User extends Authenticatable
         return $this->belongsTo(Role::class, 'rol_id');
     }
 
-    // Métodos para verificar privilegios
     public function tienePrivilegio($privilegios)
     {
         $privilegios = is_array($privilegios) ? $privilegios : [$privilegios];
         $userPrivs = $this->role ? $this->role->privilegios->pluck('nombre')->toArray() : [];
         $intersect = array_intersect($userPrivs, $privilegios);
 
-        \Log::info('TienePrivilegio', [
+        Log::info('TienePrivilegio', [
             'user_id' => $this->id,
             'user_name' => $this->name,
             'user_role' => $this->role ? $this->role->nombre : null,

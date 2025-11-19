@@ -3,21 +3,21 @@
 namespace App\Services;
 
 use Illuminate\Contracts\Auth\Authenticatable;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Str;
-use PragmaRX\Google2FALaravel\Facades\Google2FA;
 
 class TwoFactorService
 {
     public function generateSecret(): string
     {
-        return Google2FA::generateSecretKey();
+        return app('pragmarx.google2fa')->generateSecretKey();
     }
 
-    public function qrcodeUrl(Authenticatable $user, string $secret): string
+    public function qrcodeUrl(Authenticatable|Model $user, string $secret): string
     {
-        return Google2FA::getQRCodeInline(
+        return app('pragmarx.google2fa')->getQRCodeInline(
             config('app.name'),
             $user->email,
             $secret
@@ -26,18 +26,18 @@ class TwoFactorService
 
     public function verify(string $secret, string $code): bool
     {
-        return Google2FA::verifyKey($secret, $code);
+        return app('pragmarx.google2fa')->verifyKey($secret, $code);
     }
 
     public function generateRecoveryCodes(): array
     {
         return collect(range(1, 8))
-            ->map(fn () => Str::upper(Str::random(10)))
+            ->map(fn() => Str::upper(Str::random(10)))
             ->values()
             ->all();
     }
 
-    public function storeForUser(Authenticatable $user, string $secret, array $recoveryCodes): void
+    public function storeForUser(Authenticatable|Model $user, string $secret, array $recoveryCodes): void
     {
         $user->forceFill([
             'two_factor_secret' => Crypt::encryptString($secret),
@@ -46,7 +46,7 @@ class TwoFactorService
         ])->save();
     }
 
-    public function disableForUser(Authenticatable $user): void
+    public function disableForUser(Authenticatable|Model $user): void
     {
         $user->forceFill([
             'two_factor_secret' => null,
@@ -55,7 +55,7 @@ class TwoFactorService
         ])->save();
     }
 
-    public function recoveryCodes(Authenticatable $user): array
+    public function recoveryCodes(Authenticatable|Model $user): array
     {
         $codes = $user->two_factor_recovery_codes;
 
@@ -66,7 +66,7 @@ class TwoFactorService
         return json_decode(Crypt::decryptString($codes), true) ?: [];
     }
 
-    public function confirmUsingRecoveryCode(Authenticatable $user, string $code): bool
+    public function confirmUsingRecoveryCode(Authenticatable|Model $user, string $code): bool
     {
         $codes = $this->recoveryCodes($user);
 
@@ -74,7 +74,8 @@ class TwoFactorService
             return false;
         }
 
-        $remaining = Arr::where($codes, fn ($item) => $item !== $code);
+        $remaining = Arr::where($codes, fn($item) => $item !== $code);
+
         $user->forceFill([
             'two_factor_recovery_codes' => Crypt::encryptString(json_encode(array_values($remaining))),
         ])->save();

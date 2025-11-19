@@ -10,9 +10,18 @@
 <!-- Select2 JS -->
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
+<script>
+    window.getCsrfToken = function() {
+        const meta = document.querySelector('meta[name="csrf-token"]');
+        return meta ? meta.getAttribute('content') : null;
+    };
+</script>
+
+
 <x-layouts.app.sidebar :title="$title">
     <flux:main>
         {{ $slot }}
+        @fluxScripts
         @stack('scripts')
     </flux:main>
 </x-layouts.app.sidebar>

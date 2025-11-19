@@ -4,26 +4,37 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpFoundation\Response;
 
 class EnsureTwoFactorConfirmed
 {
     public function handle(Request $request, Closure $next): Response
     {
-        $user = $request->user();
+        $user = Auth::user();
 
-        if (! $user || ! $user->hasTwoFactorEnabled()) {
+        // Si no hay usuario autenticado, que siga normal
+        if (! $user) {
             return $next($request);
         }
 
-        if ($request->session()->boolean('two_factor_passed')) {
+        // Si el usuario NO tiene 2FA activo, no hacemos nada
+        if (! method_exists($user, 'hasTwoFactorEnabled') || ! $user->hasTwoFactorEnabled()) {
             return $next($request);
         }
 
-        if ($request->routeIs('two-factor.challenge', 'two-factor.challenge.store')) {
+        // Evitar bucles: dejamos pasar las rutas propias del 2FA y el logout
+        if ($request->routeIs('two-factor.*') || $request->routeIs('logout')) {
             return $next($request);
         }
 
-        return redirect()->route('two-factor.challenge');
+        // Leer el flag desde sesión (sin boolean())
+        $twoFactorPassed = (bool) $request->session()->get('two_factor_passed', false);
+
+        if (! $twoFactorPassed) {
+            return redirect()->route('two-factor.challenge');
+        }
+
+        return $next($request);
     }
 }
