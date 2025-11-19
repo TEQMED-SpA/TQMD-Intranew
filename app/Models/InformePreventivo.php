@@ -23,6 +23,7 @@ class InformePreventivo extends Model
         'comentarios',
         'fecha_proximo_control',
         'firma_tecnico',
+        'firma_cliente',
     ];
 
     protected $casts = [

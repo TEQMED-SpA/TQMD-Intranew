@@ -71,135 +71,343 @@
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
 
     <script>
-        // ==========================
-        //  FIRMA / LÓGICA CORRECTIVO
-        // ==========================
         const Correctivo = {
             signaturePad: null,
+            signaturePadCliente: null,
+            initialized: false,
 
-            init: function() {
-                // Select2 global
-                $('.select2').select2();
+            init() {
+                if (this.initialized) {
+                    return;
+                }
+                this.initialized = true;
 
-                // --------- Repuestos dinámicos ----------
                 const repuestosSelect = document.getElementById('repuestos');
                 const cantidadesContainer = document.getElementById('cantidades-container');
+                const repuestosData = @json($repuestos->keyBy('id'));
+
+                $('.select2').select2();
 
                 if (repuestosSelect && cantidadesContainer) {
-                    const repuestosData = @json($repuestos->keyBy('id'));
-
                     $('#repuestos').on('change', function() {
                         const selected = $(this).val() || [];
                         cantidadesContainer.innerHTML = '';
 
-                        selected.forEach(function(id) {
+                        selected.forEach((id) => {
                             const repuesto = repuestosData[id];
                             if (!repuesto) return;
 
                             const wrapper = document.createElement('div');
                             wrapper.className = 'mt-2';
                             wrapper.innerHTML = `
-                            <label for="cantidad_${id}" class="block text-sm font-medium text-gray-700 dark:text-zinc-200">
-                                Cantidad para ${repuesto.nombre} (Stock disponible: ${repuesto.stock})
-                            </label>
-                            <input type="number"
-                                   id="cantidad_${id}"
-                                   name="cantidades[]"
-                                   class="mt-1 block w-full rounded-md border-gray-300 dark:border-zinc-700 shadow-sm
-                                          focus:border-indigo-500 focus:ring-indigo-500 bg-zinc-50 dark:bg-zinc-900
-                                          text-zinc-900 dark:text-zinc-100 text-sm"
-                                   min="1"
-                                   max="${repuesto.stock}"
-                                   required>
-                        `;
+                                <label for="cantidad_${id}" class="block text-sm font-medium text-gray-700 dark:text-zinc-200">
+                                    Cantidad para ${repuesto.nombre} (Stock disponible: ${repuesto.stock})
+                                </label>
+                                <input type="number"
+                                       id="cantidad_${id}"
+                                       name="cantidades[]"
+                                       class="mt-1 block w-full rounded-md border-gray-300 dark:border-zinc-700 shadow-sm
+                                              focus:border-indigo-500 focus:ring-indigo-500 bg-zinc-50 dark:bg-zinc-900
+                                              text-zinc-900 dark:text-zinc-100 text-sm"
+                                       min="1"
+                                       max="${repuesto.stock}"
+                                       required>
+                            `;
                             cantidadesContainer.appendChild(wrapper);
                         });
                     });
                 }
 
-                // --------- Cargar horas de uso ----------
-                const equipoSelect = document.querySelector('#form-correctivo #equipo_id');
-                const horasUsoInput = document.getElementById('horas_uso');
+                const $form = $('#form-correctivo');
+                const $clienteSelect = $form.find('#cliente_id');
+                const $centroSelect = $form.find('#centro_medico_id');
+                const $equipoSelect = $form.find('#equipo_id');
+                const $horasUsoInput = $form.find('#horas_uso');
+                const $numeroSerieInput = $form.find('#numero_serie_correctivo');
+                const $firmaClienteWrapper = $('#firma-cliente-wrapper-correctivo');
+                const $firmaClienteInput = $('#firma-input-correctivo-cliente');
+                const $toggleClienteBtn = $('#btn-toggle-firma-cliente-correctivo');
+                const $toggleClienteText = $('#btn-toggle-firma-cliente-text-correctivo');
 
-                if (equipoSelect && horasUsoInput) {
-                    $('#form-correctivo #equipo_id').on('change', function() {
-                        const equipoId = $(this).val();
-                        if (equipoId) {
-                            $.get(`/equipos/${equipoId}/horas-uso`, function(data) {
-                                horasUsoInput.value = data.horas_uso || 0;
-                            });
-                        } else {
-                            horasUsoInput.value = '';
-                        }
-                    });
+                const refreshSelect2 = ($select) => {
+                    if (!$select.length) return;
+                    if ($select.hasClass('select2-hidden-accessible')) {
+                        $select.trigger('change.select2');
+                    } else {
+                        $select.trigger('change');
+                    }
+                };
+
+                const toggleSelect = ($select, disabled) => {
+                    $select.prop('disabled', disabled);
+                    refreshSelect2($select);
+                };
+
+                const resetEquipoFields = () => {
+                    $horasUsoInput.val('');
+                    if ($numeroSerieInput.length) {
+                        $numeroSerieInput.val('');
+                    }
+                };
+
+                const setNumeroSerieFromSelected = () => {
+                    if (!$numeroSerieInput.length) return;
+                    const serie = $equipoSelect.find('option:selected').data('numero-serie') || '';
+                    $numeroSerieInput.val(serie);
+                };
+
+                const setHorasFromSelectedOption = () => {
+                    const horas = $equipoSelect.find('option:selected').data('horas-uso');
+                    if (typeof horas !== 'undefined' && horas !== '') {
+                        $horasUsoInput.val(horas);
+                    }
+                };
+
+                if (!$clienteSelect.val()) {
+                    toggleSelect($centroSelect, true);
+                    toggleSelect($equipoSelect, true);
+                } else if (!$centroSelect.val()) {
+                    toggleSelect($centroSelect, false);
+                    toggleSelect($equipoSelect, true);
+                } else {
+                    toggleSelect($centroSelect, false);
+                    toggleSelect($equipoSelect, false);
+                    setNumeroSerieFromSelected();
                 }
 
-                // --------- Firma digital ----------
-                const canvas = document.getElementById('signature-pad');
-                const clearButton = document.getElementById('clear-signature');
-                const firmaInput = document.getElementById('firma-input');
-                const firmaHelp = document.getElementById('firma-help');
+                $clienteSelect.on('change', function() {
+                    const clienteId = $(this).val();
 
-                if (canvas && typeof SignaturePad !== 'undefined') {
-                    this.signaturePad = new SignaturePad(canvas, {
+                    $centroSelect.empty().append('<option value="">Selecciona un centro médico…</option>');
+                    toggleSelect($centroSelect, true);
+
+                    $equipoSelect.empty().append('<option value="">Selecciona un equipo…</option>');
+                    toggleSelect($equipoSelect, true);
+                    resetEquipoFields();
+
+                    if (!clienteId) {
+                        return;
+                    }
+
+                    $.get(`/clientes/${clienteId}/centros`, function(data) {
+                        data.forEach((c) => {
+                            $centroSelect.append(
+                                `<option value="${c.id}">${c.centro_dialisis}</option>`);
+                        });
+                        toggleSelect($centroSelect, false);
+                    });
+                });
+
+                $centroSelect.on('change', function() {
+                    const centroId = $(this).val();
+
+                    $equipoSelect.empty().append('<option value="">Selecciona un equipo…</option>');
+                    toggleSelect($equipoSelect, true);
+                    resetEquipoFields();
+
+                    if (!centroId) {
+                        return;
+                    }
+
+                    $.get(`/centros-medicos/${centroId}/equipos`, function(data) {
+                        data.forEach((e) => {
+                            const nombre = e.nombre || 'Equipo';
+                            const codigo = e.codigo ? ` (${e.codigo})` : '';
+                            const numeroSerie = e.numero_serie ?? '';
+                            const horasUso = e.horas_uso ?? '';
+                            $equipoSelect.append(
+                                `<option value="${e.id}" data-numero-serie="${numeroSerie}" data-horas-uso="${horasUso}">${nombre}${codigo}</option>`
+                            );
+                        });
+                        toggleSelect($equipoSelect, false);
+                    });
+                });
+
+                $equipoSelect.on('change', function() {
+                    setNumeroSerieFromSelected();
+                    const equipoId = $(this).val();
+
+                    if (!equipoId) {
+                        resetEquipoFields();
+                        return;
+                    }
+
+                    setHorasFromSelectedOption();
+
+                    $.get(`/equipos/${equipoId}/horas-uso`, function(data) {
+                        if (data && typeof data.horas_uso !== 'undefined') {
+                            $horasUsoInput.val(data.horas_uso ?? '');
+                        }
+                    });
+                });
+
+                const canvasCorrectivo = document.getElementById('signature-pad');
+                const clearButtonCorrectivo = document.getElementById('clear-signature');
+                const firmaInputCorrectivo = document.getElementById('firma-input');
+                const firmaHelpCorrectivo = document.getElementById('firma-help');
+                const formCorrectivoEl = document.getElementById('form-correctivo');
+
+                if (canvasCorrectivo && typeof SignaturePad !== 'undefined') {
+                    this.signaturePad = new SignaturePad(canvasCorrectivo, {
                         minWidth: 1,
                         maxWidth: 3,
                         penColor: 'black',
                     });
 
-                    const resizeCanvas = () => {
+                    const resizeCanvasCorrectivo = () => {
                         const ratio = Math.max(window.devicePixelRatio || 1, 1);
-                        const width = canvas.offsetWidth || 300;
+                        const width = canvasCorrectivo.offsetWidth || 300;
                         const height = 150;
-
-                        canvas.width = width * ratio;
-                        canvas.height = height * ratio;
-                        const ctx = canvas.getContext('2d');
+                        canvasCorrectivo.width = width * ratio;
+                        canvasCorrectivo.height = height * ratio;
+                        const ctx = canvasCorrectivo.getContext('2d');
                         ctx.scale(ratio, ratio);
                         this.signaturePad.clear();
                     };
 
-                    resizeCanvas();
-                    window.addEventListener('resize', resizeCanvas);
+                    resizeCanvasCorrectivo();
+                    window.addEventListener('resize', resizeCanvasCorrectivo);
 
-                    if (clearButton && firmaInput && firmaHelp) {
-                        clearButton.addEventListener('click', () => {
+                    if (clearButtonCorrectivo && firmaInputCorrectivo && firmaHelpCorrectivo) {
+                        clearButtonCorrectivo.addEventListener('click', () => {
                             this.signaturePad.clear();
-                            firmaInput.value = '';
-                            firmaHelp.textContent = 'Dibuja tu firma en el área de arriba.';
-                            firmaHelp.style.color = 'gray';
+                            firmaInputCorrectivo.value = '';
+                            firmaHelpCorrectivo.textContent = 'Dibuja tu firma en el área de arriba.';
+                            firmaHelpCorrectivo.style.color = 'gray';
                         });
                     }
 
-                    const form = document.getElementById('form-correctivo');
-                    if (form && firmaInput && firmaHelp) {
-                        form.addEventListener('submit', (e) => {
+                    if (formCorrectivoEl && firmaInputCorrectivo && firmaHelpCorrectivo) {
+                        formCorrectivoEl.addEventListener('submit', (e) => {
                             if (this.signaturePad.isEmpty()) {
                                 e.preventDefault();
-                                firmaHelp.textContent = 'La firma digital es obligatoria. Dibuja tu firma.';
-                                firmaHelp.style.color = 'red';
+                                firmaHelpCorrectivo.textContent =
+                                    'La firma digital es obligatoria. Dibuja tu firma.';
+                                firmaHelpCorrectivo.style.color = 'red';
                                 return;
                             }
-                            firmaInput.value = this.signaturePad.toDataURL('image/png');
+
+                            firmaInputCorrectivo.value = this.signaturePad.toDataURL('image/png');
+
+                            if ($firmaClienteWrapper.attr('data-visible') === '1' && this
+                                .signaturePadCliente &&
+                                !this.signaturePadCliente.isEmpty()) {
+                                $firmaClienteInput.val(this.signaturePadCliente.toDataURL('image/png'));
+                            } else if ($firmaClienteWrapper.attr('data-visible') === '0') {
+                                $firmaClienteInput.val('');
+                            }
                         });
                     }
+                }
+
+                const initFirmaClientePadCorrectivo = () => {
+                    const canvasCliente = document.getElementById('signature-pad-correctivo-cliente');
+                    const clearButtonCliente = document.getElementById('clear-signature-correctivo-cliente');
+                    const firmaHelpCliente = document.getElementById('firma-help-correctivo-cliente');
+
+                    if (!canvasCliente || typeof SignaturePad === 'undefined') {
+                        return;
+                    }
+
+                    this.signaturePadCliente = new SignaturePad(canvasCliente, {
+                        minWidth: 1,
+                        maxWidth: 3,
+                        penColor: 'black',
+                    });
+
+                    const resizeCanvasCliente = () => {
+                        const ratio = Math.max(window.devicePixelRatio || 1, 1);
+                        const width = canvasCliente.offsetWidth || 300;
+                        const height = 150;
+                        canvasCliente.width = width * ratio;
+                        canvasCliente.height = height * ratio;
+                        const ctx = canvasCliente.getContext('2d');
+                        ctx.scale(ratio, ratio);
+                        this.signaturePadCliente.clear();
+                    };
+
+                    resizeCanvasCliente();
+                    window.addEventListener('resize', resizeCanvasCliente);
+
+                    if (clearButtonCliente && firmaHelpCliente) {
+                        clearButtonCliente.addEventListener('click', () => {
+                            this.signaturePadCliente.clear();
+                            $firmaClienteInput.val('');
+                            firmaHelpCliente.textContent = 'La firma del cliente es opcional.';
+                            firmaHelpCliente.style.color = 'gray';
+                        });
+                    }
+                };
+
+                const showFirmaClienteCorrectivo = () => {
+                    $firmaClienteWrapper.removeClass('hidden').attr('data-visible', '1');
+                    $toggleClienteText.text($toggleClienteBtn.data('label-hide'));
+                    if (!this.signaturePadCliente) {
+                        initFirmaClientePadCorrectivo();
+                    }
+                };
+
+                const hideFirmaClienteCorrectivo = () => {
+                    $firmaClienteWrapper.addClass('hidden').attr('data-visible', '0');
+                    $toggleClienteText.text($toggleClienteBtn.data('label-show'));
+                };
+
+                if ($firmaClienteWrapper.data('visible') === 1 || $firmaClienteInput.val()) {
+                    showFirmaClienteCorrectivo();
+                }
+
+                if ($toggleClienteBtn.length) {
+                    $toggleClienteBtn.on('click', function() {
+                        const visible = $firmaClienteWrapper.attr('data-visible') === '1';
+                        if (visible) {
+                            hideFirmaClienteCorrectivo();
+                        } else {
+                            showFirmaClienteCorrectivo();
+                        }
+                    });
                 }
             }
         };
 
-        // ==========================
-        //  FIRMA / LÓGICA PREVENTIVO
-        // ==========================
         const Preventivo = {
             signaturePad: null,
+            signaturePadCliente: null,
+            initialized: false,
 
-            init: function() {
-                const $clienteSelect = $('#form-preventivo #cliente_id');
-                const $centroSelect = $('#form-preventivo #centro_medico_id');
-                const $equipoSelect = $('#form-preventivo #equipo_id');
-                const $horasOperacionInput = $('#form-preventivo #horas_operacion');
+            init() {
+                if (this.initialized) {
+                    return;
+                }
+                this.initialized = true;
 
-                // --------- Estado inicial (según old()) ----------
+                const $form = $('#form-preventivo');
+                const $clienteSelect = $form.find('#cliente_id');
+                const $centroSelect = $form.find('#centro_medico_id');
+                const $equipoSelect = $form.find('#equipo_id');
+                const $numeroSerieInput = $form.find('#numero_serie_preventivo');
+                const $horasOperacionInput = $form.find('#horas_operacion');
+                const $firmaClienteWrapper = $('#firma-cliente-wrapper');
+                const $firmaClienteInput = $('#firma-input-preventivo-cliente');
+                const $toggleClienteBtn = $('#btn-toggle-firma-cliente');
+                const $toggleClienteText = $('#btn-toggle-firma-cliente-text');
+
+                const resetEquipoFields = () => {
+                    $horasOperacionInput.val('');
+                    $numeroSerieInput.val('');
+                };
+
+                const setNumeroSerieFromSelected = () => {
+                    const serie = $equipoSelect.find('option:selected').data('numero-serie') || '';
+                    $numeroSerieInput.val(serie);
+                };
+
+                const setHorasFromSelectedOption = () => {
+                    const horas = $equipoSelect.find('option:selected').data('horas-uso');
+                    if (typeof horas !== 'undefined' && horas !== '') {
+                        $horasOperacionInput.val(horas);
+                    }
+                };
+
                 if (!$clienteSelect.val()) {
                     $centroSelect.prop('disabled', true);
                     $equipoSelect.prop('disabled', true);
@@ -211,18 +419,14 @@
                     $equipoSelect.prop('disabled', true);
                 }
 
-                // --------- Cambio de CLIENTE → carga centros ----------
                 if ($clienteSelect.length && $centroSelect.length && $equipoSelect.length) {
                     $clienteSelect.on('change', function() {
                         const clienteId = $(this).val();
 
-                        // reset centro/equipo/horas
-                        $centroSelect.empty()
-                            .append('<option value="">Selecciona un centro…</option>');
-                        $equipoSelect.empty()
-                            .append('<option value="">Selecciona un equipo…</option>')
-                            .prop('disabled', true);
-                        $horasOperacionInput.val('');
+                        $centroSelect.empty().append('<option value="">Selecciona un centro…</option>');
+                        $equipoSelect.empty().append('<option value="">Selecciona un equipo…</option>').prop(
+                            'disabled', true);
+                        resetEquipoFields();
 
                         if (!clienteId) {
                             $centroSelect.prop('disabled', true);
@@ -231,24 +435,19 @@
 
                         $centroSelect.prop('disabled', false);
 
-                        // endpoint que debe devolver los centros del cliente
                         $.get(`/clientes/${clienteId}/centros`, function(data) {
-                            // data: [{id, centro_dialisis}, ...]
-                            data.forEach(c => {
+                            data.forEach((c) => {
                                 $centroSelect.append(
-                                    `<option value="${c.id}">${c.centro_dialisis}</option>`
-                                );
+                                    `<option value="${c.id}">${c.centro_dialisis}</option>`);
                             });
                         });
                     });
 
-                    // --------- Cambio de CENTRO → carga equipos ----------
                     $centroSelect.on('change', function() {
                         const centroId = $(this).val();
 
-                        $equipoSelect.empty()
-                            .append('<option value="">Selecciona un equipo…</option>');
-                        $horasOperacionInput.val('');
+                        $equipoSelect.empty().append('<option value="">Selecciona un equipo…</option>');
+                        resetEquipoFields();
 
                         if (!centroId) {
                             $equipoSelect.prop('disabled', true);
@@ -257,36 +456,36 @@
 
                         $equipoSelect.prop('disabled', false);
 
-                        // endpoint que debe devolver los equipos del centro
                         $.get(`/centros-medicos/${centroId}/equipos`, function(data) {
-                            // data: [{id, nombre, codigo}, ...]
-                            data.forEach(e => {
+                            data.forEach((e) => {
+                                const nombre = e.nombre || 'Equipo';
+                                const codigo = e.codigo ? ` (${e.codigo})` : '';
+                                const numeroSerie = e.numero_serie ?? '';
+                                const horasUso = e.horas_uso ?? '';
                                 $equipoSelect.append(
-                                    `<option value="${e.id}">${e.nombre} (${e.codigo})</option>`
+                                    `<option value="${e.id}" data-numero-serie="${numeroSerie}" data-horas-uso="${horasUso}">${nombre}${codigo}</option>`
                                 );
                             });
+                            $equipoSelect.prop('disabled', false);
                         });
                     });
                 }
 
-                // --------- Cargar horas de operación al seleccionar equipo ----------
-                const equipoSelect = document.querySelector('#form-preventivo #equipo_id');
-                const horasOperacionInput = document.querySelector('#form-preventivo #horas_operacion');
+                $equipoSelect.on('change', function() {
+                    const equipoId = $(this).val();
 
-                if (equipoSelect && horasOperacionInput) {
-                    $('#form-preventivo #equipo_id').on('change', function() {
-                        const equipoId = $(this).val();
-                        if (equipoId) {
-                            $.get(`/equipos/${equipoId}/horas-uso`, function(data) {
-                                horasOperacionInput.value = data.horas_uso || 0;
-                            });
-                        } else {
-                            horasOperacionInput.value = '';
-                        }
-                    });
-                }
+                    setNumeroSerieFromSelected();
 
-                // --------- Firma para informe preventivo ----------
+                    if (equipoId) {
+                        setHorasFromSelectedOption();
+                        $.get(`/equipos/${equipoId}/horas-uso`, function(data) {
+                            $horasOperacionInput.val(data.horas_uso || 0);
+                        });
+                    } else {
+                        resetEquipoFields();
+                    }
+                });
+
                 const canvas = document.getElementById('signature-pad-preventivo');
                 const clearButton = document.getElementById('clear-signature-preventivo');
                 const firmaInput = document.getElementById('firma-input-preventivo');
@@ -322,7 +521,6 @@
                         });
                     }
 
-                    // Manejo submit
                     const form = document.getElementById('form-preventivo');
                     if (form && firmaInput && firmaHelp) {
                         form.addEventListener('submit', (e) => {
@@ -334,24 +532,98 @@
                                 return;
                             }
                             firmaInput.value = this.signaturePad.toDataURL('image/png');
+
+                            if ($firmaClienteWrapper.attr('data-visible') === '1' && this
+                                .signaturePadCliente && !this.signaturePadCliente.isEmpty()) {
+                                $firmaClienteInput.val(this.signaturePadCliente.toDataURL('image/png'));
+                            } else if ($firmaClienteWrapper.attr('data-visible') === '0') {
+                                $firmaClienteInput.val('');
+                            }
                         });
                     }
+                }
+
+                const initFirmaClientePad = () => {
+                    const canvas = document.getElementById('signature-pad-preventivo-cliente');
+                    const clearButton = document.getElementById('clear-signature-preventivo-cliente');
+                    const firmaHelp = document.getElementById('firma-help-preventivo-cliente');
+
+                    if (!canvas || typeof SignaturePad === 'undefined') {
+                        return;
+                    }
+
+                    this.signaturePadCliente = new SignaturePad(canvas, {
+                        minWidth: 1,
+                        maxWidth: 3,
+                        penColor: 'black',
+                    });
+
+                    const resizeCanvas = () => {
+                        const ratio = Math.max(window.devicePixelRatio || 1, 1);
+                        const width = canvas.offsetWidth || 300;
+                        const height = 160;
+                        canvas.width = width * ratio;
+                        canvas.height = height * ratio;
+                        const ctx = canvas.getContext('2d');
+                        ctx.scale(ratio, ratio);
+                        this.signaturePadCliente.clear();
+                        if ($firmaClienteInput.val()) {
+                            // no hay forma directa de cargar base64 al pad sin libs extra, así que mantenemos input
+                        }
+                    };
+
+                    resizeCanvas();
+                    window.addEventListener('resize', resizeCanvas);
+
+                    if (clearButton && firmaHelp) {
+                        clearButton.addEventListener('click', () => {
+                            this.signaturePadCliente.clear();
+                            $firmaClienteInput.val('');
+                            firmaHelp.textContent =
+                                'La firma del cliente es opcional. Dibuja si corresponde.';
+                            firmaHelp.style.color = 'gray';
+                        });
+                    }
+                };
+
+                const showFirmaCliente = () => {
+                    $firmaClienteWrapper.removeClass('hidden').attr('data-visible', '1');
+                    $toggleClienteText.text($toggleClienteBtn.data('label-hide'));
+                    if (!this.signaturePadCliente) {
+                        initFirmaClientePad();
+                    }
+                };
+
+                const hideFirmaCliente = () => {
+                    $firmaClienteWrapper.addClass('hidden').attr('data-visible', '0');
+                    $toggleClienteText.text($toggleClienteBtn.data('label-show'));
+                };
+
+                if ($firmaClienteWrapper.data('visible') === 1 || $firmaClienteInput.val()) {
+                    showFirmaCliente();
+                }
+
+                if ($toggleClienteBtn.length) {
+                    $toggleClienteBtn.on('click', function() {
+                        const visible = $firmaClienteWrapper.attr('data-visible') === '1';
+                        if (visible) {
+                            hideFirmaCliente();
+                        } else {
+                            showFirmaCliente();
+                        }
+                    });
                 }
             }
         };
 
-        // Inicializar al cargar
         $(document).ready(function() {
-            // Tab por defecto: Correctivo
             Correctivo.init();
         });
 
-        // Se llama desde x-on:click del tab preventivo
         function initPreventivoCanvas() {
             Preventivo.init();
         }
 
-        // Hacer accesible la función en window (por si Alpine la evalúa ahí)
         window.initPreventivoCanvas = initPreventivoCanvas;
     </script>
 

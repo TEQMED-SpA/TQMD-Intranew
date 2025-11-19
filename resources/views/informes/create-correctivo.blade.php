@@ -84,7 +84,7 @@
                             class="select2 w-full px-3 py-2.5 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-zinc-50
                                    dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2
                                    focus:ring-blue-500 focus:border-blue-500"
-                            required>
+                            {{ old('cliente_id') ? '' : 'disabled' }} required>
                             <option value="">Selecciona un centro médico…</option>
                             @foreach ($centrosMedicos as $centro)
                                 <option value="{{ $centro->id }}" @selected(old('centro_medico_id') == $centro->id)>
@@ -215,15 +215,33 @@
                             class="select2 w-full px-3 py-2.5 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-zinc-50
                                    dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2
                                    focus:ring-blue-500 focus:border-blue-500"
-                            required>
+                            {{ old('centro_medico_id') ? '' : 'disabled' }} required>
                             <option value="">Selecciona un equipo…</option>
                             @foreach ($equipos as $equipo)
-                                <option value="{{ $equipo->id }}" @selected(old('equipo_id') == $equipo->id)>
+                                <option value="{{ $equipo->id }}"
+                                    data-numero-serie="{{ $equipo->numero_serie ?? '' }}"
+                                    data-horas-uso="{{ $equipo->horas_uso ?? '' }}" @selected(old('equipo_id') == $equipo->id)>
                                     {{ $equipo->nombre }} ({{ $equipo->codigo }})
                                 </option>
                             @endforeach
                         </select>
                         @error('equipo_id')
+                            <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    {{-- N° de serie --}}
+                    <div>
+                        <label for="numero_serie_correctivo"
+                            class="block text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase mb-1.5">
+                            N° de Serie
+                        </label>
+                        <input id="numero_serie_correctivo" type="text" name="numero_serie"
+                            value="{{ old('numero_serie') }}" readonly
+                            class="w-full px-3 py-2.5 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-zinc-100
+                                   dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-sm focus:outline-none cursor-not-allowed"
+                            placeholder="Se completa al seleccionar el equipo">
+                        @error('numero_serie')
                             <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                         @enderror
                     </div>
@@ -366,6 +384,57 @@
                 @error('firma')
                     <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                 @enderror
+            </div>
+
+            {{-- Firma cliente (opcional) --}}
+            @php
+                $mostrarFirmaClienteCorrectivo = old('firma_cliente');
+            @endphp
+            <div class="space-y-2">
+                <div class="flex items-center justify-between gap-3">
+                    <h4 class="text-sm font-semibold text-zinc-700 dark:text-zinc-200 flex items-center gap-2">
+                        <span class="w-1 h-4 rounded-full bg-amber-500"></span>
+                        Firma del cliente (opcional)
+                    </h4>
+                    <button type="button" id="btn-toggle-firma-cliente-correctivo"
+                        class="inline-flex items-center px-3 py-1.5 bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-200 text-xs font-semibold rounded-lg gap-2 transition hover:bg-amber-200 dark:hover:bg-amber-900/60"
+                        data-label-show="Agregar firma del cliente" data-label-hide="Ocultar firma del cliente">
+                        <i class="fa fa-user-pen text-[11px]"></i>
+                        <span id="btn-toggle-firma-cliente-text-correctivo">
+                            {{ $mostrarFirmaClienteCorrectivo ? 'Ocultar firma del cliente' : 'Agregar firma del cliente' }}
+                        </span>
+                    </button>
+                </div>
+
+                <div id="firma-cliente-wrapper-correctivo"
+                    class="{{ $mostrarFirmaClienteCorrectivo ? '' : 'hidden' }}"
+                    data-visible="{{ $mostrarFirmaClienteCorrectivo ? '1' : '0' }}">
+                    <div
+                        class="border border-dashed border-zinc-300 dark:border-zinc-600 rounded-lg p-4 bg-zinc-50 dark:bg-zinc-900">
+                        <p class="text-xs text-zinc-600 dark:text-zinc-300 mb-2">
+                            Firma del representante del cliente/centro. Úsala sólo cuando se requiera.
+                        </p>
+                        <canvas id="signature-pad-correctivo-cliente"
+                            class="border border-zinc-200 dark:border-zinc-700 rounded bg-white"
+                            style="height: 150px; width: 100%;"></canvas>
+                        <div class="mt-3 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                            <button type="button" id="clear-signature-correctivo-cliente"
+                                class="inline-flex items-center px-3 py-1.5 bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300
+                                       dark:hover:bg-zinc-600 text-zinc-800 dark:text-zinc-50 text-xs font-medium rounded-lg transition">
+                                <i class="fa fa-eraser mr-2"></i> Limpiar firma
+                            </button>
+                            <p class="text-[11px] text-zinc-500 dark:text-zinc-400"
+                                id="firma-help-correctivo-cliente">
+                                La firma del cliente es opcional.
+                            </p>
+                        </div>
+                    </div>
+                    <input type="hidden" name="firma_cliente" id="firma-input-correctivo-cliente"
+                        value="{{ old('firma_cliente') }}">
+                    @error('firma_cliente')
+                        <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                    @enderror
+                </div>
             </div>
 
             {{-- Acciones --}}

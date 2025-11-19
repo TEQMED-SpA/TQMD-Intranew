@@ -27,6 +27,7 @@ class InformeCorrectivo extends Model
         'condicion_equipo',
         'usuario_id',
         'firma',
+        'firma_cliente',
     ];
 
     protected $casts = [
@@ -62,6 +63,6 @@ class InformeCorrectivo extends Model
     {
         return $this->belongsToMany(Repuesto::class, 'informe_correctivo_repuesto')
             ->withPivot('cantidad_usada')
-            ->withTimestamps(); 
+            ->withTimestamps();
     }
 }
