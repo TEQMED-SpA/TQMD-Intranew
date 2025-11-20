@@ -1,9 +1,11 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="dark">
+<html
+    lang="{{ str_replace('_', '-', app()->getLocale()) }}>
 
 <head>
     @include('partials.head')
-    <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
+    <link rel="icon"
+    type="image/x-icon" href="{{ asset('favicon.ico') }}">
 </head>
 
 <body class="min-h-screen bg-white dark:bg-zinc-800">

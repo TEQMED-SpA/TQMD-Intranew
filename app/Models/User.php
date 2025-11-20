@@ -85,4 +85,9 @@ class User extends Authenticatable
     {
         $this->notify(new ResetPasswordNotification($token));
     }
+
+    public function passkeys()
+    {
+        return $this->hasMany(\App\Models\Passkey::class);
+    }
 }

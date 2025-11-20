@@ -23,8 +23,9 @@ use App\Http\Controllers\TicketController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\PrivilegioController;
 use App\Http\Controllers\InventarioTecnicoController;
-use App\Http\Controllers\PasskeyController;
-
+use App\Http\Controllers\Security\PasskeyController as SecurityPasskeyController;
+use App\Http\Controllers\InformesController;
+use App\Http\Controllers\Api\LookupController;
 
 // ---------------------------------------------------------
 // Redirección inicial
@@ -56,27 +57,41 @@ Route::pattern('solicitud', '[0-9]+');
 // ---------------------------------------------------------
 // ZONA PRIVADA
 // ---------------------------------------------------------
+// Todas las rutas que requieran autenticación y 2FA
 Route::middleware(['auth', 'twofactor'])->group(function () {
 
-    // Settings
+    // ==========================
+    // Settings (Livewire)
+    // ==========================
+
+    // Siempre disponible (es solo una redirección)
     Route::redirect('settings', 'settings/profile');
-    Route::get('settings/profile', Profile::class)->name('settings.profile');
-    Route::get('settings/password', Password::class)->name('settings.password');
-    Route::get('settings/appearance', Appearance::class)->name('settings.appearance');
-    Route::get('settings/security', Security::class)->name('settings.security');
 
-    // Passkeys
-    Route::post('/passkeys/options', [PasskeyController::class, 'options'])->name('passkeys.options');
-    Route::post('/passkeys', [PasskeyController::class, 'store'])->name('passkeys.store');
-    Route::get('/passkeys', [PasskeyController::class, 'index'])->name('passkeys.index');
-    Route::delete('/passkeys/{passkey}', [PasskeyController::class, 'destroy'])->name('passkeys.destroy');
+    // Solo en entorno web (no consola/artisan)
+    if (! app()->runningInConsole()) {
+        Route::get('settings/profile', Profile::class)->name('settings.profile');
+        Route::get('settings/password', Password::class)->name('settings.password');
+        Route::get('settings/appearance', Appearance::class)->name('settings.appearance');
+        Route::get('settings/security', Security::class)->name('settings.security');
+    }
 
+    // ==========================
+    // Passkeys (CRUD usuario logueado)
+    // ==========================
+    Route::post('/passkeys/options', [SecurityPasskeyController::class, 'options'])->name('passkeys.options');
+    Route::post('/passkeys', [SecurityPasskeyController::class, 'store'])->name('passkeys.store');
+    Route::get('/passkeys', [SecurityPasskeyController::class, 'index'])->name('passkeys.index');
+    Route::delete('/passkeys/{passkey}', [SecurityPasskeyController::class, 'destroy'])->name('passkeys.destroy');
+
+
+    // ==========================
     // Endpoints JSON (selects dependientes)
-    Route::get('/api/clientes/{cliente}/centros', [\App\Http\Controllers\Api\LookupController::class, 'centrosPorCliente'])
+    // ==========================
+    Route::get('/api/clientes/{cliente}/centros', [LookupController::class, 'centrosPorCliente'])
         ->whereNumber('cliente')
         ->name('api.clientes.centros');
 
-    Route::get('/api/centros/{centro}/equipos', [\App\Http\Controllers\Api\LookupController::class, 'equiposPorCentro'])
+    Route::get('/api/centros/{centro}/equipos', [LookupController::class, 'equiposPorCentro'])
         ->whereNumber('centro')
         ->name('api.centros.equipos');
 
@@ -104,7 +119,7 @@ Route::middleware(['auth', 'twofactor'])->group(function () {
 
     // Lectura (después)
     Route::resource('clientes', ClienteController::class)
-        ->only(['index', 'show']); // si tienes 'ver_clientes' puedes agregarlo aquí
+        ->only(['index', 'show']);
 
     // -----------------------------------------------------
     // Categorías de repuestos
@@ -249,60 +264,58 @@ Route::middleware(['auth', 'twofactor'])->group(function () {
     // Informes
     // -----------------------------------------------------
 
-    Route::get('/informes', [\App\Http\Controllers\InformesController::class, 'index'])->name('informes.index');
+    Route::get('/informes', [InformesController::class, 'index'])->name('informes.index');
 
-    Route::get('/informes/create', 'App\Http\Controllers\InformesController@create')
+    Route::get('/informes/create', [InformesController::class, 'create'])
         ->name('informes.create');
 
     // Correctivo
-    Route::post('/informes/correctivo', 'App\Http\Controllers\InformesController@storeCorrectivo')
+    Route::post('/informes/correctivo', [InformesController::class, 'storeCorrectivo'])
         ->name('informes.correctivo.store');
 
-    Route::get('/informes/correctivo/{id}', 'App\Http\Controllers\InformesController@showCorrectivo')
+    Route::get('/informes/correctivo/{id}', [InformesController::class, 'showCorrectivo'])
         ->name('informes.correctivo.show');
 
     // Preventivo
-    Route::post('/informes/preventivo', 'App\Http\Controllers\InformesController@storePreventivo')
+    Route::post('/informes/preventivo', [InformesController::class, 'storePreventivo'])
         ->name('informes.preventivo.store');
 
-    Route::get('/informes/preventivo/{id}', 'App\Http\Controllers\InformesController@showPreventivo')
+    Route::get('/informes/preventivo/{id}', [InformesController::class, 'showPreventivo'])
         ->name('informes.preventivo.show');
 
     // ---------- RUTAS UNIFICADAS PARA PDF ----------
     // tipo = 'correctivo' o 'preventivo'
-    Route::get('/informes/{tipo}/{id}/download', 'App\Http\Controllers\InformesController@downloadPdf')
+    Route::get('/informes/{tipo}/{id}/download', [InformesController::class, 'downloadPdf'])
         ->name('informes.download');
 
-    Route::get('/informes/{tipo}/{id}/print', 'App\Http\Controllers\InformesController@printPdf')
+    Route::get('/informes/{tipo}/{id}/print', [InformesController::class, 'printPdf'])
         ->name('informes.print');
-    Route::get('/clientes/{cliente}/centros', [CentroMedicoController::class, 'porCliente']);
-    Route::get('/centros-medicos/{centro}/equipos', [EquipoController::class, 'porCentro'])
-        ->name('centros-medicos.equipos');
-    Route::get('/equipos/{equipo}/horas-uso', [EquipoController::class, 'horasUso'])
-        ->name('equipos.horas-uso');
+
+    // -----------------------------------------------------
+    // Helpers para selects (clientes/centros/equipos)
+    // -----------------------------------------------------
     Route::get('/clientes/{cliente}/centros', [CentroMedicoController::class, 'porCliente'])
         ->name('clientes.centros');
+
+    Route::get('/centros-medicos/{centro}/equipos', [EquipoController::class, 'porCentro'])
+        ->name('centros-medicos.equipos');
+
+    Route::get('/equipos/{equipo}/horas-uso', [EquipoController::class, 'horasUso'])
+        ->whereNumber('equipo')
+        ->name('equipos.horas-uso');
+
     Route::get('/centros/{centro}/equipos', [EquipoController::class, 'porCentro'])
         ->name('centros.equipos');
-
-    // Estas sí las vi (registro/listado/borrado), dentro de auth + twofactor
-    Route::post('/passkeys/options', [PasskeyController::class, 'options'])->name('passkeys.options');
-    Route::post('/passkeys', [PasskeyController::class, 'store'])->name('passkeys.store');
-    Route::get('/passkeys', [PasskeyController::class, 'index'])->name('passkeys.index');
-    Route::delete('/passkeys/{passkey}', [PasskeyController::class, 'destroy'])->name('passkeys.destroy');
 });
 
-
+// ---------------------------------------------------------
+// Passkeys login (fuera de auth, para login con passkey)
+// ---------------------------------------------------------
 Route::post('/passkeys/login/options', [PasskeyLoginController::class, 'options'])
-    ->name('passkeys.login.options');
+    ->name('passkeys.login.options.cust');
 
 Route::post('/passkeys/login', [PasskeyLoginController::class, 'login'])
-    ->name('passkeys.login');
-
-
-
-
-
+    ->name('passkeys.login.cust');
 
 // ---------------------------------------------------------
 // Auth scaffolding
