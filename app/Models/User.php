@@ -7,10 +7,13 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Log;
+use Laragear\WebAuthn\Contracts\WebAuthnAuthenticatable;
+use Laragear\WebAuthn\WebAuthnAuthentication;
 
-class User extends Authenticatable
+class User extends Authenticatable implements WebAuthnAuthenticatable
 {
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, WebAuthnAuthentication;
 
     protected $fillable = [
         'name',
@@ -18,12 +21,15 @@ class User extends Authenticatable
         'password',
         'rol_id',
         'avatar',
-        'activo'
+        'activo',
     ];
 
     protected $hidden = [
         'password',
         'remember_token',
+        // puedes ocultar también secretos 2FA si quieres:
+        // 'two_factor_secret',
+        // 'two_factor_recovery_codes',
     ];
 
     protected function casts(): array
@@ -31,9 +37,46 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
-            'activo' => 'boolean'
+            'activo' => 'boolean',
+            'two_factor_confirmed_at' => 'datetime', // importante para 2FA
         ];
     }
+
+    // ==========================
+    // 2FA helpers
+    // ==========================
+
+    /**
+     * Indica si el usuario tiene 2FA activado.
+     * Usa la columna two_factor_confirmed_at de la tabla users.
+     */
+
+    public function hasTwoFactorEnabled(): bool
+    {
+        return ! is_null($this->two_factor_secret)
+            && ! is_null($this->two_factor_confirmed_at);
+    }
+
+    /**
+     * Marca el 2FA como verificado (cuando el código TOTP fue correcto).
+     */
+    public function markTwoFactorAsVerified(): void
+    {
+        $this->forceFill([
+            'two_factor_confirmed_at' => now(),
+        ])->save();
+    }
+
+    // (Opcional) Por si alguna vez quieres saber si está pendiente de confirmar
+    public function isTwoFactorPending(): bool
+    {
+        return ! is_null($this->two_factor_secret)
+            && is_null($this->two_factor_confirmed_at);
+    }
+
+    // ==========================
+    // Roles / privilegios
+    // ==========================
 
     // Relación principal con Role
     public function role()
@@ -48,14 +91,14 @@ class User extends Authenticatable
         $userPrivs = $this->role ? $this->role->privilegios->pluck('nombre')->toArray() : [];
         $intersect = array_intersect($userPrivs, $privilegios);
 
-        \Log::info('TienePrivilegio', [
-            'user_id' => $this->id,
-            'user_name' => $this->name,
-            'user_role' => $this->role ? $this->role->nombre : null,
+        Log::info('TienePrivilegio', [
+            'user_id'    => $this->id,
+            'user_name'  => $this->name,
+            'user_role'  => $this->role ? $this->role->nombre : null,
             'user_privs' => $userPrivs,
-            'checking' => $privilegios,
-            'intersect' => $intersect,
-            'result' => count($intersect) > 0,
+            'checking'   => $privilegios,
+            'intersect'  => $intersect,
+            'result'     => count($intersect) > 0,
         ]);
 
         return count($intersect) > 0;
@@ -71,7 +114,10 @@ class User extends Authenticatable
         return $this->role && $this->role->nombre === 'tecnico';
     }
 
-    // Métodos existentes
+    // ==========================
+    // Otros helpers
+    // ==========================
+
     public function initials(): string
     {
         return Str::of($this->name)

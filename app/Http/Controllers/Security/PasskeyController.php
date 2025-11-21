@@ -16,20 +16,35 @@ class PasskeyController extends Controller
 
     public function store(Request $request, WebAuthnService $service)
     {
+        // 1) Validamos datos ANIDADOS en "attestation"
         $validated = $request->validate([
             'name' => ['nullable', 'string', 'max:100'],
+
             'attestation' => ['required', 'array'],
             'attestation.id' => ['required', 'string'],
             'attestation.rawId' => ['required', 'string'],
             'attestation.type' => ['required', 'string'],
+
+            'attestation.response' => ['required', 'array'],
             'attestation.response.clientDataJSON' => ['required', 'string'],
             'attestation.response.attestationObject' => ['required', 'string'],
         ]);
 
         $user = $request->user();
-        $attestationRequest = Request::create('', 'POST', $validated['attestation']);
 
-        $passkey = $service->storePasskey($attestationRequest, $user, $request->input('name', 'Passkey'));
+        // 2) Creamos un Request "fake" con SOLO los campos que espera Laragear
+        $attestationRequest = Request::create(
+            '',
+            'POST',
+            $validated['attestation']
+        );
+
+        // 3) Lo delegamos al servicio de WebAuthn
+        $passkey = $service->storePasskey(
+            $attestationRequest,
+            $user,
+            $request->input('name', 'Passkey')
+        );
 
         return response()->json(['id' => $passkey->id]);
     }

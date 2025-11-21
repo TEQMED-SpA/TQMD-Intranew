@@ -12,16 +12,12 @@ use Laragear\WebAuthn\Attestations\CredentialAttestationValidator;
 use Laragear\WebAuthn\Enums\ChallengeType;
 use Laragear\WebAuthn\WebAuthn;
 
-
 class WebAuthnService
 {
     public function __construct(
         protected WebAuthn $webAuthn,
     ) {}
 
-    /**
-     * Opciones para registrar un passkey (navigator.credentials.create).
-     */
     public function creationOptions(User $user): CredentialCreationRequestOptions
     {
         return $this->webAuthn
@@ -31,62 +27,48 @@ class WebAuthnService
             ->setChallengeType(ChallengeType::Create);
     }
 
-    /**
-     * Valida la attestation y crea tanto la credencial WebAuthn
-     * como el registro en tu tabla `passkeys`.
-     */
     public function storePasskey(Request $request, User $user, string $name): Passkey
     {
+        /** @var CredentialAttestationValidator $attestation */
         $attestation = $this->webAuthn->validateAttestation($request);
 
-        // Guardamos SOLO en tu tabla passkeys
+        $credential = $attestation->save(
+            user: $user,
+            name: $name,
+        );
+
+        $credentialId = $credential->credential_id ?? $credential->credentialId;
+        $publicKey    = $credential->public_key    ?? $credential->publicKey;
+        $transports   = $credential->transports ?? [];
+
         return Passkey::create([
-            'user_id'         => $user->id,
-            'name'            => $name,
-            'credential_id'   => base64_encode($attestation->credentialId),
-            'public_key'      => base64_encode($attestation->publicKey),
-            'counter'         => $attestation->counter,
-            'transports'      => is_array($attestation->transports)
-                ? implode(',', $attestation->transports)
-                : (string) $attestation->transports,
-            'attestation_type' => $attestation->type,
-            'last_used_at'    => now(),
+            'user_id'          => $user->id,
+            'name'             => $name,
+            'credential_id'    => base64_encode($credentialId),
+            'public_key'       => base64_encode($publicKey),
+            'counter'          => $credential->counter,
+            'transports'       => is_array($transports) ? implode(',', $transports) : (string) $transports,
+            'attestation_type' => $credential->attestation_type ?? null,
         ]);
     }
 
-
-    /**
-     * Opciones para login con passkey (navigator.credentials.get).
-     */
     public function assertionOptions(?User $user = null): CredentialAssertionRequestOptions
     {
         return $this->webAuthn
             ->generateAssertion($user)
             ->setTimeout(60000)
-            ->setUserVerification(); // puedes pasar 'required' / 'preferred' / 'discouraged' según tu config
+            ->setUserVerification();
     }
 
-    /**
-     * Valida el assertion del navegador y devuelve el usuario autenticado.
-     */
     public function validateAssertion(Request $request): ?User
     {
+        /** @var CredentialAssertionValidator $assertion */
         $assertion = $this->webAuthn->validateAssertion($request);
 
-        $passkey = Passkey::where(
-            'credential_id',
-            base64_encode($assertion->credentialId)
-        )->first();
-
-        if (! $passkey) {
-            return null;
+        if ($assertion->user instanceof User) {
+            $assertion->user->forceFill(['last_passkey_at' => now()])->save();
         }
 
-        $passkey->update([
-            'counter' => $assertion->counter,
-            'last_used_at' => now(),
-        ]);
-
-        return $passkey->user;
+        return $assertion->user;
     }
 }

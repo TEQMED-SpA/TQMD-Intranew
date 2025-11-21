@@ -117,7 +117,9 @@
         // Helpers globales para WebAuthn: se definen una sola vez en window
         if (!window.base64ToArrayBuffer) {
             window.base64ToArrayBuffer = (base64) => {
-                const binary = atob(base64.replace(/-/g, '+').replace(/_/g, '/'));
+                // Normalizamos base64 URL-safe a base64 estándar
+                const fixed = base64.replace(/-/g, '+').replace(/_/g, '/');
+                const binary = atob(fixed);
                 const bytes = new Uint8Array(binary.length);
                 for (let i = 0; i < binary.length; i++) {
                     bytes[i] = binary.charCodeAt(i);
@@ -164,6 +166,7 @@
                     const optionsResponse = await fetch('{{ route('passkeys.options') }}', {
                         method: 'POST',
                         headers: {
+                            'Content-Type': 'application/json',
                             'X-CSRF-TOKEN': csrf,
                             'Accept': 'application/json',
                         },
@@ -195,7 +198,12 @@
                         publicKey
                     });
 
-                    // 4) Preparar el payload en el formato estándar que AttestedRequest espera
+                    if (!credential) {
+                        alert('No se pudo crear la credencial WebAuthn.');
+                        return;
+                    }
+
+                    // 4) Preparar el payload en el formato estándar
                     const attestation = {
                         id: credential.id,
                         rawId: window.arrayBufferToBase64(credential.rawId),
@@ -208,7 +216,8 @@
                             credential.getClientExtensionResults() : {},
                     };
 
-                    // 5) Enviar al backend (sin envolver en "attestation", todo plano)
+                    // 5) Enviar al backend **dentro de la clave 'attestation'**
+                    // 5) Enviar al backend EN "attestation"
                     const storeResponse = await fetch('{{ route('passkeys.store') }}', {
                         method: 'POST',
                         headers: {
@@ -218,9 +227,10 @@
                         },
                         body: JSON.stringify({
                             name: this.passkeyName || 'Passkey',
-                            ...attestation,
+                            attestation: attestation, 
                         }),
                     });
+
 
                     if (!storeResponse.ok) {
                         const text = await storeResponse.text();
@@ -231,28 +241,44 @@
 
                     this.passkeyName = '';
                     await this.loadPasskeys();
-                }
-
+                }, 
 
                 async loadPasskeys() {
                     const csrf = getCsrfToken();
                     const list = await fetch('{{ route('passkeys.index') }}', {
                         headers: {
                             'X-CSRF-TOKEN': csrf,
+                            'Accept': 'application/json',
                         },
                     });
+
+                    if (!list.ok) {
+                        const text = await list.text();
+                        console.error('Error al obtener lista de passkeys', list.status, text);
+                        return;
+                    }
 
                     this.passkeys = await list.json();
                 },
 
                 async deletePasskey(id) {
+                    if (!confirm('¿Eliminar esta passkey?')) return;
+
                     const csrf = getCsrfToken();
-                    await fetch('{{ url('passkeys') }}/' + id, {
+                    const resp = await fetch('{{ url('passkeys') }}/' + id, {
                         method: 'DELETE',
                         headers: {
                             'X-CSRF-TOKEN': csrf,
+                            'Accept': 'application/json',
                         },
                     });
+
+                    if (!resp.ok) {
+                        const text = await resp.text();
+                        console.error('Error al borrar passkey', resp.status, text);
+                        alert('No se pudo eliminar la passkey.');
+                        return;
+                    }
 
                     await this.loadPasskeys();
                 },

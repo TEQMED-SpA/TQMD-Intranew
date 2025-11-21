@@ -23,7 +23,7 @@ use App\Http\Controllers\TicketController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\PrivilegioController;
 use App\Http\Controllers\InventarioTecnicoController;
-use App\Http\Controllers\Security\PasskeyController as SecurityPasskeyController;
+use App\Http\Controllers\Security\PasskeyController;
 use App\Http\Controllers\InformesController;
 use App\Http\Controllers\Api\LookupController;
 
@@ -75,13 +75,12 @@ Route::middleware(['auth', 'twofactor'])->group(function () {
         Route::get('settings/security', Security::class)->name('settings.security');
     }
 
-    // ==========================
     // Passkeys (CRUD usuario logueado)
-    // ==========================
-    Route::post('/passkeys/options', [SecurityPasskeyController::class, 'options'])->name('passkeys.options');
-    Route::post('/passkeys', [SecurityPasskeyController::class, 'store'])->name('passkeys.store');
-    Route::get('/passkeys', [SecurityPasskeyController::class, 'index'])->name('passkeys.index');
-    Route::delete('/passkeys/{passkey}', [SecurityPasskeyController::class, 'destroy'])->name('passkeys.destroy');
+    Route::post('/passkeys/options', [PasskeyController::class, 'options'])->name('passkeys.options');
+    Route::post('/passkeys', [PasskeyController::class, 'store'])->name('passkeys.store');
+    Route::get('/passkeys', [PasskeyController::class, 'index'])->name('passkeys.index');
+    Route::delete('/passkeys/{passkey}', [PasskeyController::class, 'destroy'])->name('passkeys.destroy');
+
 
 
     // ==========================
@@ -308,14 +307,13 @@ Route::middleware(['auth', 'twofactor'])->group(function () {
         ->name('centros.equipos');
 });
 
-// ---------------------------------------------------------
 // Passkeys login (fuera de auth, para login con passkey)
-// ---------------------------------------------------------
 Route::post('/passkeys/login/options', [PasskeyLoginController::class, 'options'])
     ->name('passkeys.login.options.cust');
 
 Route::post('/passkeys/login', [PasskeyLoginController::class, 'login'])
     ->name('passkeys.login.cust');
+
 
 // ---------------------------------------------------------
 // Auth scaffolding

@@ -4,15 +4,21 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
-use App\Services\WebAuthnService;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Validation\ValidationException;
+use Laragear\WebAuthn\Http\Requests\AssertionRequest;
+use Laragear\WebAuthn\Http\Requests\AssertedRequest;
 
 class PasskeyLoginController extends Controller
 {
-    public function options(Request $request, WebAuthnService $service)
+    /**
+     * Devuelve las opciones para navigator.credentials.get()
+     * (login con passkey).
+     *
+     * Se llama vía POST desde el login con JSON { email: "..."} opcional.
+     */
+    public function options(AssertionRequest $request)
     {
         $user = null;
 
@@ -20,23 +26,33 @@ class PasskeyLoginController extends Controller
             $user = User::where('email', $request->string('email'))->first();
         }
 
-        return response()->json($service->assertionOptions($user));
+        // toVerify() genera las opciones de assertion basadas en el usuario (o userless)
+        return response()->json(
+            $request->toVerify($user)
+        );
     }
 
-    public function login(Request $request, WebAuthnService $service)
+    /**
+     * Recibe el assertion de navigator.credentials.get() y autentica al usuario.
+     */
+    public function login(AssertedRequest $request)
     {
-        $user = $service->validateAssertion($request);
+        // AssertedRequest ya validó la firma, challenge, etc.
+        // El usuario autenticado viene en $request->user()
+        $user = $request->user();
 
-        if (! $user) {
+        if (! $user instanceof User) {
             throw ValidationException::withMessages([
                 'passkey' => __('No se pudo validar tu passkey.'),
             ]);
         }
 
+        // Login de Laravel
         Auth::login($user, true);
         Session::regenerate();
 
-        if ($user->hasTwoFactorEnabled()) {
+        // Si usas 2FA TOTP, checkeamos si está habilitado
+        if (method_exists($user, 'hasTwoFactorEnabled') && $user->hasTwoFactorEnabled()) {
             Session::put('two_factor_passed', false);
 
             return response()->json([

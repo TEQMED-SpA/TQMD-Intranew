@@ -4,12 +4,14 @@
 
 <head>
     @include('partials.head')
+        @fluxAppearance
+
     <link rel="icon"
     type="image/x-icon" href="{{ asset('favicon.ico') }}">
 </head>
 
 <body class="min-h-screen bg-white dark:bg-zinc-800">
-    <flux:sidebar sticky stashable class="border-e border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900">
+    <flux:sidebar sticky collapsible class="bg-zinc-50 dark:bg-zinc-900 border-r border-zinc-200 dark:border-zinc-700">
         <flux:sidebar.toggle class="lg:hidden" icon="x-mark" />
 
         <a href="{{ route('dashboard') }}" class="me-5 flex items-center space-x-2 rtl:space-x-reverse" wire:navigate>
@@ -23,11 +25,11 @@
             </flux:navlist.item>
         </flux:navlist.group>
 
-        <flux:navlist variant="outline">
+        <flux:navlist class="w-64">
             @if (auth()->check())
                 {{-- Grupo: Gestión (solo admin) --}}
                 @role('admin')
-                    <flux:navlist.group :heading="__('Gestión')" class="grid">
+                    <flux:navlist.group heading="Gestión" expandable>
                         <flux:navlist.item icon="users" :href="route('users.index')"
                             :current="request()->routeIs('users.*')" wire:navigate>
                             {{ __('Usuarios') }}

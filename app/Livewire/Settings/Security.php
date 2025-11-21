@@ -7,9 +7,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Session;
 use Livewire\Attributes\Layout;
-
 use Livewire\Component;
-use Laragear\WebAuthn\Models\WebAuthnCredential;
 
 #[Layout('components.layouts.app')]
 class Security extends Component
@@ -30,7 +28,6 @@ class Security extends Component
             try {
                 $this->secret = Crypt::decryptString($user->two_factor_secret);
             } catch (\Throwable $e) {
-                // Si falla, dejamos el secreto en null y evitamos romper la vista
                 $this->secret = null;
             }
 
@@ -38,7 +35,6 @@ class Security extends Component
                 $this->qrCode = $twoFactor->qrcodeUrl($user, $this->secret);
             }
 
-            // Esto ya usa Crypt::decryptString internamente
             $this->recoveryCodes = $twoFactor->recoveryCodes($user);
         }
 
@@ -111,7 +107,6 @@ class Security extends Component
         try {
             $secret = Crypt::decryptString($user->two_factor_secret);
         } catch (\Throwable $e) {
-            // No se puede regenerar si el secreto está corrupto
             return;
         }
 
@@ -135,11 +130,8 @@ class Security extends Component
             ->toArray();
     }
 
-
-
     public function render()
     {
-        // Ajusta la vista al path real que tengas
         return view('livewire.settings.security');
     }
 }
