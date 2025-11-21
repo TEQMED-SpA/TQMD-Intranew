@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services;
 
 use App\Models\Passkey;
@@ -7,30 +9,30 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Laragear\WebAuthn\Assertions\CredentialAssertionRequestOptions;
 use Laragear\WebAuthn\Assertions\CredentialAssertionValidator;
-use Laragear\WebAuthn\Attestations\CredentialCreationRequestOptions;
 use Laragear\WebAuthn\Attestations\CredentialAttestationValidator;
+use Laragear\WebAuthn\Attestations\CredentialCreationRequestOptions;
 use Laragear\WebAuthn\Enums\ChallengeType;
-use Laragear\WebAuthn\WebAuthn;
+use Laragear\WebAuthn\Facades\WebAuthn;
 
 class WebAuthnService
 {
-    public function __construct(
-        protected WebAuthn $webAuthn,
-    ) {}
-
-    public function creationOptions(User $user): CredentialCreationRequestOptions
+    public function attestationOptions(User $user): CredentialCreationRequestOptions
     {
-        return $this->webAuthn
-            ->generateAttestation($user)
+        return WebAuthn::generateAttestation($user)
             ->setUserHandle((string) $user->getAuthIdentifier())
             ->setTimeout(60000)
             ->setChallengeType(ChallengeType::Create);
     }
 
+    public function creationOptions(User $user): CredentialCreationRequestOptions
+    {
+        return $this->attestationOptions($user);
+    }
+
     public function storePasskey(Request $request, User $user, string $name): Passkey
     {
         /** @var CredentialAttestationValidator $attestation */
-        $attestation = $this->webAuthn->validateAttestation($request);
+        $attestation = WebAuthn::validateAttestation($request);
 
         $credential = $attestation->save(
             user: $user,
@@ -54,8 +56,8 @@ class WebAuthnService
 
     public function assertionOptions(?User $user = null): CredentialAssertionRequestOptions
     {
-        return $this->webAuthn
-            ->generateAssertion($user)
+
+        return WebAuthn::generateAssertion($user)
             ->setTimeout(60000)
             ->setUserVerification();
     }
@@ -63,7 +65,7 @@ class WebAuthnService
     public function validateAssertion(Request $request): ?User
     {
         /** @var CredentialAssertionValidator $assertion */
-        $assertion = $this->webAuthn->validateAssertion($request);
+        $assertion = WebAuthn::validateAssertion($request);
 
         if ($assertion->user instanceof User) {
             $assertion->user->forceFill(['last_passkey_at' => now()])->save();

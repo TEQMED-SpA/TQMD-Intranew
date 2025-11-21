@@ -23,7 +23,7 @@
 
         <!-- Remember Me -->
         <flux:checkbox wire:model="remember" :label="__('Recordarme')" />
-        <div class="flex flex-col gap-6" x-data="passkeyLogin()">
+        <div class="flex flex-col gap-6" x-data="passkeyLogin">
             <div class="flex items-center justify-end">
                 <flux:button variant="primary" type="submit" class="w-full">
                     {{ __('Iniciar sesión') }}
@@ -70,8 +70,8 @@
             };
         }
 
-        function passkeyLogin() {
-            return {
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('passkeyLogin', () => ({
                 async loginWithPasskey() {
                     const csrf = getCsrfToken();
 
@@ -84,21 +84,23 @@
                     const email = emailInput ? emailInput.value : '';
 
                     // 1) Pedimos opciones al backend
-                    const optionsResponse = await fetch('{{ route('passkeys.login.options.cust') }}', {
-                        method: 'POST',
-                        headers: {
-                            'X-CSRF-TOKEN': csrf,
-                            'Accept': 'application/json',
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({
-                            email
-                        }),
-                    });
+                    const optionsResponse = await fetch(
+                        '{{ route('passkeys.login.options.cust') }}', {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRF-TOKEN': csrf,
+                                'Accept': 'application/json',
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                email
+                            }),
+                        });
 
                     if (!optionsResponse.ok) {
                         const text = await optionsResponse.text();
-                        console.error('Error al obtener opciones de login passkey', optionsResponse.status, text);
+                        console.error('Error al obtener opciones de login passkey', optionsResponse
+                            .status, text);
                         alert('Error al preparar el login con passkey.');
                         return;
                     }
@@ -127,11 +129,14 @@
                         rawId: window.arrayBufferToBase64(assertion.rawId),
                         type: assertion.type,
                         response: {
-                            clientDataJSON: window.arrayBufferToBase64(assertion.response.clientDataJSON),
-                            authenticatorData: window.arrayBufferToBase64(assertion.response.authenticatorData),
+                            clientDataJSON: window.arrayBufferToBase64(assertion.response
+                                .clientDataJSON),
+                            authenticatorData: window.arrayBufferToBase64(assertion.response
+                                .authenticatorData),
                             signature: window.arrayBufferToBase64(assertion.response.signature),
                             userHandle: assertion.response.userHandle ?
-                                window.arrayBufferToBase64(assertion.response.userHandle) : null,
+                                window.arrayBufferToBase64(assertion.response.userHandle) :
+                                null,
                         },
                         clientExtensionResults: assertion.getClientExtensionResults ?
                             assertion.getClientExtensionResults() : {},
@@ -163,7 +168,7 @@
                         window.location.reload();
                     }
                 }
-            }
-        }
+            }));
+        });
     </script>
 @endpush
