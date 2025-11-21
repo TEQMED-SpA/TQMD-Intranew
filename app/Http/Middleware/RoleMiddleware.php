@@ -25,7 +25,7 @@ class RoleMiddleware
         }
 
         if ($user->isAdmin()) {
-            return $next($request); // admin pasa siempre
+            return $next($request);
         }
 
         if ($user->hasRole($roles)) {
