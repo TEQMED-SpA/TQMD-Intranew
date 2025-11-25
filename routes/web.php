@@ -33,7 +33,7 @@ Route::redirect('/', '/login')->name('home');
 // Dashboard
 // ---------------------------------------------------------
 Route::view('dashboard', 'dashboard')
-    ->middleware(['auth', 'verified'])
+    ->middleware(['auth', 'verified', 'privilege:ver_dashboard'])
     ->name('dashboard');
 
 // ---------------------------------------------------------
@@ -75,15 +75,31 @@ Route::middleware(['auth'])->group(function () {
     // Roles y Privilegios
     // -----------------------------------------------------
     Route::resource('roles', RoleController::class)
-        ->middleware(['role:admin']);
+        ->only(['index', 'show'])
+        ->middleware('privilege:ver_roles');
 
-    Route::resource('privilegios', PrivilegioController::class);
+    Route::resource('roles', RoleController::class)
+        ->only(['create', 'store', 'edit', 'update', 'destroy'])
+        ->middleware('privilege:editar_roles');
+
+    Route::resource('privilegios', PrivilegioController::class)
+        ->only(['index', 'show'])
+        ->middleware('privilege:ver_privilegios');
+
+    Route::resource('privilegios', PrivilegioController::class)
+        ->only(['create', 'store', 'edit', 'update', 'destroy'])
+        ->middleware('privilege:editar_privilegios');
 
     // -----------------------------------------------------
     // Usuarios (solo admin)
     // -----------------------------------------------------
     Route::resource('users', UserController::class)
-        ->middleware(['role:admin']);
+        ->only(['index', 'show'])
+        ->middleware('privilege:ver_usuarios');
+
+    Route::resource('users', UserController::class)
+        ->only(['create', 'store', 'edit', 'update', 'destroy'])
+        ->middleware('privilege:editar_usuarios');
 
     // -----------------------------------------------------
     // Clientes (separado por privilegio de edición)
@@ -95,23 +111,24 @@ Route::middleware(['auth'])->group(function () {
 
     // Lectura (después)
     Route::resource('clientes', ClienteController::class)
-        ->only(['index', 'show']); // si tienes 'ver_clientes' puedes agregarlo aquí
+        ->only(['index', 'show'])
+        ->middleware(['privilege:ver_clientes']);
 
     // -----------------------------------------------------
     // Categorías de repuestos
     // -----------------------------------------------------
     Route::resource('categorias', CategoriaRepuestoController::class)
         ->only(['create', 'store', 'edit', 'update', 'destroy'])
-        ->middleware(['privilege:editar_repuestos']);
+        ->middleware(['privilege:editar_categorias_repuestos']);
 
     Route::resource('categorias', CategoriaRepuestoController::class)
         ->only(['index', 'show'])
-        ->middleware(['privilege:ver_repuestos']);
+        ->middleware(['privilege:ver_categorias_repuestos']);
 
     // AJAX categorías (crear rápida)
     Route::post('/categorias/ajax-store', [CategoriaRepuestoController::class, 'ajaxStore'])
         ->name('categorias.ajax-store')
-        ->middleware(['privilege:editar_repuestos']);
+        ->middleware(['privilege:editar_categorias_repuestos']);
 
     // -----------------------------------------------------
     // Repuestos
@@ -173,7 +190,9 @@ Route::middleware(['auth'])->group(function () {
     // -----------------------------------------------------
     // Salidas
     // -----------------------------------------------------
-    Route::resource('salidas', SalidaController::class);
+    Route::resource('salidas', SalidaController::class)
+        ->only(['index'])
+        ->middleware('privilege:ver_repuestos');
 
     // -----------------------------------------------------
     // Inventario Técnico
@@ -215,13 +234,32 @@ Route::middleware(['auth'])->group(function () {
     // -----------------------------------------------------
     // Tickets (sin create/store)
     // -----------------------------------------------------
-    Route::resource('tickets', TicketController::class)->except(['create', 'store']);
+    Route::resource('tickets', TicketController::class)
+        ->only(['index', 'show'])
+        ->middleware('privilege:ver_tickets');
+
+    Route::resource('tickets', TicketController::class)
+        ->only(['edit', 'update', 'destroy'])
+        ->middleware('privilege:editar_tickets');
 
     // -----------------------------------------------------
     // Llamados y categorías de llamados
     // -----------------------------------------------------
-    Route::resource('llamados', LlamadoController::class);
-    Route::resource('categoria_llamados', CategoriaLlamadoController::class);
+    Route::resource('llamados', LlamadoController::class)
+        ->only(['index', 'show'])
+        ->middleware('privilege:ver_llamados');
+
+    Route::resource('llamados', LlamadoController::class)
+        ->only(['create', 'store', 'edit', 'update', 'destroy'])
+        ->middleware('privilege:editar_llamados');
+
+    Route::resource('categoria_llamados', CategoriaLlamadoController::class)
+        ->only(['index', 'show'])
+        ->middleware('privilege:ver_llamados');
+
+    Route::resource('categoria_llamados', CategoriaLlamadoController::class)
+        ->only(['create', 'store', 'edit', 'update', 'destroy'])
+        ->middleware('privilege:editar_llamados');
     Route::get('get-all-categorias', [CategoriaLlamadoController::class, 'getAllCategorias'])
         ->name('get.all.categorias');
 
@@ -241,32 +279,40 @@ Route::middleware(['auth'])->group(function () {
     // -----------------------------------------------------
 
     Route::get('/informes', [InformesController::class, 'index'])
-        ->name('informes.index');
+        ->name('informes.index')
+        ->middleware('privilege:ver_reportes');
 
     Route::get('/informes/create', [InformesController::class, 'create'])
-        ->name('informes.create');
+        ->name('informes.create')
+        ->middleware('privilege:ver_reportes');
 
     // Correctivo
     Route::post('/informes/correctivo', [InformesController::class, 'storeCorrectivo'])
-        ->name('informes.correctivo.store');
+        ->name('informes.correctivo.store')
+        ->middleware('privilege:ver_reportes');
 
     Route::get('/informes/correctivo/{id}', [InformesController::class, 'showCorrectivo'])
-        ->name('informes.correctivo.show');
+        ->name('informes.correctivo.show')
+        ->middleware('privilege:ver_reportes');
 
     // Preventivo
     Route::post('/informes/preventivo', [InformesController::class, 'storePreventivo'])
-        ->name('informes.preventivo.store');
+        ->name('informes.preventivo.store')
+        ->middleware('privilege:ver_reportes');
 
     Route::get('/informes/preventivo/{id}', [InformesController::class, 'showPreventivo'])
-        ->name('informes.preventivo.show');
+        ->name('informes.preventivo.show')
+        ->middleware('privilege:ver_reportes');
 
     // ---------- RUTAS UNIFICADAS PARA PDF ----------
     // tipo = 'correctivo' o 'preventivo'
     Route::get('/informes/{tipo}/{id}/download', [InformesController::class, 'downloadPdf'])
-        ->name('informes.download');
+        ->name('informes.download')
+        ->middleware('privilege:ver_reportes');
 
     Route::get('/informes/{tipo}/{id}/print', [InformesController::class, 'printPdf'])
-        ->name('informes.print');
+        ->name('informes.print')
+        ->middleware('privilege:ver_reportes');
 
     Route::get('/clientes/{cliente}/centros', [CentroMedicoController::class, 'porCliente']);
     Route::get('/centros-medicos/{centro}/equipos', [EquipoController::class, 'porCentro'])

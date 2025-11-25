@@ -45,20 +45,26 @@
 
                 {{-- Grupo: Gestión general --}}
                 <flux:navlist.group :heading="__('Gestión')" class="grid">
-                    <flux:navlist.item icon="ticket" :href="route('tickets.index')"
-                        :current="request()->routeIs('tickets.*')" wire:navigate>
-                        {{ __('Tickets') }}
-                    </flux:navlist.item>
+                    @privilegio('ver_tickets')
+                        <flux:navlist.item icon="ticket" :href="route('tickets.index')"
+                            :current="request()->routeIs('tickets.*')" wire:navigate>
+                            {{ __('Tickets') }}
+                        </flux:navlist.item>
+                    @endprivilegio
 
-                    <flux:navlist.item icon="users" :href="route('clientes.index')"
-                        :current="request()->routeIs('clientes.*')" wire:navigate>
-                        {{ __('Clientes') }}
-                    </flux:navlist.item>
+                    @privilegio('ver_clientes')
+                        <flux:navlist.item icon="users" :href="route('clientes.index')"
+                            :current="request()->routeIs('clientes.*')" wire:navigate>
+                            {{ __('Clientes') }}
+                        </flux:navlist.item>
+                    @endprivilegio
 
-                    <flux:navlist.item icon="building-office-2" :href="route('centros_medicos.index')"
-                        :current="request()->routeIs('centros_medicos.*')" wire:navigate>
-                        {{ __('Centros Médicos') }}
-                    </flux:navlist.item>
+                    @privilegio('ver_centros_medicos')
+                        <flux:navlist.item icon="building-office-2" :href="route('centros_medicos.index')"
+                            :current="request()->routeIs('centros_medicos.*')" wire:navigate>
+                            {{ __('Centros Médicos') }}
+                        </flux:navlist.item>
+                    @endprivilegio
 
                     @php
                         $u = auth()->user();

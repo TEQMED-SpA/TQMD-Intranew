@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasRolesAndPrivileges;
 use App\Notifications\ResetPasswordNotification;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -10,7 +11,7 @@ use Illuminate\Support\Str;
 
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, HasRolesAndPrivileges;
 
     protected $fillable = [
         'name',
@@ -63,7 +64,7 @@ class User extends Authenticatable
 
     public function esAdmin()
     {
-        return $this->role && $this->role->nombre === 'admin';
+        return $this->isAdmin();
     }
 
     public function esTecnico()
