@@ -75,7 +75,7 @@
         //  FIRMA / LÓGICA CORRECTIVO
         // ==========================
         const Correctivo = {
-            signaturePad: null,
+            signaturePads: [],
 
             init: function() {
                 // Select2 global
@@ -134,64 +134,155 @@
                     });
                 }
 
-                // --------- Firma digital ----------
-                const canvas = document.getElementById('signature-pad');
-                const clearButton = document.getElementById('clear-signature');
-                const firmaInput = document.getElementById('firma-input');
-                const firmaHelp = document.getElementById('firma-help');
-
-                if (canvas && typeof SignaturePad !== 'undefined') {
-                    this.signaturePad = new SignaturePad(canvas, {
-                        minWidth: 1,
-                        maxWidth: 3,
-                        penColor: 'black',
-                    });
-
-                    const resizeCanvas = () => {
-                        const ratio = Math.max(window.devicePixelRatio || 1, 1);
-                        const width = canvas.offsetWidth || 300;
-                        const height = 150;
-
-                        canvas.width = width * ratio;
-                        canvas.height = height * ratio;
-                        const ctx = canvas.getContext('2d');
-                        ctx.scale(ratio, ratio);
-                        this.signaturePad.clear();
-                    };
-
-                    resizeCanvas();
-                    window.addEventListener('resize', resizeCanvas);
-
-                    if (clearButton && firmaInput && firmaHelp) {
-                        clearButton.addEventListener('click', () => {
-                            this.signaturePad.clear();
-                            firmaInput.value = '';
-                            firmaHelp.textContent = 'Dibuja tu firma en el área de arriba.';
-                            firmaHelp.style.color = 'gray';
-                        });
-                    }
-
-                    const form = document.getElementById('form-correctivo');
-                    if (form && firmaInput && firmaHelp) {
-                        form.addEventListener('submit', (e) => {
-                            if (this.signaturePad.isEmpty()) {
-                                e.preventDefault();
-                                firmaHelp.textContent = 'La firma digital es obligatoria. Dibuja tu firma.';
-                                firmaHelp.style.color = 'red';
-                                return;
-                            }
-                            firmaInput.value = this.signaturePad.toDataURL('image/png');
-                        });
-                    }
-                }
+                // --------- Firmas (técnico obligatorio / cliente opcional) ----------
+                this.initSignaturePads();
             }
+        };
+
+        Correctivo.initSignaturePads = function() {
+            if (this.signaturePads.length) {
+                return;
+            }
+
+            if (typeof SignaturePad === 'undefined') {
+                return;
+            }
+
+            const padsConfig = [{
+                    canvasId: 'signature-pad-tecnico',
+                    clearId: 'clear-signature-tecnico',
+                    inputId: 'firma-tecnico-input',
+                    helpId: 'firma-tecnico-help',
+                    required: true,
+                },
+                {
+                    canvasId: 'signature-pad-cliente',
+                    clearId: 'clear-signature-cliente',
+                    inputId: 'firma-cliente-input',
+                    helpId: 'firma-cliente-help',
+                    required: false,
+                },
+            ];
+
+            const createPad = ({
+                canvasId,
+                clearId,
+                inputId,
+                helpId,
+                required
+            }) => {
+                const canvas = document.getElementById(canvasId);
+                const clearBtn = document.getElementById(clearId);
+                const input = document.getElementById(inputId);
+                const help = document.getElementById(helpId);
+
+                if (!canvas || !input) {
+                    return null;
+                }
+
+                const pad = new SignaturePad(canvas, {
+                    minWidth: 1,
+                    maxWidth: 3,
+                    penColor: 'black',
+                });
+
+                const defaultHelpText = help ? help.textContent : '';
+                const defaultHelpColor = help ? help.style.color : '';
+
+                const resizeCanvas = () => {
+                    const ratio = Math.max(window.devicePixelRatio || 1, 1);
+                    const width = canvas.offsetWidth || 300;
+                    const height = 150;
+                    canvas.width = width * ratio;
+                    canvas.height = height * ratio;
+                    const ctx = canvas.getContext('2d');
+                    ctx.scale(ratio, ratio);
+                    pad.clear();
+                };
+
+                resizeCanvas();
+                window.addEventListener('resize', resizeCanvas);
+
+                if (clearBtn) {
+                    clearBtn.addEventListener('click', () => {
+                        pad.clear();
+                        input.value = '';
+                        if (help) {
+                            help.textContent = defaultHelpText;
+                            help.style.color = defaultHelpColor;
+                        }
+                    });
+                }
+
+                return {
+                    pad,
+                    input,
+                    help,
+                    required,
+                    defaultHelpText,
+                    defaultHelpColor
+                };
+            };
+
+            this.signaturePads = padsConfig
+                .map(config => createPad(config))
+                .filter(Boolean);
+
+            const form = document.getElementById('form-correctivo');
+            if (!form || !this.signaturePads.length) {
+                return;
+            }
+
+            form.addEventListener('submit', (e) => {
+                let hasError = false;
+
+                this.signaturePads.forEach(({
+                    pad,
+                    input,
+                    help,
+                    required,
+                    defaultHelpText,
+                    defaultHelpColor
+                }) => {
+                    if (!pad) {
+                        return;
+                    }
+
+                    if (pad.isEmpty()) {
+                        input.value = '';
+                        if (required) {
+                            hasError = true;
+                            if (help) {
+                                help.textContent =
+                                    'La firma del técnico es obligatoria. Dibuja tu firma.';
+                                help.style.color = 'red';
+                            }
+                        } else if (help) {
+                            help.textContent = defaultHelpText;
+                            help.style.color = defaultHelpColor;
+                        }
+                    } else {
+                        input.value = pad.toDataURL('image/png');
+                        if (help) {
+                            help.textContent = defaultHelpText;
+                            help.style.color = defaultHelpColor;
+                        }
+                    }
+                });
+
+                if (hasError) {
+                    e.preventDefault();
+                }
+            }, {
+                once: true
+            });
         };
 
         // ==========================
         //  FIRMA / LÓGICA PREVENTIVO
         // ==========================
         const Preventivo = {
-            signaturePad: null,
+            signaturePads: [],
 
             init: function() {
                 const $clienteSelect = $('#form-preventivo #cliente_id');
@@ -286,58 +377,154 @@
                     });
                 }
 
-                // --------- Firma para informe preventivo ----------
-                const canvas = document.getElementById('signature-pad-preventivo');
-                const clearButton = document.getElementById('clear-signature-preventivo');
-                const firmaInput = document.getElementById('firma-input-preventivo');
-                const firmaHelp = document.getElementById('firma-help-preventivo');
-
-                if (canvas && typeof SignaturePad !== 'undefined') {
-                    this.signaturePad = new SignaturePad(canvas, {
-                        minWidth: 1,
-                        maxWidth: 3,
-                        penColor: 'black',
-                    });
-
-                    const resizeCanvasPreventivo = () => {
-                        const ratio = Math.max(window.devicePixelRatio || 1, 1);
-                        const width = canvas.offsetWidth || 300;
-                        const height = 200;
-                        canvas.width = width * ratio;
-                        canvas.height = height * ratio;
-                        const ctx = canvas.getContext('2d');
-                        ctx.scale(ratio, ratio);
-                        this.signaturePad.clear();
-                    };
-
-                    resizeCanvasPreventivo();
-                    window.addEventListener('resize', resizeCanvasPreventivo);
-
-                    if (clearButton && firmaInput && firmaHelp) {
-                        clearButton.addEventListener('click', () => {
-                            this.signaturePad.clear();
-                            firmaInput.value = '';
-                            firmaHelp.textContent = 'Dibuja tu firma en el área de arriba.';
-                            firmaHelp.style.color = 'gray';
-                        });
-                    }
-
-                    // Manejo submit
-                    const form = document.getElementById('form-preventivo');
-                    if (form && firmaInput && firmaHelp) {
-                        form.addEventListener('submit', (e) => {
-                            if (this.signaturePad.isEmpty()) {
-                                e.preventDefault();
-                                firmaHelp.textContent =
-                                    'La firma del técnico es obligatoria. Dibuja tu firma.';
-                                firmaHelp.style.color = 'red';
-                                return;
-                            }
-                            firmaInput.value = this.signaturePad.toDataURL('image/png');
-                        });
-                    }
-                }
+                // --------- Firmas (técnico obligatorio / cliente opcional) ----------
+                this.initSignaturePads();
             }
+        };
+
+        Preventivo.initSignaturePads = function() {
+            if (this.signaturePads.length) {
+                return;
+            }
+
+            if (typeof SignaturePad === 'undefined') {
+                return;
+            }
+
+            const padsConfig = [{
+                    canvasId: 'signature-pad-preventivo-tecnico',
+                    clearId: 'clear-signature-preventivo-tecnico',
+                    inputId: 'firma-input-preventivo-tecnico',
+                    helpId: 'firma-help-preventivo-tecnico',
+                    required: true,
+                    emptyMessage: 'La firma del técnico es obligatoria. Dibuja tu firma.',
+                    height: 180,
+                },
+                {
+                    canvasId: 'signature-pad-preventivo-cliente',
+                    clearId: 'clear-signature-preventivo-cliente',
+                    inputId: 'firma-input-preventivo-cliente',
+                    helpId: 'firma-help-preventivo-cliente',
+                    required: false,
+                    emptyMessage: '',
+                    height: 180,
+                },
+            ];
+
+            const createPad = ({
+                canvasId,
+                clearId,
+                inputId,
+                helpId,
+                required,
+                emptyMessage,
+                height
+            }) => {
+                const canvas = document.getElementById(canvasId);
+                const clearBtn = document.getElementById(clearId);
+                const input = document.getElementById(inputId);
+                const help = document.getElementById(helpId);
+
+                if (!canvas || !input) {
+                    return null;
+                }
+
+                const pad = new SignaturePad(canvas, {
+                    minWidth: 1,
+                    maxWidth: 3,
+                    penColor: 'black',
+                });
+
+                const defaultHelpText = help ? help.textContent : '';
+                const defaultHelpColor = help ? help.style.color : '';
+
+                const resizeCanvas = () => {
+                    const ratio = Math.max(window.devicePixelRatio || 1, 1);
+                    const width = canvas.offsetWidth || 300;
+                    canvas.width = width * ratio;
+                    canvas.height = height * ratio;
+                    const ctx = canvas.getContext('2d');
+                    ctx.scale(ratio, ratio);
+                    pad.clear();
+                };
+
+                resizeCanvas();
+                window.addEventListener('resize', resizeCanvas);
+
+                if (clearBtn) {
+                    clearBtn.addEventListener('click', () => {
+                        pad.clear();
+                        input.value = '';
+                        if (help) {
+                            help.textContent = defaultHelpText;
+                            help.style.color = defaultHelpColor;
+                        }
+                    });
+                }
+
+                return {
+                    pad,
+                    input,
+                    help,
+                    required,
+                    defaultHelpText,
+                    defaultHelpColor,
+                    emptyMessage
+                };
+            };
+
+            this.signaturePads = padsConfig
+                .map(config => createPad(config))
+                .filter(Boolean);
+
+            const form = document.getElementById('form-preventivo');
+            if (!form || !this.signaturePads.length) {
+                return;
+            }
+
+            form.addEventListener('submit', (e) => {
+                let hasError = false;
+
+                this.signaturePads.forEach(({
+                    pad,
+                    input,
+                    help,
+                    required,
+                    defaultHelpText,
+                    defaultHelpColor,
+                    emptyMessage
+                }) => {
+                    if (!pad) {
+                        return;
+                    }
+
+                    if (pad.isEmpty()) {
+                        input.value = '';
+                        if (required) {
+                            hasError = true;
+                            if (help) {
+                                help.textContent = emptyMessage || 'La firma es obligatoria.';
+                                help.style.color = 'red';
+                            }
+                        } else if (help) {
+                            help.textContent = defaultHelpText;
+                            help.style.color = defaultHelpColor;
+                        }
+                    } else {
+                        input.value = pad.toDataURL('image/png');
+                        if (help) {
+                            help.textContent = defaultHelpText;
+                            help.style.color = defaultHelpColor;
+                        }
+                    }
+                });
+
+                if (hasError) {
+                    e.preventDefault();
+                }
+            }, {
+                once: true
+            });
         };
 
         // Inicializar al cargar

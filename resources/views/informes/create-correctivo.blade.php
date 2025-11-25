@@ -338,34 +338,68 @@
                 @enderror
             </div>
 
-            {{-- Firma digital --}}
-            <div class="space-y-2">
+            {{-- Firmas requeridas --}}
+            <div class="space-y-4">
                 <h4 class="text-sm font-semibold text-zinc-700 dark:text-zinc-200 flex items-center gap-2">
                     <span class="w-1 h-4 rounded-full bg-purple-500"></span>
-                    Firma digital
+                    Firmas requeridas
                 </h4>
-                <div
-                    class="border border-dashed border-zinc-300 dark:border-zinc-600 rounded-lg p-4 bg-zinc-50 dark:bg-zinc-900">
-                    <p class="text-xs text-zinc-600 dark:text-zinc-300 mb-2">
-                        La firma digital del técnico es obligatoria. Dibuja con el mouse o lápiz sobre el área.
-                    </p>
-                    <canvas id="signature-pad" class="border border-zinc-200 dark:border-zinc-700 rounded bg-white"
-                        style="height: 150px; width: 100%;"></canvas>
-                    <div class="mt-3 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-                        <button type="button" id="clear-signature"
-                            class="inline-flex items-center px-3 py-1.5 bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300
-                                   dark:hover:bg-zinc-600 text-zinc-800 dark:text-zinc-50 text-xs font-medium rounded-lg transition">
-                            <i class="fa fa-eraser mr-2"></i> Limpiar firma
-                        </button>
-                        <p class="text-[11px] text-zinc-500 dark:text-zinc-400" id="firma-help">
-                            Dibuja tu firma en el área de arriba.
+
+                <div class="grid gap-6 md:grid-cols-2">
+                    {{-- Firma Técnico --}}
+                    <div class="space-y-2">
+                        <p class="text-xs text-zinc-600 dark:text-zinc-300">
+                            La firma del técnico es obligatoria. Dibuja con el mouse o lápiz.
                         </p>
+                        <div
+                            class="border border-dashed border-zinc-300 dark:border-zinc-600 rounded-lg p-4 bg-zinc-50 dark:bg-zinc-900">
+                            <canvas id="signature-pad-tecnico"
+                                class="border border-zinc-200 dark:border-zinc-700 rounded bg-white"
+                                style="height: 150px; width: 100%;"></canvas>
+                            <div
+                                class="mt-3 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                                <button type="button" id="clear-signature-tecnico"
+                                    class="inline-flex items-center px-3 py-1.5 bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300
+                                           dark:hover:bg-zinc-600 text-zinc-800 dark:text-zinc-50 text-xs font-medium rounded-lg transition">
+                                    <i class="fa fa-eraser mr-2"></i> Limpiar firma
+                                </button>
+                                <p class="text-[11px] text-zinc-500 dark:text-zinc-400" id="firma-tecnico-help">
+                                    Dibuja tu firma en el área de arriba.
+                                </p>
+                            </div>
+                        </div>
+                        <input type="hidden" name="firma" id="firma-tecnico-input">
+                        @error('firma')
+                            <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    {{-- Firma Cliente (opcional) --}}
+                    <div class="space-y-2">
+                        <p class="text-xs text-zinc-600 dark:text-zinc-300">
+                            Firma del cliente <span class="font-semibold">(opcional)</span>. Úsala cuando el
+                            representante esté disponible.
+                        </p>
+                        <div
+                            class="border border-dashed border-zinc-300 dark:border-zinc-600 rounded-lg p-4 bg-zinc-50 dark:bg-zinc-900">
+                            <canvas id="signature-pad-cliente"
+                                class="border border-zinc-200 dark:border-zinc-700 rounded bg-white"
+                                style="height: 150px; width: 100%;"></canvas>
+                            <div
+                                class="mt-3 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                                <button type="button" id="clear-signature-cliente"
+                                    class="inline-flex items-center px-3 py-1.5 bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300
+                                           dark:hover:bg-zinc-600 text-zinc-800 dark:text-zinc-50 text-xs font-medium rounded-lg transition">
+                                    <i class="fa fa-eraser mr-2"></i> Limpiar firma
+                                </button>
+                                <p class="text-[11px] text-zinc-500 dark:text-zinc-400" id="firma-cliente-help">
+                                    Pide la firma del cliente en esta área.
+                                </p>
+                            </div>
+                        </div>
+                        <input type="hidden" name="firma_cliente" id="firma-cliente-input">
                     </div>
                 </div>
-                <input type="hidden" name="firma" id="firma-input">
-                @error('firma')
-                    <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                @enderror
             </div>
 
             {{-- Acciones --}}

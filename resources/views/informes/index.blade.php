@@ -116,13 +116,58 @@
                         <table class="w-full table-auto text-left text-sm">
                             <thead>
                                 <tr class="bg-white dark:bg-zinc-700">
-                                    <th class="p-3 text-zinc-700 dark:text-white font-semibold">Folio</th>
-                                    <th class="p-3 text-zinc-700 dark:text-white font-semibold">Fecha Servicio</th>
-                                    <th class="p-3 text-zinc-700 dark:text-white font-semibold">Cliente</th>
-                                    <th class="p-3 text-zinc-700 dark:text-white font-semibold">Sucursal</th>
-                                    <th class="p-3 text-zinc-700 dark:text-white font-semibold">Equipo - ID</th>
-                                    <th class="p-3 text-zinc-700 dark:text-white font-semibold">Técnico</th>
-                                    <th class="p-3 text-zinc-700 dark:text-white font-semibold">Condición</th>
+                                    @php
+                                        $correctivoSorts = [
+                                            'numero_folio' => 'Folio',
+                                            'fecha_servicio' => 'Fecha Servicio',
+                                            'cliente' => 'Cliente',
+                                            'centro' => 'Sucursal',
+                                            'equipo' => 'Equipo - ID',
+                                            'tecnico' => 'Técnico',
+                                            'condicion_equipo' => 'Condición',
+                                        ];
+
+                                        $buildSortUrl = function ($column, $currentSort, $currentDir) {
+                                            $isActive = $currentSort === $column;
+                                            $dir = 'asc';
+
+                                            if ($isActive) {
+                                                $dir = $currentDir === 'asc' ? 'desc' : null;
+                                            }
+
+                                            $query = request()->query();
+                                            $query['tab'] = 'correctivos';
+
+                                            if ($dir) {
+                                                $query['sort_correctivos'] = $column;
+                                                $query['dir_correctivos'] = $dir;
+                                            } else {
+                                                unset($query['sort_correctivos'], $query['dir_correctivos']);
+                                            }
+
+                                            return request()->url() . '?' . http_build_query($query);
+                                        };
+
+                                        $renderSortIcon = function ($column, $currentSort, $currentDir) {
+                                            if ($currentSort !== $column || !$currentDir) {
+                                                return '<i class="fa fa-sort text-xs text-zinc-400"></i>';
+                                            }
+
+                                            return $currentDir === 'asc'
+                                                ? '<i class="fa fa-sort-up text-xs"></i>'
+                                                : '<i class="fa fa-sort-down text-xs"></i>';
+                                        };
+                                    @endphp
+
+                                    @foreach ($correctivoSorts as $column => $label)
+                                        <th class="p-3 text-zinc-700 dark:text-white font-semibold">
+                                            <a href="{{ $buildSortUrl($column, $sortCorrectivos, $dirCorrectivos) }}"
+                                                class="inline-flex items-center gap-1 hover:text-blue-600 dark:hover:text-blue-300">
+                                                <span>{{ $label }}</span>
+                                                {!! $renderSortIcon($column, $sortCorrectivos, $dirCorrectivos) !!}
+                                            </a>
+                                        </th>
+                                    @endforeach
                                     <th class="p-3 text-center text-zinc-700 dark:text-white font-semibold">Acciones
                                     </th>
                                 </tr>
@@ -213,12 +258,47 @@
                         <table class="w-full table-auto text-left text-sm">
                             <thead>
                                 <tr class="bg-white dark:bg-zinc-700">
-                                    <th class="p-3 text-zinc-700 dark:text-white font-semibold">N° Reporte</th>
-                                    <th class="p-3 text-zinc-700 dark:text-white font-semibold">Fecha</th>
-                                    <th class="p-3 text-zinc-700 dark:text-white font-semibold">Sucursal</th>
-                                    <th class="p-3 text-zinc-700 dark:text-white font-semibold">Equipo - ID</th>
-                                    <th class="p-3 text-zinc-700 dark:text-white font-semibold">Técnico</th>
-                                    <th class="p-3 text-zinc-700 dark:text-white font-semibold">Próx. Control</th>
+                                    @php
+                                        $preventivoSorts = [
+                                            'numero_reporte_servicio' => 'N° Reporte',
+                                            'fecha' => 'Fecha',
+                                            'centro' => 'Sucursal',
+                                            'equipo' => 'Equipo - ID',
+                                            'tecnico' => 'Técnico',
+                                            'fecha_proximo_control' => 'Próx. Control',
+                                        ];
+
+                                        $buildPreventivoSortUrl = function ($column, $currentSort, $currentDir) {
+                                            $isActive = $currentSort === $column;
+                                            $dir = 'asc';
+
+                                            if ($isActive) {
+                                                $dir = $currentDir === 'asc' ? 'desc' : null;
+                                            }
+
+                                            $query = request()->query();
+                                            $query['tab'] = 'preventivos';
+
+                                            if ($dir) {
+                                                $query['sort_preventivos'] = $column;
+                                                $query['dir_preventivos'] = $dir;
+                                            } else {
+                                                unset($query['sort_preventivos'], $query['dir_preventivos']);
+                                            }
+
+                                            return request()->url() . '?' . http_build_query($query);
+                                        };
+                                    @endphp
+
+                                    @foreach ($preventivoSorts as $column => $label)
+                                        <th class="p-3 text-zinc-700 dark:text-white font-semibold">
+                                            <a href="{{ $buildPreventivoSortUrl($column, $sortPreventivos, $dirPreventivos) }}"
+                                                class="inline-flex items-center gap-1 hover:text-blue-600 dark:hover:text-blue-300">
+                                                <span>{{ $label }}</span>
+                                                {!! $renderSortIcon($column, $sortPreventivos, $dirPreventivos) !!}
+                                            </a>
+                                        </th>
+                                    @endforeach
                                     <th class="p-3 text-center text-zinc-700 dark:text-white font-semibold">Acciones
                                     </th>
                                 </tr>

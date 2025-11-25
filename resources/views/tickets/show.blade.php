@@ -553,11 +553,11 @@
                             </div>
                         </div>
                     </div>
-                    <div class="bg-zinc-100 dark:bg-zinc-700/50 p-4 rounded-lg"></div>
 
                     {{-- Timeline Vertical de Eventos --}}
                     @if ($ticket->historial->count() > 0)
-                        <h3 class="text-lg font-semibold text-zinc-800 dark:text-white mb-4 flex items-center gap-2">
+                        <h3
+                            class="text-lg font-semibold text-zinc-800 dark:text-white mb-4 mt-5 flex items-center gap-2">
                             <i class="fa fa-list-alt text-blue-500"></i>
                             Registro de Actividades
                         </h3>
@@ -571,7 +571,7 @@
                                 @foreach ($ticket->historial as $evento)
                                     <div class="relative flex gap-4">
                                         {{-- Punto del timeline --}}
-                                        <div class="relative z-10 flex-shrink-0 text-zinc-900 dark:text-zinc-100">
+                                        <div class="relative z-10 flex-shrink-0 text-zinc-900 dark:text-white">
                                             @php
                                                 $iconConfig = [
                                                     'Creación de ticket' => [
@@ -604,10 +604,10 @@
 
                                         {{-- Contenido del evento --}}
                                         <div
-                                            class="flex-1 bg-zinc-700/50 rounded-lg p-4 shadow-sm border border-zinc-200 dark:border-zinc-600">
-                                            <div class="flex items-start justify-between mb-3 bg-zinc-700/50">
+                                            class="flex-1 bg-zinc-700/50 rounded-lg p-4 shadow-sm border border-zinc-200 dark:border-zinc-400">
+                                            <div class="flex items-start justify-between mb-3 bg-zinc-400/50">
                                                 <div>
-                                                    <h3 class="font-bold text-zinc-900 dark:text-zinc-900 text-base">
+                                                    <h3 class="font-bold text-zinc-900 dark:text-white text-base">
                                                         {{ $evento->accion }}</h3>
                                                     <p class="text-sm text-zinc-600 dark:text-zinc-400 mt-1">
                                                         <i class="fa fa-user text-blue-500 text-xs"></i>

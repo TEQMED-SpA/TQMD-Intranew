@@ -8,6 +8,7 @@ use App\Models\Equipo;
 use App\Models\InformeCorrectivo;
 use App\Models\InformePreventivo;
 use App\Models\Repuesto;
+use App\Models\User;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -29,13 +30,56 @@ class InformesController extends Controller
         $clienteId      = $request->input('cliente_id');
         $centroMedicoId = $request->input('centro_medico_id');
         $activeTab      = $request->input('tab', 'correctivos');
+        $sortCorrectivos = $request->input('sort_correctivos');
+        $dirCorrectivos  = $request->input('dir_correctivos', 'desc');
+        $sortPreventivos = $request->input('sort_preventivos');
+        $dirPreventivos  = $request->input('dir_preventivos', 'desc');
+
+        $dirCorrectivos  = strtolower($dirCorrectivos) === 'asc' ? 'asc' : 'desc';
+        $dirPreventivos  = strtolower($dirPreventivos) === 'asc' ? 'asc' : 'desc';
 
         // Base queries
-        $correctivosQuery = InformeCorrectivo::with(['cliente', 'centroMedico', 'equipo', 'usuario'])
-            ->latest('fecha_servicio');
+        $correctivosQuery = InformeCorrectivo::with(['cliente', 'centroMedico', 'equipo', 'usuario']);
 
-        $preventivosQuery = InformePreventivo::with(['centroMedico', 'equipo', 'usuario'])
-            ->latest('fecha');
+        $preventivosQuery = InformePreventivo::with(['centroMedico', 'equipo', 'usuario']);
+
+        $sortableCorrectivos = [
+            'numero_folio'    => 'numero_folio',
+            'fecha_servicio'  => 'fecha_servicio',
+            'cliente'         => Cliente::select('nombre')
+                ->whereColumn('clientes.id', 'informes_correctivos.cliente_id'),
+            'centro'          => CentroMedico::select('centro_dialisis')
+                ->whereColumn('centros_medicos.id', 'informes_correctivos.centro_medico_id'),
+            'equipo'          => Equipo::select('modelo')
+                ->whereColumn('equipos.id', 'informes_correctivos.equipo_id'),
+            'tecnico'         => User::select('name')
+                ->whereColumn('users.id', 'informes_correctivos.usuario_id'),
+            'condicion_equipo' => 'condicion_equipo',
+        ];
+
+        if ($sortCorrectivos && isset($sortableCorrectivos[$sortCorrectivos])) {
+            $correctivosQuery->orderBy($sortableCorrectivos[$sortCorrectivos], $dirCorrectivos);
+        } else {
+            $correctivosQuery->latest('fecha_servicio');
+        }
+
+        $sortablePreventivos = [
+            'numero_reporte_servicio' => 'numero_reporte_servicio',
+            'fecha'                   => 'fecha',
+            'centro'                  => CentroMedico::select('centro_dialisis')
+                ->whereColumn('centros_medicos.id', 'informes_preventivos.centro_medico_id'),
+            'equipo'                  => Equipo::select('modelo')
+                ->whereColumn('equipos.id', 'informes_preventivos.equipo_id'),
+            'tecnico'                 => User::select('name')
+                ->whereColumn('users.id', 'informes_preventivos.usuario_id'),
+            'fecha_proximo_control'   => 'fecha_proximo_control',
+        ];
+
+        if ($sortPreventivos && isset($sortablePreventivos[$sortPreventivos])) {
+            $preventivosQuery->orderBy($sortablePreventivos[$sortPreventivos], $dirPreventivos);
+        } else {
+            $preventivosQuery->latest('fecha');
+        }
 
         // Filtros compartidos
         if ($clienteId) {
@@ -75,23 +119,37 @@ class InformesController extends Controller
         }
 
         // Paginación independiente
+        $correctivosAppends = [
+            'tab'              => 'correctivos',
+            'search'           => $search,
+            'cliente_id'       => $clienteId,
+            'centro_medico_id' => $centroMedicoId,
+        ];
+
+        if ($sortCorrectivos) {
+            $correctivosAppends['sort_correctivos'] = $sortCorrectivos;
+            $correctivosAppends['dir_correctivos']  = $dirCorrectivos;
+        }
+
         $correctivos = $correctivosQuery
             ->paginate(10, ['*'], 'page_correctivos')
-            ->appends([
-                'tab'              => 'correctivos',
-                'search'           => $search,
-                'cliente_id'       => $clienteId,
-                'centro_medico_id' => $centroMedicoId,
-            ]);
+            ->appends($correctivosAppends);
+
+        $preventivosAppends = [
+            'tab'              => 'preventivos',
+            'search'           => $search,
+            'cliente_id'       => $clienteId,
+            'centro_medico_id' => $centroMedicoId,
+        ];
+
+        if ($sortPreventivos) {
+            $preventivosAppends['sort_preventivos'] = $sortPreventivos;
+            $preventivosAppends['dir_preventivos']  = $dirPreventivos;
+        }
 
         $preventivos = $preventivosQuery
             ->paginate(10, ['*'], 'page_preventivos')
-            ->appends([
-                'tab'              => 'preventivos',
-                'search'           => $search,
-                'cliente_id'       => $clienteId,
-                'centro_medico_id' => $centroMedicoId,
-            ]);
+            ->appends($preventivosAppends);
 
         return view('informes.index', [
             'correctivos'    => $correctivos,
@@ -104,6 +162,10 @@ class InformesController extends Controller
                 'centro_medico_id' => $centroMedicoId,
                 'tab'              => $activeTab,
             ],
+            'sortCorrectivos' => $sortCorrectivos,
+            'dirCorrectivos'  => $sortCorrectivos ? $dirCorrectivos : null,
+            'sortPreventivos' => $sortPreventivos,
+            'dirPreventivos'  => $sortPreventivos ? $dirPreventivos : null,
         ]);
     }
 
@@ -239,6 +301,7 @@ class InformesController extends Controller
             'condicion_equipo'    => 'required|in:operativo,en_observacion,fuera_de_servicio',
             'cliente_id'          => 'required|exists:clientes,id',
             'firma'               => 'required|string',
+            'firma_cliente'       => 'nullable|string',
             'horas_uso'           => 'required|integer|min:0',
         ], [
             'hora_cierre.after'         => 'La hora de cierre debe ser posterior a la hora de inicio.',
@@ -279,6 +342,7 @@ class InformesController extends Controller
                 'condicion_equipo'   => $request->condicion_equipo,
                 'usuario_id'         => Auth::id(),
                 'firma'              => $request->firma,
+                'firma_cliente'      => $request->firma_cliente,
             ]);
 
             // Actualizar horas de uso
@@ -348,6 +412,7 @@ class InformesController extends Controller
             'comentarios'           => 'nullable|string|max:500',
             'fecha_proximo_control' => 'nullable|date',
             'firma_tecnico'         => 'required|string',
+            'firma_cliente'         => 'nullable|string',
         ]);
 
         // Validar horas de operación
@@ -376,6 +441,7 @@ class InformesController extends Controller
                 'comentarios'             => $request->comentarios,
                 'fecha_proximo_control'   => $request->fecha_proximo_control,
                 'firma_tecnico'           => $request->firma_tecnico,
+                'firma_cliente'           => $request->firma_cliente,
             ]);
 
             // Actualizar horas de uso

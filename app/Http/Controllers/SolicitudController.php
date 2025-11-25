@@ -33,10 +33,10 @@ class SolicitudController extends Controller
         // Catálogos para filtros (ajusta los modelos si tienen otros nombres)
         $estados  = EstadoSolicitud::orderBy('nombre')->get(['id', 'nombre']);
         $clientes = Cliente::orderBy('nombre')->get(['id', 'nombre']);
-        $centros_medicos  = CentroMedico::orderBy('nombre')->get(['id', 'nombre']);
+        $centros  = CentroMedico::orderBy('centro_dialisis')->get(['id', 'centro_dialisis']);
         $equipos  = Equipo::orderBy('codigo')->get(['id', 'codigo', 'modelo']);
 
-        return view('solicitudes.index', compact('solicitudes', 'estados', 'clientes', 'centros_medicos', 'equipos'));
+        return view('solicitudes.index', compact('solicitudes', 'estados', 'clientes', 'centros', 'equipos'));
     }
 
     public function create(Request $request)
