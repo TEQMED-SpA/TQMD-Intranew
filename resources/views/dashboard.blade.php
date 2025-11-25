@@ -250,7 +250,8 @@
             </div>
 
             <div class="grid gap-4 lg:grid-cols-3">
-                <div class="glass-card glass-card--muted">
+                <!-- Tarjeta 1: Distribución por estado (fondo original) -->
+                <div class="glass-card glass-card--muted rounded-2xl p-5 shadow-sm">
                     <div class="flex items-center justify-between">
                         <h2 class="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Distribución por estado</h2>
                         <span class="text-xs text-zinc-500">{{ $equiposTotal ? '100%' : 'Sin datos' }}</span>
@@ -276,7 +277,8 @@
                     </div>
                 </div>
 
-                <div class="rounded-2xl border border-zinc-200 p-5 shadow-sm dark:border-zinc-700">
+                <!-- Tarjeta 2: Equipos críticos recientes (ahora con el mismo fondo que la 1) -->
+                <div class="glass-card glass-card--muted rounded-2xl p-5 shadow-sm">
                     <h2 class="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Equipos críticos recientes</h2>
                     <p class="text-sm text-zinc-500 dark:text-zinc-400">Monitorea rápidamente las máquinas fuera de
                         servicio o en revisión.</p>
@@ -302,7 +304,8 @@
                     </div>
                 </div>
 
-                <div class="rounded-2xl border border-zinc-200 p-5 shadow-sm dark:border-zinc-700">
+                <!-- Tarjeta 3: Resumen de actividad (ahora con el mismo fondo que la 1) -->
+                <div class="glass-card glass-card--muted rounded-2xl p-5 shadow-sm">
                     <h2 class="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Resumen de actividad</h2>
                     <ul class="mt-4 space-y-3 text-sm">
                         @foreach ($estadoMeta as $estado => $meta)
@@ -323,179 +326,183 @@
                     </div>
                 </div>
             </div>
-        </section>
-
-        <section data-section="informes" class="glass-card p-6">
-            <div class="flex flex-wrap items-center justify-between gap-4">
-                <div>
-                    <p class="text-sm font-semibold uppercase tracking-wide text-purple-600">Informes técnicos</p>
-                    <h2 class="text-xl font-bold text-zinc-900 dark:text-zinc-50">Correctivos y preventivos</h2>
-                    <p class="text-sm text-zinc-500 dark:text-zinc-400">Rango seleccionado:
-                        {{ $rangeOptions[$rangoSeleccionado] }}</p>
-                </div>
-                <div class="flex items-center gap-4 text-sm">
+            <section data-section="informes" class="glass-card p-6">
+                <div class="flex flex-wrap items-center justify-between gap-4">
                     <div>
-                        <p class="text-xs uppercase text-zinc-500">Total correctivos</p>
-                        <p class="text-2xl font-bold text-zinc-900 dark:text-white">
-                            {{ number_format($informesCorrectivosTotal) }}</p>
+                        <p class="text-sm font-semibold uppercase tracking-wide text-purple-600">Informes técnicos</p>
+                        <h2 class="text-xl font-bold text-zinc-900 dark:text-zinc-50">Correctivos y preventivos</h2>
+                        <p class="text-sm text-zinc-500 dark:text-zinc-400">Rango seleccionado:
+                            {{ $rangeOptions[$rangoSeleccionado] }}</p>
                     </div>
-                    <div class="h-12 w-px bg-zinc-200 dark:bg-zinc-700"></div>
-                    <div>
-                        <p class="text-xs uppercase text-zinc-500">Total preventivos</p>
-                        <p class="text-2xl font-bold text-zinc-900 dark:text-white">
-                            {{ number_format($informesPreventivosTotal) }}</p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="mt-6 grid gap-4 md:grid-cols-2">
-                <div class="glass-card p-5">
-                    <div class="flex items-center justify-between">
-                        <h3 class="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Actividad reciente</h3>
-                        <span class="text-sm text-zinc-500">{{ $rangeOptions[$rangoSeleccionado] }}</span>
-                    </div>
-                    <dl class="mt-4 grid grid-cols-2 gap-4 text-sm">
-                        <div class="rounded-xl bg-purple-50 p-4 dark:bg-purple-900/20">
-                            <dt class="text-xs uppercase text-purple-600">Correctivos</dt>
-                            <dd class="text-2xl font-bold text-purple-800 dark:text-purple-600">
-                                {{ number_format($informesPeriodoCorrectivos) }}</dd>
+                    <div class="flex items-center gap-4 text-sm">
+                        <div>
+                            <p class="text-xs uppercase text-zinc-500">Total correctivos</p>
+                            <p class="text-2xl font-bold text-zinc-900 dark:text-white">
+                                {{ number_format($informesCorrectivosTotal) }}</p>
                         </div>
-                        <div class="rounded-xl bg-emerald-50 p-4 dark:bg-emerald-900/20">
-                            <dt class="text-xs uppercase text-emerald-600">Preventivos</dt>
-                            <dd class="text-2xl font-bold text-emerald-800 dark:text-emerald-600">
-                                {{ number_format($informesPeriodoPreventivos) }}</dd>
+                        <div class="h-12 w-px bg-zinc-200 dark:bg-zinc-700"></div>
+                        <div>
+                            <p class="text-xs uppercase text-zinc-500">Total preventivos</p>
+                            <p class="text-2xl font-bold text-zinc-900 dark:text-white">
+                                {{ number_format($informesPreventivosTotal) }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-6 grid gap-4 md:grid-cols-2">
+                    <div class="glass-card p-5">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Actividad reciente</h3>
+                            <span class="text-sm text-zinc-500">{{ $rangeOptions[$rangoSeleccionado] }}</span>
+                        </div>
+                        <dl class="mt-4 grid grid-cols-2 gap-4 text-sm">
+                            <div class="rounded-xl bg-purple-200 p-4 dark:bg-purple-900/20">
+                                <dt class="text-xs uppercase text-purple-600">Correctivos</dt>
+                                <dd class="text-2xl font-bold text-purple-800 dark:text-purple-600">
+                                    {{ number_format($informesPeriodoCorrectivos) }}</dd>
+                            </div>
+                            <div class="rounded-xl bg-emerald-200 p-4 dark:bg-emerald-900/20">
+                                <dt class="text-xs uppercase text-emerald-600">Preventivos</dt>
+                                <dd class="text-2xl font-bold text-emerald-800 dark:text-emerald-600">
+                                    {{ number_format($informesPeriodoPreventivos) }}</dd>
+                            </div>
+                        </dl>
+                        <p class="mt-4 text-xs text-zinc-500">Los valores consideran informes con fecha igual o
+                            posterior
+                            al {{ $fechaInicio->format('d/m/Y') }}.</p>
+                    </div>
+
+                    <div class="glass-card p-5">
+                        <h3 class="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Próximos pasos</h3>
+                        <ul class="mt-4 space-y-3 text-sm text-zinc-600 dark:text-zinc-300">
+                            <li class="flex items-center gap-3">
+                                <i class="fa-solid fa-file-circle-plus text-purple-500"></i>
+                                <span>Planifica informes preventivos para los equipos en revisión.</span>
+                            </li>
+                            <li class="flex items-center gap-3">
+                                <i class="fa-solid fa-turn-up text-emerald-500"></i>
+                                <span> Revisa los informes sin realizar.</span>
+                            </li>
+                            <li class="flex items-center gap-3">
+                                <i class="fa-solid fa-diagram-project text-blue-500"></i>
+                                <span>Comparte el resumen PDF con clientes desde la sección de informes.</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <section data-section="clients" class="grid gap-4 lg:grid-cols-3">
+                <div class="glass-card p-6">
+                    <p class="text-sm font-semibold text-teal-600">Clientes</p>
+                    <h2 class="text-3xl font-bold text-zinc-900 dark:text-white">{{ number_format($clientesTotal) }}
+                    </h2>
+                    <p class="text-sm text-zinc-500 dark:text-zinc-400">Clientes registrados en la plataforma.</p>
+                    <div class="mt-4 flex items-center gap-4 text-sm">
+                        <div>
+                            <p class="text-xs uppercase text-zinc-500">Con centros activos</p>
+                            <p class="text-xl font-semibold text-zinc-900 dark:text-white">
+                                {{ number_format($clientesConCentros) }}</p>
+                        </div>
+                        <div>
+                            <p class="text-xs uppercase text-zinc-500">Sin centros</p>
+                            <p class="text-xl font-semibold text-zinc-900 dark:text-white">
+                                {{ number_format(max($clientesTotal - $clientesConCentros, 0)) }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass-card p-6 lg:col-span-2">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Clientes con más centros</h3>
+                        <a href="{{ route('clientes.index') }}"
+                            class="text-sm font-semibold text-blue-600 hover:text-blue-500">Ver clientes</a>
+                    </div>
+                    <table class="mt-4 w-full text-left text-sm">
+                        <thead class="text-xs uppercase tracking-wide text-zinc-500">
+                            <tr>
+                                <th class="pb-2">Cliente</th>
+                                <th class="pb-2">Centros</th>
+                                <th class="pb-2">Prioridad</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800">
+                            @forelse ($topClientes as $cliente)
+                                @php
+                                    $centros = $cliente->centros_medicos_count ?? 0;
+                                    $priority = $centros >= 5 ? 'Alta' : ($centros >= 3 ? 'Media' : 'Normal');
+                                @endphp
+                                <tr class="text-zinc-700 dark:text-zinc-200">
+                                    <td class="py-3 font-semibold">{{ $cliente->nombre }}</td>
+                                    <td class="py-3">{{ number_format($centros) }}</td>
+                                    <td class="py-3">
+                                        <span
+                                            class="rounded-full bg-zinc-100 px-3 py-0.5 text-xs font-semibold text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">{{ $priority }}</span>
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="3" class="py-3 text-center text-zinc-500">No hay datos
+                                        disponibles.
+                                    </td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section data-section="spares" class="grid gap-4 lg:grid-cols-3">
+                <div class="glass-card p-6">
+                    <p class="text-sm font-semibold text-amber-600">Repuestos registrados</p>
+                    <h2 class="text-3xl font-bold text-zinc-900 dark:text-white">{{ number_format($repuestosTotal) }}
+                    </h2>
+                    <p class="text-sm text-zinc-500 dark:text-zinc-400">Stock total disponible: <span
+                            class="font-semibold text-zinc-800 dark:text-zinc-200">{{ number_format($repuestosStock) }}</span>
+                        unidades.</p>
+                    <dl class="mt-4 space-y-2 text-sm text-zinc-600 dark:text-zinc-300">
+                        <div class="flex items-center justify-between">
+                            <dt>Stock crítico (≤2)</dt>
+                            <dd class="font-semibold text-red-500">{{ number_format($repuestosCriticos) }}</dd>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <dt>Stock bajo (3 a 5)</dt>
+                            <dd class="font-semibold text-amber-500">{{ number_format($repuestosBajos) }}</dd>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <dt>Sin stock</dt>
+                            <dd class="font-semibold text-zinc-500">{{ number_format($repuestosSinStock) }}</dd>
                         </div>
                     </dl>
-                    <p class="mt-4 text-xs text-zinc-500">Los valores consideran informes con fecha igual o posterior
-                        al {{ $fechaInicio->format('d/m/Y') }}.</p>
                 </div>
 
-                <div class="rounded-2xl border border-zinc-200 p-5 dark:border-zinc-700">
-                    <h3 class="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Próximos pasos</h3>
-                    <ul class="mt-4 space-y-3 text-sm text-zinc-600 dark:text-zinc-300">
-                        <li class="flex items-center gap-3">
-                            <i class="fa-solid fa-file-circle-plus text-purple-500"></i>
-                            <span>Planifica informes preventivos para los equipos en revisión.</span>
-                        </li>
-                        <li class="flex items-center gap-3">
-                            <i class="fa-solid fa-turn-up text-emerald-500"></i>
-                            <span>Convierte correctivos recurrentes en mantenimientos programados.</span>
-                        </li>
-                        <li class="flex items-center gap-3">
-                            <i class="fa-solid fa-diagram-project text-blue-500"></i>
-                            <span>Comparte el resumen PDF con clientes clave desde la sección de informes.</span>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-        </section>
-
-        <section data-section="clients" class="grid gap-4 lg:grid-cols-3">
-            <div class="glass-card p-6">
-                <p class="text-sm font-semibold text-teal-600">Clientes</p>
-                <h2 class="text-3xl font-bold text-zinc-900 dark:text-white">{{ number_format($clientesTotal) }}</h2>
-                <p class="text-sm text-zinc-500 dark:text-zinc-400">Clientes registrados en la plataforma.</p>
-                <div class="mt-4 flex items-center gap-4 text-sm">
-                    <div>
-                        <p class="text-xs uppercase text-zinc-500">Con centros activos</p>
-                        <p class="text-xl font-semibold text-zinc-900 dark:text-white">
-                            {{ number_format($clientesConCentros) }}</p>
-                    </div>
-                    <div>
-                        <p class="text-xs uppercase text-zinc-500">Sin centros</p>
-                        <p class="text-xl font-semibold text-zinc-900 dark:text-white">
-                            {{ number_format(max($clientesTotal - $clientesConCentros, 0)) }}</p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="glass-card p-6 lg:col-span-2">
-                <div class="flex items-center justify-between">
-                    <h3 class="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Clientes con más centros</h3>
-                    <a href="{{ route('clientes.index') }}"
-                        class="text-sm font-semibold text-blue-600 hover:text-blue-500">Ver clientes</a>
-                </div>
-                <table class="mt-4 w-full text-left text-sm">
-                    <thead class="text-xs uppercase tracking-wide text-zinc-500">
-                        <tr>
-                            <th class="pb-2">Cliente</th>
-                            <th class="pb-2">Centros</th>
-                            <th class="pb-2">Prioridad</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800">
-                        @forelse ($topClientes as $cliente)
-                            @php
-                                $centros = $cliente->centros_medicos_count ?? 0;
-                                $priority = $centros >= 5 ? 'Alta' : ($centros >= 3 ? 'Media' : 'Normal');
-                            @endphp
-                            <tr class="text-zinc-700 dark:text-zinc-200">
-                                <td class="py-3 font-semibold">{{ $cliente->nombre }}</td>
-                                <td class="py-3">{{ number_format($centros) }}</td>
-                                <td class="py-3">
-                                    <span
-                                        class="rounded-full bg-zinc-100 px-3 py-0.5 text-xs font-semibold text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">{{ $priority }}</span>
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="3" class="py-3 text-center text-zinc-500">No hay datos disponibles.
-                                </td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-        </section>
-
-        <section data-section="spares" class="grid gap-4 lg:grid-cols-3">
-            <div class="glass-card p-6">
-                <p class="text-sm font-semibold text-amber-600">Repuestos registrados</p>
-                <h2 class="text-3xl font-bold text-zinc-900 dark:text-white">{{ number_format($repuestosTotal) }}</h2>
-                <p class="text-sm text-zinc-500 dark:text-zinc-400">Stock total disponible: <span
-                        class="font-semibold text-zinc-800 dark:text-zinc-200">{{ number_format($repuestosStock) }}</span>
-                    unidades.</p>
-                <dl class="mt-4 space-y-2 text-sm text-zinc-600 dark:text-zinc-300">
+                <div class="glass-card p-6 lg:col-span-2">
                     <div class="flex items-center justify-between">
-                        <dt>Stock crítico (≤2)</dt>
-                        <dd class="font-semibold text-red-500">{{ number_format($repuestosCriticos) }}</dd>
+                        <h3 class="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Repuestos próximos a agotar
+                            stock
+                        </h3>
+                        <a href="{{ route('repuestos.index') }}"
+                            class="text-sm font-semibold text-amber-600 hover:text-amber-500">Ir al inventario</a>
                     </div>
-                    <div class="flex items-center justify-between">
-                        <dt>Stock bajo (3 a 5)</dt>
-                        <dd class="font-semibold text-amber-500">{{ number_format($repuestosBajos) }}</dd>
-                    </div>
-                    <div class="flex items-center justify-between">
-                        <dt>Sin stock</dt>
-                        <dd class="font-semibold text-zinc-500">{{ number_format($repuestosSinStock) }}</dd>
-                    </div>
-                </dl>
-            </div>
-
-            <div class="glass-card p-6 lg:col-span-2">
-                <div class="flex items-center justify-between">
-                    <h3 class="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Repuestos próximos a agotar stock
-                    </h3>
-                    <a href="{{ route('repuestos.index') }}"
-                        class="text-sm font-semibold text-amber-600 hover:text-amber-500">Ir al inventario</a>
-                </div>
-                <div class="mt-4 space-y-3">
-                    @forelse ($repuestosPorSalir as $repuesto)
-                        <div
-                            class="flex items-center justify-between rounded-xl border border-zinc-100 px-4 py-3 text-sm dark:border-zinc-800">
-                            <div>
-                                <p class="font-semibold text-zinc-800 dark:text-zinc-100">{{ $repuesto->nombre }}</p>
-                                <p class="text-xs text-zinc-500">ID #{{ $repuesto->id }}</p>
+                    <div class="mt-4 space-y-3">
+                        @forelse ($repuestosPorSalir as $repuesto)
+                            <div
+                                class="flex items-center justify-between rounded-xl border border-zinc-100 px-4 py-3 text-sm dark:border-zinc-800">
+                                <div>
+                                    <p class="font-semibold text-zinc-800 dark:text-zinc-100">{{ $repuesto->nombre }}
+                                    </p>
+                                    <p class="text-xs text-zinc-500">ID #{{ $repuesto->id }}</p>
+                                </div>
+                                <span
+                                    class="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700 dark:bg-amber-900/30 dark:text-amber-200">{{ number_format($repuesto->stock ?? 0) }}
+                                    u.</span>
                             </div>
-                            <span
-                                class="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700 dark:bg-amber-900/30 dark:text-amber-200">{{ number_format($repuesto->stock ?? 0) }}
-                                u.</span>
-                        </div>
-                    @empty
-                        <p class="text-sm text-zinc-500">Todos los repuestos cuentan con stock suficiente.</p>
-                    @endforelse
+                        @empty
+                            <p class="text-sm text-zinc-500">Todos los repuestos cuentan con stock suficiente.</p>
+                        @endforelse
+                    </div>
                 </div>
-            </div>
-        </section>
+            </section>
     </div>
 
     @push('scripts')
