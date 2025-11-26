@@ -302,6 +302,7 @@ class InformesController extends Controller
             'cliente_id'          => 'required|exists:clientes,id',
             'firma'               => 'required|string',
             'firma_cliente'       => 'nullable|string',
+            'firma_cliente_nombre' => 'nullable|string|max:150',
             'horas_uso'           => 'required|integer|min:0',
         ], [
             'hora_cierre.after'         => 'La hora de cierre debe ser posterior a la hora de inicio.',
@@ -343,6 +344,7 @@ class InformesController extends Controller
                 'usuario_id'         => Auth::id(),
                 'firma'              => $request->firma,
                 'firma_cliente'      => $request->firma_cliente,
+                'firma_cliente_nombre' => $request->firma_cliente_nombre,
             ]);
 
             // Actualizar horas de uso
@@ -413,6 +415,7 @@ class InformesController extends Controller
             'fecha_proximo_control' => 'nullable|date',
             'firma_tecnico'         => 'required|string',
             'firma_cliente'         => 'nullable|string',
+            'firma_cliente_nombre'  => 'nullable|string|max:150',
         ]);
 
         // Validar horas de operación
@@ -442,6 +445,7 @@ class InformesController extends Controller
                 'fecha_proximo_control'   => $request->fecha_proximo_control,
                 'firma_tecnico'           => $request->firma_tecnico,
                 'firma_cliente'           => $request->firma_cliente,
+                'firma_cliente_nombre'    => $request->firma_cliente_nombre,
             ]);
 
             // Actualizar horas de uso

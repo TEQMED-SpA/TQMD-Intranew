@@ -24,6 +24,7 @@ class InformePreventivo extends Model
         'fecha_proximo_control',
         'firma_tecnico',
         'firma_cliente',
+        'firma_cliente_nombre',
     ];
 
     protected $casts = [

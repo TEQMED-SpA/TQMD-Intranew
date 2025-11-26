@@ -313,12 +313,14 @@
                         <img src="{{ $informe->firma_cliente }}" alt="Firma Cliente">
                     </div>
                     <p class="firma-label">Firma del Cliente/Usuario</p>
-                    <p class="firma-text small">Nombre: {{ $informe->cliente->nombre }}</p>
+                    <p class="firma-text small">
+                        Nombre: {{ $informe->firma_cliente_nombre ?: $informe->cliente->nombre }}
+                    </p>
                 @else
                     <div class="firma-box"></div>
                     <p class="firma-label">Cliente/Usuario</p>
                     <hr class="firma-line">
-                    <p class="small">Nombre:</p>
+                    <p class="small">Nombre: {{ $informe->firma_cliente_nombre ?: '' }}</p>
                     <hr class="firma-line">
                 @endif
             </td>

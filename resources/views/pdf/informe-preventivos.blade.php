@@ -285,7 +285,7 @@
                 </div>
                 <p class="firma-label">Cliente / Representante Legal</p>
                 <p class="firma-text small">
-                    Firma y nombre del representante del centro de diálisis.
+                    Nombre: {{ $informe->firma_cliente_nombre ?: '________________________' }}
                 </p>
             </td>
         </tr>

@@ -139,7 +139,7 @@
                     <div>
                         <p class="text-xs uppercase text-zinc-500 dark:text-zinc-400 font-semibold">Serie</p>
                         <p class="text-zinc-900 dark:text-zinc-100">
-                            {{ $informe->equipo->serie }}
+                            {{ $informe->equipo->numero_serie }}
                         </p>
                     </div>
                     <div>
@@ -151,7 +151,7 @@
                     <div class="lg:col-span-1 md:col-span-2">
                         <p class="text-xs uppercase text-zinc-500 dark:text-zinc-400 font-semibold">Descripción</p>
                         <p class="text-zinc-900 dark:text-zinc-100">
-                            {{ $informe->equipo->descripcion }}
+                            {{ $informe->equipo->descripcion ?: 'N/A' }}
                         </p>
                     </div>
                     <div>
@@ -311,9 +311,15 @@
                             @endif
                         </div>
 
-                        <p class="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
-                            Nombre y firma del representante del centro de diálisis.
-                        </p>
+                        @if ($informe->firma_cliente_nombre)
+                            <p class="mt-2 text-sm text-zinc-700 dark:text-zinc-300">
+                                Nombre: <strong>{{ $informe->firma_cliente_nombre }}</strong>
+                            </p>
+                        @else
+                            <p class="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
+                                Nombre y firma del representante del centro de diálisis.
+                            </p>
+                        @endif
                     </div>
 
                 </div>

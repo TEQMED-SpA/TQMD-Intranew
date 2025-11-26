@@ -398,6 +398,22 @@
                             </div>
                         </div>
                         <input type="hidden" name="firma_cliente" id="firma-cliente-input">
+                        <div class="space-y-1">
+                            <label for="firma_cliente_nombre"
+                                class="block text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase">
+                                Nombre del representante
+                            </label>
+                            <input type="text" name="firma_cliente_nombre" id="firma_cliente_nombre"
+                                value="{{ old('firma_cliente_nombre') }}"
+                                class="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-950 text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                                placeholder="Ej: Juan Pérez" maxlength="150">
+                            @error('firma_cliente_nombre')
+                                <p class="text-red-500 text-xs">{{ $message }}</p>
+                            @enderror
+                            <p class="text-[11px] text-zinc-500 dark:text-zinc-400">
+                                Registra el nombre de quien firma por el cliente.
+                            </p>
+                        </div>
                     </div>
                 </div>
             </div>

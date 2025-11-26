@@ -261,9 +261,15 @@
                                 @endif
                             </div>
 
-                            <p class="text-sm text-zinc-500 dark:text-zinc-400 text-left">
-                                Nombre y firma del representante del centro de diálisis.
-                            </p>
+                            @if ($informe->firma_cliente_nombre)
+                                <p class="text-sm text-zinc-700 dark:text-zinc-300">
+                                    Nombre: <strong>{{ $informe->firma_cliente_nombre }}</strong>
+                                </p>
+                            @else
+                                <p class="text-sm text-zinc-500 dark:text-zinc-400 text-left">
+                                    Nombre y firma del representante del centro de diálisis.
+                                </p>
+                            @endif
                         </div>
 
                     </div>

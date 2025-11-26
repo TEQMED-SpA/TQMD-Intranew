@@ -28,6 +28,7 @@ class InformeCorrectivo extends Model
         'usuario_id',
         'firma',
         'firma_cliente',
+        'firma_cliente_nombre',
     ];
 
     protected $casts = [

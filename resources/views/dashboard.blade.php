@@ -9,6 +9,24 @@
             365 => 'Últimos 12 meses',
         ];
 
+        $seccionesDisponibles = [
+            'machines' => 'Máquinas',
+            'informes' => 'Informes',
+            'clients' => 'Clientes',
+            'spares' => 'Repuestos',
+        ];
+
+        $seccionesSeleccionadas = collect((array) request('secciones', array_keys($seccionesDisponibles)))
+            ->filter(fn($seccion) => array_key_exists($seccion, $seccionesDisponibles))
+            ->values()
+            ->all();
+
+        if (empty($seccionesSeleccionadas)) {
+            $seccionesSeleccionadas = array_keys($seccionesDisponibles);
+        }
+
+        $mostrarSeccion = fn($clave) => in_array($clave, $seccionesSeleccionadas, true);
+
         $rangoSeleccionado = request()->integer('rango', 30);
         if (!array_key_exists($rangoSeleccionado, $rangeOptions)) {
             $rangoSeleccionado = 30;
@@ -125,13 +143,176 @@
             ->take(5)
             ->get();
 
+        $clienteFiltro = request()->integer('cliente_filtro');
+        $centroFiltro = request()->integer('centro_filtro');
+        $estadoFiltroSeleccionado = request()->input('estado_filtro');
+        $estadoFiltroSeleccionado = in_array($estadoFiltroSeleccionado, $estadosValidos, true)
+            ? $estadoFiltroSeleccionado
+            : null;
+        $numeroSerieFiltro = trim((string) request()->input('numero_serie_filtro', ''));
+
+        $equiposMetricas = \App\Models\Equipo::with(['centro.cliente'])
+            ->when($clienteFiltro, fn($q) => $q->whereHas('centro', fn($w) => $w->where('cliente_id', $clienteFiltro)))
+            ->when($centroFiltro, fn($q) => $q->where('centro_medico_id', $centroFiltro))
+            ->when($estadoFiltroSeleccionado, fn($q) => $q->where('estado', $estadoFiltroSeleccionado))
+            ->when($numeroSerieFiltro !== '', fn($q) => $q->where('numero_serie', 'like', "%{$numeroSerieFiltro}%"))
+            ->orderBy('nombre')
+            ->get();
+
+        $clientesFiltroOpciones = \App\Models\Cliente::orderBy('nombre')->get(['id', 'nombre']);
+        $centrosFiltroOpciones = \App\Models\CentroMedico::with('cliente:id,nombre')
+            ->orderBy('nombre')
+            ->get(['id', 'nombre', 'cliente_id']);
+
+        $totalesPorCliente = $equiposMetricas
+            ->groupBy(function ($equipo) {
+                return optional(optional($equipo->centro)->cliente)->nombre ?? 'Sin cliente asignado';
+            })
+            ->map->count()
+            ->sortDesc();
+
+        $resumenMetricas = [
+            'total_maquinas' => $equiposMetricas->count(),
+            'total_clientes' => $equiposMetricas
+                ->map(fn($equipo) => optional(optional($equipo->centro)->cliente)->id)
+                ->filter()
+                ->unique()
+                ->count(),
+        ];
+
+        $filtrosMetricasPersistentes = request()->except([
+            'cliente_filtro',
+            'centro_filtro',
+            'estado_filtro',
+            'numero_serie_filtro',
+        ]);
+
+        $clienteInformesFiltro = request()->integer('cliente_informes');
+        $informesDesdeRaw = trim((string) request()->input('informes_desde', ''));
+        $informesHastaRaw = trim((string) request()->input('informes_hasta', ''));
+
+        $parseFechaFiltro = function ($valor, $finDeDia = false) {
+            if ($valor === '') {
+                return null;
+            }
+
+            try {
+                $fecha = \Carbon\Carbon::createFromFormat('d/m/Y', $valor);
+                return $finDeDia ? $fecha->endOfDay() : $fecha->startOfDay();
+            } catch (\Throwable $th) {
+                return null;
+            }
+        };
+
+        $informesDesde = $parseFechaFiltro($informesDesdeRaw);
+        $informesHasta = $parseFechaFiltro($informesHastaRaw, true);
+
+        if ($informesDesde && $informesHasta && $informesHasta->lessThan($informesDesde)) {
+            [$informesDesde, $informesHasta] = [
+                $informesHasta->copy()->startOfDay(),
+                $informesDesde->copy()->endOfDay(),
+            ];
+        }
+
+        if (!$informesHasta) {
+            $informesHasta = now()->endOfDay();
+        }
+
+        if (!$informesDesde) {
+            $informesDesde = $informesHasta->copy()->subMonths(11)->startOfMonth();
+        }
+
+        $mesesReferencia = collect();
+        $cursor = $informesDesde->copy()->startOfMonth();
+        $finMes = $informesHasta->copy()->startOfMonth();
+        while ($cursor <= $finMes) {
+            $mesesReferencia->push($cursor->copy());
+            $cursor->addMonth();
+        }
+
+        if ($mesesReferencia->isEmpty()) {
+            $mesesReferencia->push($informesDesde->copy()->startOfMonth());
+        }
+
+        $informesDesdeInput =
+            $informesDesdeRaw !== ''
+                ? ($informesDesde
+                    ? $informesDesde->copy()->startOfDay()->format('d/m/Y')
+                    : $informesDesdeRaw)
+                : '';
+        $informesHastaInput =
+            $informesHastaRaw !== ''
+                ? ($informesHasta
+                    ? $informesHasta->copy()->startOfDay()->format('d/m/Y')
+                    : $informesHastaRaw)
+                : '';
+
+        $filtrosInformesPersistentes = request()->except(['cliente_informes', 'informes_desde', 'informes_hasta']);
+
+        $fallasPorTipo = \App\Models\InformeCorrectivo::selectRaw(
+            "COALESCE(NULLIF(TRIM(problema_informado), ''), 'Sin clasificación') as tipo_falla, COUNT(*) as total",
+        )
+            ->when($clienteInformesFiltro, fn($q) => $q->where('cliente_id', $clienteInformesFiltro))
+            ->groupBy('tipo_falla')
+            ->orderByDesc('total')
+            ->take(7)
+            ->get();
+
+        $correctivosPorMes = \App\Models\InformeCorrectivo::select(
+            \Illuminate\Support\Facades\DB::raw("DATE_FORMAT(fecha_servicio, '%Y-%m') as periodo"),
+            \Illuminate\Support\Facades\DB::raw('COUNT(*) as total'),
+        )
+            ->whereDate('fecha_servicio', '>=', $informesDesde)
+            ->whereDate('fecha_servicio', '<=', $informesHasta)
+            ->when($clienteInformesFiltro, fn($q) => $q->where('cliente_id', $clienteInformesFiltro))
+            ->groupBy('periodo')
+            ->get()
+            ->pluck('total', 'periodo');
+
+        $preventivosPorMes = \App\Models\InformePreventivo::select(
+            \Illuminate\Support\Facades\DB::raw("DATE_FORMAT(fecha, '%Y-%m') as periodo"),
+            \Illuminate\Support\Facades\DB::raw('COUNT(*) as total'),
+        )
+            ->whereDate('fecha', '>=', $informesDesde)
+            ->whereDate('fecha', '<=', $informesHasta)
+            ->when($clienteInformesFiltro, function ($q) use ($clienteInformesFiltro) {
+                $q->whereHas('centroMedico', fn($w) => $w->where('cliente_id', $clienteInformesFiltro));
+            })
+            ->groupBy('periodo')
+            ->get()
+            ->pluck('total', 'periodo');
+
+        $chartInformesMes = [
+            'labels' => $mesesReferencia->map(fn($mes) => $mes->translatedFormat('M Y'))->toArray(),
+            'correctivos' => $mesesReferencia->map(fn($mes) => $correctivosPorMes[$mes->format('Y-m')] ?? 0)->toArray(),
+            'preventivos' => $mesesReferencia->map(fn($mes) => $preventivosPorMes[$mes->format('Y-m')] ?? 0)->toArray(),
+        ];
+
+        $chartFallasData = [
+            'labels' => $fallasPorTipo->pluck('tipo_falla')->toArray(),
+            'values' => $fallasPorTipo->pluck('total')->toArray(),
+        ];
+
+        $repuestosMasUsados = \Illuminate\Support\Facades\DB::table('informe_correctivo_repuesto as icr')
+            ->join('repuestos as r', 'r.id', '=', 'icr.repuesto_id')
+            ->select('r.nombre', \Illuminate\Support\Facades\DB::raw('SUM(COALESCE(icr.cantidad_usada, 0)) as total'))
+            ->groupBy('r.nombre')
+            ->orderByDesc('total')
+            ->take(7)
+            ->get();
+
+        $chartRepuestos = [
+            'labels' => $repuestosMasUsados->pluck('nombre')->toArray(),
+            'values' => $repuestosMasUsados->pluck('total')->toArray(),
+        ];
+
     @endphp
 
     <div class="dashboard-shell flex flex-col gap-6">
         <div class="glass-card p-6">
             <div class="flex flex-wrap items-center justify-between gap-4">
                 <div>
-                    <p class="text-sm font-semibold uppercase tracking-wide text-blue-600">Panel personalizable</p>
+                    <p class="text-sm mb-2 font-semibold uppercase tracking-wide text-blue-600">Dashboard</p>
                     <h1 class="text-2xl font-bold text-zinc-900 dark:text-zinc-50">Visión general de operaciones</h1>
                     <p class="text-sm text-zinc-600 dark:text-zinc-400">Controla equipos, informes, clientes y repuestos
                         desde un solo lugar.</p>
@@ -172,6 +353,21 @@
                     </div>
                 </div>
 
+                <div>
+                    <span class="text-sm font-medium text-zinc-600 dark:text-zinc-300">Secciones visibles</span>
+                    <div class="mt-2 flex flex-wrap gap-3">
+                        @foreach ($seccionesDisponibles as $clave => $label)
+                            <label
+                                class="inline-flex items-center gap-2 rounded-full border border-zinc-200 px-3 py-1 text-xs font-semibold text-zinc-600 transition hover:border-blue-400 hover:text-blue-600 dark:border-zinc-700 dark:text-zinc-300">
+                                <input type="checkbox" name="secciones[]" value="{{ $clave }}"
+                                    class="size-4 rounded border-zinc-300 text-blue-600 focus:ring-blue-500 dark:border-zinc-600"
+                                    @checked(in_array($clave, $seccionesSeleccionadas, true))>
+                                {{ $label }}
+                            </label>
+                        @endforeach
+                    </div>
+                </div>
+
                 <div class="flex flex-wrap items-center gap-3 text-xs text-zinc-500 dark:text-zinc-400">
                     <span class="inline-flex items-center gap-1">
                         <i class="fa-solid fa-bolt text-yellow-400"></i>
@@ -183,326 +379,568 @@
                     </a>
                 </div>
             </form>
-
-            <div class="mt-6 border-t border-dashed border-zinc-200 pt-6 dark:border-zinc-700">
-                <p class="text-sm font-semibold text-zinc-600 dark:text-zinc-300">Elige qué módulos mostrar</p>
-                <div class="mt-3 flex flex-wrap gap-4 text-sm font-medium text-zinc-600 dark:text-zinc-300">
-                    @foreach ([
-        'machines' => 'Máquinas',
-        'informes' => 'Informes',
-        'clients' => 'Clientes',
-        'spares' => 'Repuestos',
-    ] as $section => $label)
-                        <label
-                            class="inline-flex items-center gap-2 rounded-full border border-zinc-200 px-3 py-1 text-xs font-semibold transition hover:border-blue-400 hover:text-blue-600 dark:border-zinc-700">
-                            <input type="checkbox" value="{{ $section }}" data-section-toggle
-                                class="size-4 rounded border-zinc-300 text-blue-600 focus:ring-blue-500 dark:border-zinc-600"
-                                checked>
-                            {{ $label }}
-                        </label>
-                    @endforeach
-                </div>
-            </div>
         </div>
 
-        <section data-section="machines" class="space-y-4">
-            <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-                <div class="glass-card glass-card--accent p-5">
-                    <div class="flex items-center gap-3">
-                        <div class="rounded-2xl bg-white/20 p-3 text-white shadow-lg shadow-blue-900/30 backdrop-blur">
-                            <i class="fa-solid fa-screwdriver-wrench text-xl"></i>
-                        </div>
-                        <div>
-                            <p class="text-sm font-medium text-white/90">Total de máquinas</p>
-                            <p class="text-3xl font-black">
-                                {{ number_format($equiposTotal) }}</p>
-                        </div>
-                    </div>
-                    <p class="mt-3 text-xs text-white/80">Estados monitoreados: Operativo, En observación, Fuera de
-                        servicio y Baja.</p>
-                </div>
-
-                @foreach ($estadoCards as $card)
-                    @php
-                        $porcentaje = $equiposTotal > 0 ? round(($card['valor'] / $equiposTotal) * 100) : 0;
-                        $resaltado = in_array($card['key'], $estadosSeleccionados, true);
-                    @endphp
-                    <div class="glass-card glass-card--state p-5 {{ $resaltado ? 'ring-2 ring-blue-400' : '' }}">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p
-                                    class="text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
-                                    {{ $card['label'] }}</p>
-                                <p class="text-2xl font-bold text-zinc-900 dark:text-zinc-50">
-                                    {{ number_format($card['valor']) }}</p>
-                            </div>
-                            <span class="glass-pill text-{{ $card['color'] }}-700 dark:text-{{ $card['color'] }}-200">
-                                {{ $porcentaje }}%
-                            </span>
-                        </div>
-                        <p class="mt-2 text-sm text-zinc-500 dark:text-zinc-400">{{ $card['descripcion'] }}</p>
-                        <div class="mt-4 h-2 w-full rounded-full bg-zinc-100 dark:bg-zinc-800">
-                            <div class="h-2 rounded-full bg-gradient-to-r from-{{ $card['color'] }}-400 to-{{ $card['color'] }}-600"
-                                style="width: {{ $porcentaje }}%"></div>
-                        </div>
-                    </div>
-                @endforeach
-            </div>
-
-            <div class="grid gap-4 lg:grid-cols-3">
-                <!-- Tarjeta 1: Distribución por estado (fondo original) -->
-                <div class="glass-card glass-card--muted rounded-2xl p-5 shadow-sm">
-                    <div class="flex items-center justify-between">
-                        <h2 class="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Distribución por estado</h2>
-                        <span class="text-xs text-zinc-500">{{ $equiposTotal ? '100%' : 'Sin datos' }}</span>
-                    </div>
-                    <div class="mt-4 space-y-4">
-                        @foreach ($estadoCards as $card)
-                            @php
-                                $valorEstado = $card['valor'];
-                                $porcentaje = $equiposTotal > 0 ? round(($valorEstado / $equiposTotal) * 100) : 0;
-                            @endphp
-                            <div>
-                                <div
-                                    class="flex items-center justify-between text-sm font-semibold text-zinc-600 dark:text-zinc-300">
-                                    <span>{{ $card['label'] }}</span>
-                                    <span>{{ number_format($valorEstado) }} ({{ $porcentaje }}%)</span>
-                                </div>
-                                <div class="mt-2 h-2 rounded-full bg-zinc-100 dark:bg-zinc-800">
-                                    <div class="h-2 rounded-full bg-{{ $card['color'] }}-500"
-                                        style="width: {{ $porcentaje }}%"></div>
-                                </div>
-                            </div>
-                        @endforeach
-                    </div>
-                </div>
-
-                <!-- Tarjeta 2: Equipos críticos recientes (ahora con el mismo fondo que la 1) -->
-                <div class="glass-card glass-card--muted rounded-2xl p-5 shadow-sm">
-                    <h2 class="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Equipos críticos recientes</h2>
-                    <p class="text-sm text-zinc-500 dark:text-zinc-400">Monitorea rápidamente las máquinas fuera de
-                        servicio o en revisión.</p>
-                    <div class="mt-4 space-y-4">
-                        @forelse ($equiposCriticos as $equipo)
-                            <div class="rounded-xl border border-zinc-100 p-3 text-sm dark:border-zinc-800">
-                                <div class="flex items-center justify-between">
-                                    <p class="font-semibold text-zinc-800 dark:text-zinc-100">{{ $equipo->nombre }}</p>
-                                    <span
-                                        class="text-xs text-zinc-500">{{ optional($equipo->updated_at)->diffForHumans() }}</span>
-                                </div>
-                                <p class="text-xs text-zinc-500">Código: {{ $equipo->codigo ?? 'SD' }}</p>
-                                <span
-                                    class="mt-2 inline-flex rounded-full bg-zinc-100 px-3 py-0.5 text-xs font-semibold text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">{{ $equipo->estado }}</span>
-                                @if ($equipo->cant_dias_fuera_serv)
-                                    <p class="mt-1 text-xs text-zinc-500">{{ $equipo->cant_dias_fuera_serv }} días
-                                        fuera de servicio</p>
-                                @endif
-                            </div>
-                        @empty
-                            <p class="text-sm text-zinc-500">No hay registros críticos en este momento.</p>
-                        @endforelse
-                    </div>
-                </div>
-
-                <!-- Tarjeta 3: Resumen de actividad (ahora con el mismo fondo que la 1) -->
-                <div class="glass-card glass-card--muted rounded-2xl p-5 shadow-sm">
-                    <h2 class="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Resumen de actividad</h2>
-                    <ul class="mt-4 space-y-3 text-sm">
-                        @foreach ($estadoMeta as $estado => $meta)
-                            @php
-                                $habilitado = in_array($estado, $estadosSeleccionados, true);
-                                $valor = $habilitado ? $equiposPorEstado[$estado] ?? 0 : 0;
-                            @endphp
-                            <li
-                                class="flex items-center justify-between {{ $habilitado ? 'text-zinc-600 dark:text-zinc-300' : 'text-zinc-400 dark:text-zinc-600 italic' }}">
-                                <span>{{ $meta['label'] }}</span><strong>{{ number_format($valor) }}</strong>
-                            </li>
-                        @endforeach
-                    </ul>
-                    <div
-                        class="mt-5 rounded-xl bg-blue-50 p-4 text-xs text-blue-800 dark:bg-blue-900/30 dark:text-blue-200">
-                        <p>Consejo: usa las casillas de "Resaltar estados" para centrar tu atención en los estados
-                            críticos.</p>
-                    </div>
-                </div>
-            </div>
-            <section data-section="informes" class="glass-card p-6">
-                <div class="flex flex-wrap items-center justify-between gap-4">
+        @if ($mostrarSeccion('machines'))
+            <section data-section="machines" class="space-y-6">
+                <div class="flex flex-wrap items-center justify-between gap-3">
                     <div>
-                        <p class="text-sm font-semibold uppercase tracking-wide text-purple-600">Informes técnicos</p>
-                        <h2 class="text-xl font-bold text-zinc-900 dark:text-zinc-50">Correctivos y preventivos</h2>
-                        <p class="text-sm text-zinc-500 dark:text-zinc-400">Rango seleccionado:
-                            {{ $rangeOptions[$rangoSeleccionado] }}</p>
+                        <p class="text-xs font-semibold uppercase tracking-wide text-blue-600">Sección</p>
+                        <h2 class="text-2xl font-bold text-white">Máquinas</h2>
+                        <p class="text-sm text-zinc-100 dark:text-zinc-400">Visión consolidada por estado y cliente.</p>
                     </div>
-                    <div class="flex items-center gap-4 text-sm">
-                        <div>
-                            <p class="text-xs uppercase text-zinc-500">Total correctivos</p>
-                            <p class="text-2xl font-bold text-zinc-900 dark:text-white">
-                                {{ number_format($informesCorrectivosTotal) }}</p>
+                </div>
+
+                <div class="glass-card p-5">
+                    <form method="GET" class="flex flex-wrap items-end gap-4">
+                        @foreach ($filtrosMetricasPersistentes as $param => $valor)
+                            @if (is_array($valor))
+                                @foreach ($valor as $subValor)
+                                    <input type="hidden" name="{{ $param }}[]" value="{{ $subValor }}">
+                                @endforeach
+                            @else
+                                <input type="hidden" name="{{ $param }}" value="{{ $valor }}">
+                            @endif
+                        @endforeach
+
+                        <div class="flex-1 min-w-[200px]">
+                            <label for="cliente_filtro"
+                                class="text-xs font-semibold uppercase tracking-wide text-zinc-500">Cliente</label>
+                            <select id="cliente_filtro" name="cliente_filtro"
+                                class="mt-1 w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-800 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100">
+                                <option value="">Todos</option>
+                                @foreach ($clientesFiltroOpciones as $cliente)
+                                    <option value="{{ $cliente->id }}" @selected($clienteFiltro === $cliente->id)>
+                                        {{ $cliente->nombre }}</option>
+                                @endforeach
+                            </select>
                         </div>
-                        <div class="h-12 w-px bg-zinc-200 dark:bg-zinc-700"></div>
-                        <div>
-                            <p class="text-xs uppercase text-zinc-500">Total preventivos</p>
-                            <p class="text-2xl font-bold text-zinc-900 dark:text-white">
-                                {{ number_format($informesPreventivosTotal) }}</p>
+                        <div class="flex-1 min-w-[200px]">
+                            <label for="centro_filtro"
+                                class="text-xs font-semibold uppercase tracking-wide text-zinc-500">Centro
+                                médico</label>
+                            <select id="centro_filtro" name="centro_filtro"
+                                class="mt-1 w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-800 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100">
+                                <option value="">Todos</option>
+                                @foreach ($centrosFiltroOpciones as $centro)
+                                    <option value="{{ $centro->id }}" @selected($centroFiltro === $centro->id)>
+                                        {{ $centro->nombre }}
+                                        @if (optional($centro->cliente)->nombre)
+                                            ({{ $centro->cliente->nombre }})
+                                        @endif
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="flex-1 min-w-[200px]">
+                            <label for="estado_filtro"
+                                class="text-xs font-semibold uppercase tracking-wide text-zinc-500">Estado</label>
+                            <select id="estado_filtro" name="estado_filtro"
+                                class="mt-1 w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-800 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100">
+                                <option value="">Todos</option>
+                                @foreach ($estadosValidos as $estado)
+                                    <option value="{{ $estado }}" @selected($estadoFiltroSeleccionado === $estado)>
+                                        {{ $estado }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="flex-1 min-w-[200px]">
+                            <label for="numero_serie_filtro"
+                                class="text-xs font-semibold uppercase tracking-wide text-zinc-500">Número de
+                                serie</label>
+                            <input id="numero_serie_filtro" name="numero_serie_filtro" type="text"
+                                value="{{ $numeroSerieFiltro }}"
+                                class="mt-1 w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-800 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+                                placeholder="Ej. SN-00123">
+                        </div>
+
+                        <div class="flex items-center gap-3 text-sm">
+                            <button type="submit"
+                                class="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 font-semibold text-white shadow hover:bg-blue-500">
+                                <i class="fa-solid fa-magnifying-glass"></i>
+                                Aplicar filtros
+                            </button>
+                            <a href="{{ route('dashboard', $filtrosMetricasPersistentes) }}"
+                                class="inline-flex items-center gap-2 rounded-xl px-4 py-2 font-semibold text-zinc-600 hover:text-blue-600 dark:text-zinc-300">
+                                <i class="fa-solid fa-rotate-left"></i>
+                                Limpiar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="grid gap-4 xl:grid-cols-3 items-start">
+                    <div class="glass-card glass-card--muted rounded-2xl p-5 shadow-sm xl:col-span-2">
+                        <div class="flex flex-wrap items-center justify-between gap-4">
+                            <div>
+                                <p class="text-xs font-semibold uppercase tracking-wide text-blue-500">Resumen filtrado
+                                </p>
+                                <h2 class="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Métrica de máquinas
+                                    por
+                                    cliente</h2>
+                                <p class="text-sm text-zinc-500 dark:text-zinc-400">Números totales de la vista actual.
+                                </p>
+                            </div>
+                            <div class="flex gap-6 text-sm">
+                                <div>
+                                    <p class="text-xs uppercase text-zinc-500">Máquinas</p>
+                                    <p class="text-2xl font-bold text-zinc-900 dark:text-zinc-50">
+                                        {{ number_format($resumenMetricas['total_maquinas']) }}</p>
+                                </div>
+                                <div>
+                                    <p class="text-xs uppercase text-zinc-500">Clientes</p>
+                                    <p class="text-2xl font-bold text-zinc-900 dark:text-zinc-50">
+                                        {{ number_format($resumenMetricas['total_clientes']) }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="glass-card glass-card--muted rounded-2xl p-5 shadow-sm">
+                        <div class="flex items-center justify-between">
+                            <h2 class="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Distribución por estado
+                            </h2>
+                            <span class="text-xs text-zinc-500">{{ $equiposTotal ? '100%' : 'Sin datos' }}</span>
+                        </div>
+                        <div class="mt-4 space-y-4">
+                            @foreach ($estadoCards as $card)
+                                @php
+                                    $valorEstado = $card['valor'];
+                                    $porcentaje = $equiposTotal > 0 ? round(($valorEstado / $equiposTotal) * 100) : 0;
+                                @endphp
+                                <div>
+                                    <div
+                                        class="flex items-center justify-between text-sm font-semibold text-zinc-600 dark:text-zinc-300">
+                                        <span>{{ $card['label'] }}</span>
+                                        <span>{{ number_format($valorEstado) }} ({{ $porcentaje }}%)</span>
+                                    </div>
+                                    <div class="mt-2 h-2 rounded-full bg-zinc-100 dark:bg-zinc-800">
+                                        <div class="h-2 rounded-full bg-{{ $card['color'] }}-500"
+                                            style="width: {{ $porcentaje }}%"></div>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+
+                    <div class="glass-card glass-card--muted rounded-2xl p-5 shadow-sm">
+                        <h2 class="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Resumen de actividad</h2>
+                        <ul class="mt-4 space-y-3 text-sm">
+                            @foreach ($estadoMeta as $estado => $meta)
+                                @php
+                                    $habilitado = in_array($estado, $estadosSeleccionados, true);
+                                    $valor = $habilitado ? $equiposPorEstado[$estado] ?? 0 : 0;
+                                @endphp
+                                <li
+                                    class="flex items-center justify-between {{ $habilitado ? 'text-zinc-600 dark:text-zinc-300' : 'text-zinc-400 dark:text-zinc-600 italic' }}">
+                                    <span>{{ $meta['label'] }}</span><strong>{{ number_format($valor) }}</strong>
+                                </li>
+                            @endforeach
+                        </ul>
+                        <div
+                            class="mt-5 rounded-xl bg-blue-50 p-4 text-xs text-blue-800 dark:bg-blue-900/30 dark:text-blue-200">
+                            <p>Consejo: usa las casillas de "Resaltar estados" para centrar tu atención en los estados
+                                críticos.</p>
                         </div>
                     </div>
                 </div>
 
-                <div class="mt-6 grid gap-4 md:grid-cols-2">
-                    <div class="glass-card p-5">
-                        <div class="flex items-center justify-between">
-                            <h3 class="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Actividad reciente</h3>
-                            <span class="text-sm text-zinc-500">{{ $rangeOptions[$rangoSeleccionado] }}</span>
+                <div class="glass-card glass-card--muted rounded-2xl p-5 shadow-sm">
+                    <div class="flex flex-wrap items-center justify-between gap-4">
+                        <div>
+                            <h3 class="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Detalle de máquinas
+                                filtradas
+                            </h3>
+                            <p class="text-sm text-zinc-500 dark:text-zinc-400">Tabla completa según los filtros
+                                aplicados.
+                            </p>
                         </div>
-                        <dl class="mt-4 grid grid-cols-2 gap-4 text-sm">
-                            <div class="rounded-xl bg-purple-200 p-4 dark:bg-purple-900/20">
-                                <dt class="text-xs uppercase text-purple-600">Correctivos</dt>
-                                <dd class="text-2xl font-bold text-purple-800 dark:text-purple-600">
-                                    {{ number_format($informesPeriodoCorrectivos) }}</dd>
+                        <span
+                            class="text-xs font-semibold uppercase tracking-wide text-zinc-500">{{ number_format($equiposMetricas->count()) }}
+                            registros</span>
+                    </div>
+
+                    <div class="mt-4 overflow-x-auto rounded-xl border border-zinc-100 dark:border-zinc-800">
+                        <table class="w-full min-w-[720px] text-left text-sm">
+                            <thead
+                                class="bg-zinc-50 text-xs uppercase tracking-wide text-zinc-500 dark:bg-zinc-900/40">
+                                <tr>
+                                    <th class="px-4 py-2">Cliente</th>
+                                    <th class="px-4 py-2">Centro médico</th>
+                                    <th class="px-4 py-2">Máquina</th>
+                                    <th class="px-4 py-2">Estado</th>
+                                    <th class="px-4 py-2">N° serie</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800">
+                                @forelse ($equiposMetricas as $equipo)
+                                    @php
+                                        $clienteNombre =
+                                            optional(optional($equipo->centro)->cliente)->nombre ??
+                                            'Sin cliente asignado';
+                                        $centroNombre = optional($equipo->centro)->nombre ?? 'Sin centro asociado';
+                                    @endphp
+                                    <tr class="text-zinc-700 dark:text-zinc-200">
+                                        <td class="px-4 py-2 font-semibold">{{ $clienteNombre }}</td>
+                                        <td class="px-4 py-2">{{ $centroNombre }}</td>
+                                        <td class="px-4 py-2">{{ $equipo->nombre }}</td>
+                                        <td class="px-4 py-2">
+                                            <span
+                                                class="rounded-full bg-zinc-100 px-3 py-0.5 text-xs font-semibold text-zinc-600 dark:bg-zinc-800 dark:text-zinc-200">
+                                                {{ $equipo->estado ?? 'Sin estado' }}
+                                            </span>
+                                        </td>
+                                        <td class="px-4 py-2 text-xs text-zinc-500">
+                                            {{ $equipo->numero_serie ?? 'N/D' }}
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="5" class="px-4 py-4 text-center text-sm text-zinc-500">Sin
+                                            resultados para los filtros aplicados.</td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="mt-6 rounded-xl border border-dashed border-zinc-200 p-4 dark:border-zinc-700">
+                        <h4 class="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Total de máquinas por cliente
+                        </h4>
+                        @if ($totalesPorCliente->isEmpty())
+                            <p class="mt-3 text-sm text-zinc-500">No hay datos para mostrar.</p>
+                        @else
+                            <ul class="mt-4 space-y-3 text-sm">
+                                @foreach ($totalesPorCliente->take(5) as $clienteNombre => $total)
+                                    <li class="flex items-center justify-between">
+                                        <span class="text-zinc-600 dark:text-zinc-300">{{ $clienteNombre }}</span>
+                                        <span
+                                            class="font-semibold text-zinc-900 dark:text-zinc-50">{{ number_format($total) }}</span>
+                                    </li>
+                                @endforeach
+                            </ul>
+                            @if ($totalesPorCliente->count() > 5)
+                                <p class="mt-3 text-xs text-zinc-500">Mostrando los 5 principales clientes.</p>
+                            @endif
+                        @endif
+                    </div>
+                </div>
+            </section>
+        @endif
+
+        @if ($mostrarSeccion('informes'))
+            <section data-section="informes" class="space-y-4">
+                <div>
+                    <p class="text-xs font-semibold uppercase tracking-wide text-purple-600">Sección</p>
+                    <h2 class="text-2xl font-bold text-white">Informes</h2>
+                    <p class="text-sm text-zinc-100 dark:text-zinc-400">Seguimiento de informes correctivos y
+                        preventivos.
+                    </p>
+                </div>
+
+                <div class="glass-card p-5">
+                    <form method="GET" class="flex flex-wrap items-end gap-4">
+                        @foreach ($filtrosInformesPersistentes as $param => $valor)
+                            @if (is_array($valor))
+                                @foreach ($valor as $subValor)
+                                    <input type="hidden" name="{{ $param }}[]" value="{{ $subValor }}">
+                                @endforeach
+                            @else
+                                <input type="hidden" name="{{ $param }}" value="{{ $valor }}">
+                            @endif
+                        @endforeach
+
+                        <div class="flex-1 min-w-[200px]">
+                            <label for="cliente_informes"
+                                class="text-xs font-semibold uppercase tracking-wide text-zinc-500">Filtrar por
+                                cliente</label>
+                            <select id="cliente_informes" name="cliente_informes"
+                                class="mt-1 w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-800 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100">
+                                <option value="">Todos los clientes</option>
+                                @foreach ($clientesFiltroOpciones as $cliente)
+                                    <option value="{{ $cliente->id }}" @selected($clienteInformesFiltro === $cliente->id)>
+                                        {{ $cliente->nombre }}</option>
+                                @endforeach
+                            </select>
+                            <span class="text-xs text-zinc-500">Últimos registros</span>
+                        </div>
+                        <div class="flex items-center gap-3 text-sm">
+                            <button type="submit"
+                                class="inline-flex items-center gap-2 rounded-xl bg-purple-600 px-4 py-2 font-semibold text-white shadow hover:bg-purple-500">
+                                <i class="fa-solid fa-filter"></i>
+                                Aplicar
+                            </button>
+                            <a href="{{ route('dashboard', $filtrosInformesPersistentes) }}"
+                                class="inline-flex items-center gap-2 rounded-xl px-4 py-2 font-semibold text-zinc-600 hover:text-purple-600 dark:text-zinc-300">
+                                <i class="fa-solid fa-rotate-left"></i>
+                                Limpiar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+                <div class="glass-card p-6">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Informes por mes</h3>
+                    </div>
+                    <span class="text-xs text-zinc-500">Últimos 12 meses</span>
+                    <div class="mt-4">
+                        <canvas id="chart-informes-mes" height="220"></canvas>
+                    </div>
+
+                </div>
+
+                <div class="glass-card p-6">
+                    <div class="flex flex-wrap items-center justify-between gap-4">
+                        <div>
+                            <p class="text-sm font-semibold uppercase tracking-wide text-purple-600">Informes técnicos
+                            </p>
+                            <h2 class="text-xl font-bold text-zinc-900 dark:text-zinc-50">Correctivos y preventivos
+                            </h2>
+                            <p class="text-sm text-zinc-500 dark:text-zinc-400">Rango seleccionado:
+                                {{ $rangeOptions[$rangoSeleccionado] }}</p>
+                        </div>
+                        <div class="flex items-center gap-4 text-sm">
+                            <div>
+                                <p class="text-xs uppercase text-zinc-500">Total correctivos</p>
+                                <p class="text-2xl font-bold text-zinc-900 dark:text-white">
+                                    {{ number_format($informesCorrectivosTotal) }}</p>
                             </div>
-                            <div class="rounded-xl bg-emerald-200 p-4 dark:bg-emerald-900/20">
-                                <dt class="text-xs uppercase text-emerald-600">Preventivos</dt>
-                                <dd class="text-2xl font-bold text-emerald-800 dark:text-emerald-600">
-                                    {{ number_format($informesPeriodoPreventivos) }}</dd>
+                            <div class="h-12 w-px bg-zinc-200 dark:bg-zinc-700"></div>
+                            <div>
+                                <p class="text-xs uppercase text-zinc-500">Total preventivos</p>
+                                <p class="text-2xl font-bold text-zinc-900 dark:text-white">
+                                    {{ number_format($informesPreventivosTotal) }}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-6 grid gap-4 md:grid-cols-2">
+                        <div class="glass-card p-5">
+                            <div class="flex items-center justify-between">
+                                <h3 class="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Actividad reciente
+                                </h3>
+                                <span class="text-sm text-zinc-500">{{ $rangeOptions[$rangoSeleccionado] }}</span>
+                            </div>
+                            <dl class="mt-4 grid grid-cols-2 gap-4 text-sm">
+                                <div class="rounded-xl bg-purple-200 p-4 dark:bg-purple-900/20">
+                                    <dt class="text-xs uppercase text-purple-600">Correctivos</dt>
+                                    <dd class="text-2xl font-bold text-purple-800 dark:text-purple-600">
+                                        {{ number_format($informesPeriodoCorrectivos) }}</dd>
+                                </div>
+                                <div class="rounded-xl bg-emerald-200 p-4 dark:bg-emerald-900/20">
+                                    <dt class="text-xs uppercase text-emerald-600">Preventivos</dt>
+                                    <dd class="text-2xl font-bold text-emerald-800 dark:text-emerald-600">
+                                        {{ number_format($informesPeriodoPreventivos) }}</dd>
+                                </div>
+                            </dl>
+                            <p class="mt-4 text-xs text-zinc-500">Los valores consideran informes con fecha igual o
+                                posterior
+                                al {{ $fechaInicio->format('d/m/Y') }}.</p>
+                        </div>
+
+                        <div class="glass-card p-5">
+                            <div class="grid gap-4 lg:grid-cols-2">
+                                <div class="flex items-center justify-between">
+                                    <p class="text-sm font-semibold uppercase tracking-wide text-emerald-600">Actividad
+                                        mensual
+                                    </p>
+                                </div>
+                                <div class="mt-4 space-y-4">
+                                    <span class="text-xs text-zinc-500">Últimos 12 meses</span>
+
+                                    <div class="flex items-center justify-between">
+                                        <h3 class="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Distribución
+                                            por
+                                            estado</h3>
+                                        <span
+                                            class="text-xs text-zinc-500">{{ $equiposTotal ? '100%' : 'Sin datos' }}</span>
+                                    </div>
+                                    @foreach ($estadoCards as $card)
+                                        @php
+                                            $valorEstado = $card['valor'];
+                                            $porcentaje =
+                                                $equiposTotal > 0 ? round(($valorEstado / $equiposTotal) * 100) : 0;
+                                        @endphp
+                                        <div>
+                                            <div
+                                                class="flex items-center justify-between text-sm font-semibold text-zinc-600 dark:text-zinc-300">
+                                                <span>{{ $card['label'] }}</span>
+                                                <span>{{ number_format($valorEstado) }} ({{ $porcentaje }}%)</span>
+                                            </div>
+                                            <div class="mt-2 h-2 rounded-full bg-zinc-100 dark:bg-zinc-800">
+                                                <div class="h-2 rounded-full bg-{{ $card['color'] }}-500"
+                                                    style="width: {{ $porcentaje }}%"></div>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+            </section>
+        @endif
+
+        @if ($mostrarSeccion('clients'))
+            <section data-section="clients" class="space-y-4">
+                <div>
+                    <p class="text-xs font-semibold uppercase tracking-wide text-teal-600">Sección</p>
+                    <h2 class="text-2xl font-bold text-white">Clientes</h2>
+                    <p class="text-sm text-zinc-100 dark:text-zinc-400">Resumen de clientes y sus centros médicos.</p>
+                </div>
+                <div class="grid gap-4 lg:grid-cols-3">
+                    <div class="glass-card p-6">
+                        <p class="text-sm font-semibold text-teal-600">Clientes registrados</p>
+                        <h2 class="text-3xl font-bold text-zinc-900 dark:text-white">
+                            {{ number_format($clientesTotal) }}
+                        </h2>
+                        <p class="text-sm text-zinc-500 dark:text-zinc-400">Clientes registrados en la plataforma.</p>
+                        <div class="mt-4 flex items-center gap-4 text-sm">
+                            <div>
+                                <p class="text-xs uppercase text-zinc-500">Con centros activos</p>
+                                <p class="text-xl font-semibold text-zinc-900 dark:text-white">
+                                    {{ number_format($clientesConCentros) }}</p>
+                            </div>
+                            <div>
+                                <p class="text-xs uppercase text-zinc-500">Sin centros</p>
+                                <p class="text-xl font-semibold text-zinc-900 dark:text-white">
+                                    {{ number_format(max($clientesTotal - $clientesConCentros, 0)) }}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="glass-card p-6 lg:col-span-2">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Clientes con más centros
+                            </h3>
+                            <a href="{{ route('clientes.index') }}"
+                                class="text-sm font-semibold text-blue-600 hover:text-blue-500">Ver clientes</a>
+                        </div>
+                        <table class="mt-4 w-full text-left text-sm">
+                            <thead class="text-xs uppercase tracking-wide text-zinc-500">
+                                <tr>
+                                    <th class="pb-2">Cliente</th>
+                                    <th class="pb-2">Centros</th>
+                                    <th class="pb-2">Cantidad</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800">
+                                @forelse ($topClientes as $cliente)
+                                    @php
+                                        $centros = $cliente->centros_medicos_count ?? 0;
+                                        $priority =
+                                            $centros >= 5
+                                                ? 'Alta'
+                                                : ($centros >= 3
+                                                    ? 'Media'
+                                                    : ($centros <= 1
+                                                        ? 'Bajo'
+                                                        : 'Normal'));
+                                    @endphp
+                                    <tr class="text-zinc-700 dark:text-zinc-200">
+                                        <td class="py-3 font-semibold">{{ $cliente->nombre }}</td>
+                                        <td class="py-3">{{ number_format($centros) }}</td>
+                                        <td class="py-3">
+                                            <span
+                                                class="rounded-full bg-zinc-100 px-3 py-0.5 text-xs font-semibold text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">{{ $priority }}</span>
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="3" class="py-3 text-center text-zinc-500">No hay datos
+                                            disponibles.
+                                        </td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        @endif
+
+        @if ($mostrarSeccion('spares'))
+            <section data-section="spares" class="space-y-4">
+                <div>
+                    <p class="text-xs font-semibold uppercase tracking-wide text-amber-600">Sección</p>
+                    <h2 class="text-2xl font-bold text-white">Repuestos</h2>
+                    <p class="text-sm text-zinc-100 dark:text-zinc-400">Inventario y alertas de stock crítico.</p>
+                </div>
+                <div class="grid gap-4 lg:grid-cols-3">
+                    <div class="glass-card p-6">
+                        <p class="text-sm font-semibold text-amber-600">Repuestos registrados</p>
+                        <h2 class="text-3xl font-bold text-zinc-900 dark:text-white">
+                            {{ number_format($repuestosTotal) }}
+                        </h2>
+                        <p class="text-sm text-zinc-500 dark:text-zinc-400">Stock total disponible: <span
+                                class="font-semibold text-zinc-800 dark:text-zinc-200">{{ number_format($repuestosStock) }}</span>
+                            unidades.</p>
+                        <dl class="mt-4 space-y-2 text-sm text-zinc-600 dark:text-zinc-300">
+                            <div class="flex items-center justify-between">
+                                <dt>Stock crítico (≤2)</dt>
+                                <dd class="font-semibold text-red-500">{{ number_format($repuestosCriticos) }}</dd>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <dt>Stock bajo (3 a 5)</dt>
+                                <dd class="font-semibold text-amber-500">{{ number_format($repuestosBajos) }}</dd>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <dt>Sin stock</dt>
+                                <dd class="font-semibold text-zinc-500">{{ number_format($repuestosSinStock) }}</dd>
                             </div>
                         </dl>
-                        <p class="mt-4 text-xs text-zinc-500">Los valores consideran informes con fecha igual o
-                            posterior
-                            al {{ $fechaInicio->format('d/m/Y') }}.</p>
                     </div>
 
-                    <div class="glass-card p-5">
-                        <h3 class="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Próximos pasos</h3>
-                        <ul class="mt-4 space-y-3 text-sm text-zinc-600 dark:text-zinc-300">
-                            <li class="flex items-center gap-3">
-                                <i class="fa-solid fa-file-circle-plus text-purple-500"></i>
-                                <span>Planifica informes preventivos para los equipos en revisión.</span>
-                            </li>
-                            <li class="flex items-center gap-3">
-                                <i class="fa-solid fa-turn-up text-emerald-500"></i>
-                                <span> Revisa los informes sin realizar.</span>
-                            </li>
-                            <li class="flex items-center gap-3">
-                                <i class="fa-solid fa-diagram-project text-blue-500"></i>
-                                <span>Comparte el resumen PDF con clientes desde la sección de informes.</span>
-                            </li>
-                        </ul>
-                    </div>
-                </div>
-            </section>
-
-            <section data-section="clients" class="grid gap-4 lg:grid-cols-3">
-                <div class="glass-card p-6">
-                    <p class="text-sm font-semibold text-teal-600">Clientes</p>
-                    <h2 class="text-3xl font-bold text-zinc-900 dark:text-white">{{ number_format($clientesTotal) }}
-                    </h2>
-                    <p class="text-sm text-zinc-500 dark:text-zinc-400">Clientes registrados en la plataforma.</p>
-                    <div class="mt-4 flex items-center gap-4 text-sm">
-                        <div>
-                            <p class="text-xs uppercase text-zinc-500">Con centros activos</p>
-                            <p class="text-xl font-semibold text-zinc-900 dark:text-white">
-                                {{ number_format($clientesConCentros) }}</p>
-                        </div>
-                        <div>
-                            <p class="text-xs uppercase text-zinc-500">Sin centros</p>
-                            <p class="text-xl font-semibold text-zinc-900 dark:text-white">
-                                {{ number_format(max($clientesTotal - $clientesConCentros, 0)) }}</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="glass-card p-6 lg:col-span-2">
-                    <div class="flex items-center justify-between">
-                        <h3 class="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Clientes con más centros</h3>
-                        <a href="{{ route('clientes.index') }}"
-                            class="text-sm font-semibold text-blue-600 hover:text-blue-500">Ver clientes</a>
-                    </div>
-                    <table class="mt-4 w-full text-left text-sm">
-                        <thead class="text-xs uppercase tracking-wide text-zinc-500">
-                            <tr>
-                                <th class="pb-2">Cliente</th>
-                                <th class="pb-2">Centros</th>
-                                <th class="pb-2">Prioridad</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800">
-                            @forelse ($topClientes as $cliente)
-                                @php
-                                    $centros = $cliente->centros_medicos_count ?? 0;
-                                    $priority = $centros >= 5 ? 'Alta' : ($centros >= 3 ? 'Media' : 'Normal');
-                                @endphp
-                                <tr class="text-zinc-700 dark:text-zinc-200">
-                                    <td class="py-3 font-semibold">{{ $cliente->nombre }}</td>
-                                    <td class="py-3">{{ number_format($centros) }}</td>
-                                    <td class="py-3">
-                                        <span
-                                            class="rounded-full bg-zinc-100 px-3 py-0.5 text-xs font-semibold text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">{{ $priority }}</span>
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="3" class="py-3 text-center text-zinc-500">No hay datos
-                                        disponibles.
-                                    </td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
-            </section>
-
-            <section data-section="spares" class="grid gap-4 lg:grid-cols-3">
-                <div class="glass-card p-6">
-                    <p class="text-sm font-semibold text-amber-600">Repuestos registrados</p>
-                    <h2 class="text-3xl font-bold text-zinc-900 dark:text-white">{{ number_format($repuestosTotal) }}
-                    </h2>
-                    <p class="text-sm text-zinc-500 dark:text-zinc-400">Stock total disponible: <span
-                            class="font-semibold text-zinc-800 dark:text-zinc-200">{{ number_format($repuestosStock) }}</span>
-                        unidades.</p>
-                    <dl class="mt-4 space-y-2 text-sm text-zinc-600 dark:text-zinc-300">
+                    <div class="glass-card p-6 lg:col-span-2">
                         <div class="flex items-center justify-between">
-                            <dt>Stock crítico (≤2)</dt>
-                            <dd class="font-semibold text-red-500">{{ number_format($repuestosCriticos) }}</dd>
+                            <h3 class="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Repuestos próximos a
+                                agotar
+                                stock
+                            </h3>
+                            <a href="{{ route('repuestos.index') }}"
+                                class="text-sm font-semibold text-amber-600 hover:text-amber-500">Ir al inventario</a>
                         </div>
-                        <div class="flex items-center justify-between">
-                            <dt>Stock bajo (3 a 5)</dt>
-                            <dd class="font-semibold text-amber-500">{{ number_format($repuestosBajos) }}</dd>
-                        </div>
-                        <div class="flex items-center justify-between">
-                            <dt>Sin stock</dt>
-                            <dd class="font-semibold text-zinc-500">{{ number_format($repuestosSinStock) }}</dd>
-                        </div>
-                    </dl>
-                </div>
-
-                <div class="glass-card p-6 lg:col-span-2">
-                    <div class="flex items-center justify-between">
-                        <h3 class="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Repuestos próximos a agotar
-                            stock
-                        </h3>
-                        <a href="{{ route('repuestos.index') }}"
-                            class="text-sm font-semibold text-amber-600 hover:text-amber-500">Ir al inventario</a>
-                    </div>
-                    <div class="mt-4 space-y-3">
-                        @forelse ($repuestosPorSalir as $repuesto)
-                            <div
-                                class="flex items-center justify-between rounded-xl border border-zinc-100 px-4 py-3 text-sm dark:border-zinc-800">
-                                <div>
-                                    <p class="font-semibold text-zinc-800 dark:text-zinc-100">{{ $repuesto->nombre }}
-                                    </p>
-                                    <p class="text-xs text-zinc-500">ID #{{ $repuesto->id }}</p>
+                        <div class="mt-4 space-y-3">
+                            @forelse ($repuestosPorSalir as $repuesto)
+                                <div
+                                    class="flex items-center justify-between rounded-xl border border-zinc-100 px-4 py-3 text-sm dark:border-zinc-800">
+                                    <div>
+                                        <p class="font-semibold text-zinc-800 dark:text-zinc-100">
+                                            {{ $repuesto->nombre }}
+                                        </p>
+                                        <p class="text-xs text-zinc-500">ID #{{ $repuesto->id }}</p>
+                                    </div>
+                                    <span
+                                        class="rounded-full bg-amber-50 px-3 py-1 text-xsfont-semibold text-amber-700 dark:bg-amber-900/30 dark:text-amber-200">{{ number_format($repuesto->stock ?? 0) }}
+                                        u.</span>
                                 </div>
-                                <span
-                                    class="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700 dark:bg-amber-900/30 dark:text-amber-200">{{ number_format($repuesto->stock ?? 0) }}
-                                    u.</span>
-                            </div>
-                        @empty
-                            <p class="text-sm text-zinc-500">Todos los repuestos cuentan con stock suficiente.</p>
-                        @endforelse
+                            @empty
+                                <p class="text-sm text-zinc-500">Todos los repuestos cuentan con stock suficiente.</p>
+                            @endforelse
+                        </div>
                     </div>
                 </div>
+
+                <div class="glass-card p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-semibold uppercase tracking-wide text-amber-600">Consumo</p>
+                            <h3 class="text-lg font-semibold text-zinc-900 dark:text-white">Repuestos más usados</h3>
+                        </div>
+                        <span class="text-xs text-zinc-500">Top 7</span>
+                    </div>
+                    @if (count($chartRepuestos['labels']))
+                        <div class="mt-4">
+                            <canvas id="chart-repuestos" height="220"></canvas>
+                        </div>
+                    @else
+                        <p class="mt-4 text-sm text-zinc-500">No hay uso de repuestos registrado en informes
+                            correctivos.
+                        </p>
+                    @endif
+                </div>
             </section>
+        @endif
     </div>
 
     @push('scripts')
@@ -521,48 +959,131 @@
                     });
                 }
 
-                const STORAGE_KEY = 'tqmd-dashboard-sections';
-                const defaultState = {
-                    machines: true,
-                    informes: true,
-                    clients: true,
-                    spares: true,
+                const chartConfigs = {
+                    fallas: {
+                        el: document.getElementById('chart-fallas'),
+                        data: {
+                            labels: @json($chartFallasData['labels']),
+                            datasets: [{
+                                label: 'Cantidad',
+                                data: @json($chartFallasData['values']),
+                                backgroundColor: '#7c3aed',
+                                borderRadius: 12,
+                                barThickness: 18,
+                            }],
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    display: false
+                                },
+                            },
+                            scales: {
+                                x: {
+                                    grid: {
+                                        display: false
+                                    }
+                                },
+                                y: {
+                                    beginAtZero: true,
+                                    ticks: {
+                                        precision: 0
+                                    },
+                                },
+                            },
+                        },
+                        type: 'bar',
+                    },
+                    informesMes: {
+                        el: document.getElementById('chart-informes-mes'),
+                        data: {
+                            labels: @json($chartInformesMes['labels']),
+                            datasets: [{
+                                    label: 'Correctivos',
+                                    data: @json($chartInformesMes['correctivos']),
+                                    borderColor: '#7c3aed',
+                                    backgroundColor: 'rgba(124, 58, 237, 0.2)',
+                                    tension: 0.3,
+                                    fill: true,
+                                },
+                                {
+                                    label: 'Preventivos',
+                                    data: @json($chartInformesMes['preventivos']),
+                                    borderColor: '#10b981',
+                                    backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                                    tension: 0.3,
+                                    fill: true,
+                                },
+                            ],
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            interaction: {
+                                intersect: false,
+                                mode: 'index'
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    ticks: {
+                                        precision: 0
+                                    }
+                                },
+                            },
+                        },
+                        type: 'line',
+                    },
+                    repuestos: {
+                        el: document.getElementById('chart-repuestos'),
+                        data: {
+                            labels: @json($chartRepuestos['labels']),
+                            datasets: [{
+                                label: 'Unidades usadas',
+                                data: @json($chartRepuestos['values']),
+                                backgroundColor: '#f59e0b',
+                                borderRadius: 12,
+                                barThickness: 18,
+                            }],
+                        },
+                        options: {
+                            indexAxis: 'y',
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    display: false
+                                }
+                            },
+                            scales: {
+                                x: {
+                                    beginAtZero: true,
+                                    ticks: {
+                                        precision: 0
+                                    }
+                                },
+                                y: {
+                                    grid: {
+                                        display: false
+                                    }
+                                },
+                            },
+                        },
+                        type: 'bar',
+                    },
                 };
 
-                let storedState = {};
-                try {
-                    storedState = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '{}');
-                } catch (error) {
-                    storedState = {};
-                }
-
-                const state = {
-                    ...defaultState,
-                    ...storedState,
-                };
-
-                const applyState = () => {
-                    document.querySelectorAll('[data-section]').forEach((section) => {
-                        const key = section.getAttribute('data-section');
-                        const visible = state[key] ?? true;
-                        section.classList.toggle('hidden', !visible);
-                    });
-
-                    document.querySelectorAll('[data-section-toggle]').forEach((checkbox) => {
-                        const key = checkbox.value;
-                        checkbox.checked = state[key] ?? true;
-                    });
-                };
-
-                document.querySelectorAll('[data-section-toggle]').forEach((checkbox) => {
-                    checkbox.addEventListener('change', () => {
-                        state[checkbox.value] = checkbox.checked;
-                        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-                        applyState();
-                    });
+                Object.values(chartConfigs).forEach((config) => {
+                    if (config.el && config.data.labels.length > 0) {
+                        new window.Chart(config.el.getContext('2d'), {
+                            type: config.type,
+                            data: config.data,
+                            options: config.options,
+                        });
+                    }
                 });
-
-                applyState();
             });
         </script>
     @endpush
