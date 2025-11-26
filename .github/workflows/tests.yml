@@ -11,44 +11,54 @@ on:
       - main
 
 jobs:
-  ci:
+  pest:
+    name: Run automated tests
     runs-on: ubuntu-latest
     environment: Testing
 
+    env:
+      APP_ENV: testing
+      APP_KEY: base64:placeholderkey1234567890==
+      CACHE_DRIVER: array
+      SESSION_DRIVER: array
+
     steps:
-      - name: Checkout
+      - name: Checkout sources
         uses: actions/checkout@v4
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: 8.4
+          php-version: '8.3'
           tools: composer:v2
-          coverage: xdebug
+          extensions: sqlite
+          coverage: none
 
-      - name: Setup Node
+      - name: Configure Composer auth for Flux
+        if: ${{ secrets.FLUX_USERNAME != '' && secrets.FLUX_LICENSE_KEY != '' }}
+        run: composer config http-basic.composer.fluxui.dev "${{ secrets.FLUX_USERNAME }}" "${{ secrets.FLUX_LICENSE_KEY }}"
+
+      - name: Install Composer dependencies
+        uses: ramsey/composer-install@v3
+        with:
+          composer-options: --no-interaction --prefer-dist --optimize-autoloader
+
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '22'
           cache: 'npm'
 
-      - name: Install Node Dependencies
-        run: npm i
+      - name: Install Node dependencies
+        run: npm ci
 
-      - name: Add Flux Credentials Loaded From ENV
-        run: composer config http-basic.composer.fluxui.dev "${{ secrets.FLUX_USERNAME }}" "${{ secrets.FLUX_LICENSE_KEY }}"
+      - name: Prepare application environment
+        run: |
+          cp .env.example .env
+          php artisan key:generate
 
-      - name: Install Dependencies
-        run: composer install --no-interaction --prefer-dist --optimize-autoloader
-
-      - name: Copy Environment File
-        run: cp .env.example .env
-
-      - name: Generate Application Key
-        run: php artisan key:generate
-
-      - name: Build Assets
+      - name: Build assets
         run: npm run build
 
-      - name: Run Tests
-        run: ./vendor/bin/pest
+      - name: Run Pest test suite
+        run: ./vendor/bin/pest --colors=always
