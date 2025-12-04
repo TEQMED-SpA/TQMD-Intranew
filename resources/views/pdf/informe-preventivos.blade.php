@@ -5,12 +5,31 @@
     <meta charset="UTF-8">
     <title>Informe Preventivo - {{ $informe->numero_reporte_servicio }}</title>
     <style>
+        /* Márgenes de página para impresión (respetado por la mayoría de engines) */
+        @page {
+            size: A4;
+            margin: 4mm;
+        }
+
+        html,
+        body {
+            height: 100%;
+            box-sizing: border-box;
+        }
+
         body {
             font-family: Arial, sans-serif;
-            margin: 15px;
+            margin: 4mm;
             font-size: 9px;
             line-height: 1.3;
             color: #333;
+        }
+
+        /* Resto de estilos (con box-sizing para que padding no aumente ancho total) */
+        *,
+        *:before,
+        *:after {
+            box-sizing: inherit;
         }
 
         h1,
@@ -22,7 +41,6 @@
 
         h1 {
             font-size: 16px;
-            margin-top: 5px;
         }
 
         h2 {
@@ -71,45 +89,48 @@
         }
 
         /* Cabecera (logo + datos empresa) */
-        .header-table {
+        .header-band {
             width: 100%;
-            margin-bottom: 10px;
-            border-collapse: collapse;
+            /* ocupa todo el ancho disponible */
+            border: 2px solid #000;
+            background-color: lightblue;
+            padding: 6px 10px;
+            margin-bottom: 14px;
+            box-sizing: border-box;
+            /* padding no amplía ancho */
+            position: relative;
+            height: 58px;
         }
 
-        .header-table td {
-            border: none;
-            padding: 0;
-            vertical-align: top;
-        }
-
-        .header-logo {
-            width: 60px;
-        }
-
-        .header-logo img {
-            max-width: 50px;
+        .header-band img {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 40px;
             height: auto;
+            display: block;
+        }
+
+        .header-band h1 {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -60%);
+            margin: 0;
+            font-size: 14px;
+            line-height: 1;
+            white-space: nowrap;
         }
 
         .header-company {
-            font-size: 10px;
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
             text-align: right;
-            line-height: 1.25;
-        }
-
-        .header-band {
-            width: 100%;
-            border: 2px solid #000;
-            background-color: lightblue;
-            padding: 6px 8px;
-            margin-bottom: 14px;
-        }
-
-        .header-band-title {
-            margin: 0;
-            font-size: 13px;
-            text-align: center;
+            font-size: 10px;
+            line-height: 1.1;
         }
 
         /* Firmas */
@@ -127,22 +148,22 @@
 
         .firma-box {
             border: 1px dashed #666;
-            width: 320px;
-            height: 100px;
+            width: 200px;
+            height: 40px;
             padding: 4px;
             background-color: #fff;
             margin-bottom: 6px;
         }
 
         .firma-box img {
-            max-width: 300px;
-            max-height: 90px;
+            max-width: 150px;
+            max-height: 50px;
         }
 
         .firma-label {
             font-weight: bold;
             margin: 0;
-            font-size: 9px;
+            font-size: 10px;
         }
 
         .firma-text {
@@ -150,7 +171,6 @@
         }
 
         @media print {
-
             th {
                 background-color: lightblue !important;
                 -webkit-print-color-adjust: exact;
@@ -169,25 +189,33 @@
 
 <body>
     {{-- CABECERA --}}
-    <table class="header-table">
-        <tr>
-            <td class="header-logo">
-                @if (!empty($base64Logo))
-                    <img src="{{ $base64Logo }}" alt="Logo Empresa">
-                @endif
-            </td>
-            <td class="header-company">
-                Técnicos en Equipos Médicos SpA.<br>
-                Castellón 970<br>
-                4030282 Concepción<br>
-                R. del Biobío, Chile
-            </td>
-        </tr>
-    </table>
 
-    <div class="header-band">
-        <h1 class="header-band-title">PROTOCOLO MANTENCIÓN FRESENIUS</h1>
+    <div style="width: 96%; padding: 8px 12px; box-sizing: border-box;
+            position: relative; height: 58px;">
+
+        <!-- Logo a la izquierda (absoluto para no interferir con el centrado del título) -->
+        <img src="{{ $base64Logo }}" alt="Logo Empresa"
+            style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+                width: 40px; height: auto; display: block;">
+
+        <!-- Título exactamente centrado respecto al ancho del contenedor -->
+        <h1
+            style="position: absolute; left: 50%; top: 50%; transform: translate(-50%, -60%);
+               margin: 0; font-size: 18px; line-height: 1; white-space: nowrap;">
+            PROTOCOLO MANTENCION FRESENIUS
+        </h1>
+
+        <!-- Bloque de información a la derecha, alineado verticalmente y a la derecha -->
+        <div
+            style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+                text-align: right; font-size: 8px; line-height: 1.1;">
+            Técnicos en Equipos Médicos SpA.<br>
+            Castellón 970<br>
+            4030282 Concepción<br>
+            R. del Biobío, Chile
+        </div>
     </div>
+
 
     {{-- DATOS GENERALES --}}
     <table>
@@ -201,16 +229,18 @@
                 <td>{{ $informe->centroMedico->centro_dialisis }}</td>
             </tr>
             <tr>
-                <td class="bold lightblue">Modelo/Marca</td>
-                <td>{{ $informe->equipo->modelo }} / {{ $informe->equipo->marca }}</td>
+                <td class="bold lightblue">Marca/Modelo</td>
+                <td>{{ $informe->equipo->marca }} / {{ $informe->equipo->modelo }}</td>
                 <td class="bold lightblue">N° de Serie</td>
                 <td>{{ $informe->equipo->numero_serie }}</td>
-                <td class="bold lightblue">N° de Inventario</td>
-                <td>{{ $informe->numero_inventario }}</td>
+                <td class="bold lightblue">ID/N° de Inventario</td>
+                <td>{{ $informe->equipo->id }}</td>
             </tr>
             <tr>
                 <td class="bold lightblue">N° Reporte de Servicio</td>
-                <td colspan="3">{{ $informe->numero_reporte_servicio }}</td>
+                <td>{{ $informe->numero_reporte_servicio }}</td>
+                <td class="bold lightblue">N° Desc. Trabajo</td>
+                <td>{{ $informe->numero_reporte_servicio }}</td>
                 <td class="bold lightblue">Horas de Operación</td>
                 <td>{{ $informe->equipo->horas_uso }}</td>
             </tr>
@@ -218,7 +248,6 @@
     </table>
 
     {{-- INSPECCIONES --}}
-    <h2>INSPECCIONES</h2>
     <table>
         <thead>
             <tr>
@@ -243,7 +272,6 @@
     </table>
 
     {{-- COMENTARIOS Y PRÓXIMO CONTROL --}}
-    <h2>OBSERVACIONES</h2>
     <table>
         <tbody>
             <tr>
@@ -262,7 +290,6 @@
     </table>
 
     {{-- FIRMAS --}}
-    <h2>FIRMAS</h2>
     <table class="firmas-table">
         <tr>
             {{-- Firma Técnico --}}

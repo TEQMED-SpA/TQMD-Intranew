@@ -2,10 +2,15 @@
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Http\Request;
 
 use App\Livewire\Settings\Appearance;
 use App\Livewire\Settings\Password;
 use App\Livewire\Settings\Profile;
+
+use App\Models\Equipo;
+use App\Models\Cliente;
 
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\ClienteController;
@@ -35,6 +40,44 @@ Route::redirect('/', '/login')->name('home');
 Route::view('dashboard', 'dashboard')
     ->middleware(['auth', 'verified', 'privilege:ver_dashboard'])
     ->name('dashboard');
+
+Route::get('dashboard/charts/equipos-estado', function (Request $request) {
+    $clienteId = $request->integer('cliente_id');
+
+    $estadosValidos = ['Operativo', 'En observacion', 'Fuera de servicio', 'Baja'];
+    $estadoMeta = [
+        'Operativo' => 'En funcionamiento',
+        'En observacion' => 'En revisión',
+        'Fuera de servicio' => 'Fuera de servicio',
+        'Baja' => 'Dados de baja',
+    ];
+    $estadoColorHex = [
+        'Operativo' => '#10b981',
+        'En observacion' => '#f59e0b',
+        'Fuera de servicio' => '#ef4444',
+        'Baja' => '#64748b',
+    ];
+
+    $totales = Equipo::select('estado', DB::raw('COUNT(*) as total'))
+        ->whereIn('estado', $estadosValidos)
+        ->when(
+            $clienteId,
+            fn($q) => $q->whereHas('centro', fn($w) => $w->where('cliente_id', $clienteId)),
+        )
+        ->groupBy('estado')
+        ->pluck('total', 'estado');
+
+    $payload = [
+        'keys' => $estadosValidos,
+        'labels' => collect($estadosValidos)->map(fn($estado) => $estadoMeta[$estado] ?? $estado)->toArray(),
+        'values' => collect($estadosValidos)->map(fn($estado) => $totales[$estado] ?? 0)->toArray(),
+        'colors' => collect($estadosValidos)->map(fn($estado) => $estadoColorHex[$estado] ?? '#94a3b8')->toArray(),
+    ];
+    $payload['total'] = array_sum($payload['values']);
+    $payload['cliente'] = $clienteId ? optional(Cliente::find($clienteId))->nombre : null;
+
+    return response()->json($payload);
+})->middleware(['auth', 'verified', 'privilege:ver_dashboard'])->name('dashboard.charts.equipos-estado');
 
 // ---------------------------------------------------------
 // PATRONES GLOBALES (evitan choques tipo /recurso/create vs /recurso/{id})

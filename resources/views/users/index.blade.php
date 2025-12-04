@@ -1,15 +1,23 @@
 <x-layouts.app :title="$title ?? 'Usuarios'">
     <div class="min-h-screen px-4 py-8 bg-zinc-50 dark:bg-zinc-800 transition-all">
         <div class="max-w-6xl mx-auto">
-            <div class="flex justify-between items-center mb-6">
+            <div class="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center mb-6">
                 <h1 class="text-2xl font-bold text-zinc-800 dark:text-white">Usuarios</h1>
-                <a href="{{ route('users.create') }}">
-                    <button type="button"
-                        class="bg-zinc-200 dark:bg-zinc-700 text-zinc-100 dark:text-zinc-100 font-semibold px-4 py-2 rounded-lg hover:bg-zinc-300 dark:hover:bg-zinc-600 transition flex items-center gap-2">
-                        <i class="fa fa-plus"></i>
-                        Nuevo Usuario
+                <div class="flex flex-wrap gap-3 justify-end">
+                    <button type="button" id="toggleInactiveUsers"
+                        class="bg-white border border-zinc-200 dark:border-zinc-600 text-zinc-700 dark:text-zinc-200 font-semibold px-4 py-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-700 transition flex items-center gap-2">
+                        <i class="fa fa-eye-slash"></i>
+                        Ocultar inactivos
                     </button>
-                </a>
+
+                    <a href="{{ route('users.create') }}">
+                        <button type="button"
+                            class="bg-zinc-200 dark:bg-zinc-700 text-zinc-100 dark:text-zinc-100 font-semibold px-4 py-2 rounded-lg hover:bg-zinc-300 dark:hover:bg-zinc-600 transition flex items-center gap-2">
+                            <i class="fa fa-plus"></i>
+                            Nuevo Usuario
+                        </button>
+                    </a>
+                </div>
             </div>
 
             <div class="overflow-x-auto rounded-lg shadow bg-white dark:bg-zinc-900">
@@ -34,7 +42,10 @@
                     </thead>
                     <tbody>
                         @foreach ($users as $user)
-                            <tr class="{{ $tableRowClass }}">
+                            @php
+                                $isActive = (int) $user->activo === 1;
+                            @endphp
+                            <tr class="{{ $tableRowClass }}" data-user-active="{{ $isActive ? '1' : '0' }}">
                                 <td class="p-3 text-zinc-900 dark:text-zinc-100 font-medium">{{ $user->name }}</td>
                                 <td class="p-3 text-zinc-900 dark:text-zinc-300">{{ $user->email }}</td>
                                 <td class="p-3">
@@ -46,10 +57,6 @@
                                     </span>
                                 </td>
                                 <td class="p-3">
-                                    @php
-                                        $isActive = (int) $user->activo === 1;
-                                    @endphp
-
                                     <span
                                         class="inline-block rounded-full px-3 py-1 text-xs font-semibold transition-colors duration-200
            {{ $isActive
@@ -92,4 +99,37 @@
             </div>
         </div>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const toggleButton = document.getElementById('toggleInactiveUsers');
+            if (!toggleButton) return;
+
+            const rows = document.querySelectorAll('tr[data-user-active]');
+            let hideInactive = false;
+
+            const updateButtonLabel = () => {
+                if (hideInactive) {
+                    toggleButton.innerHTML = '<i class="fa fa-eye"></i><span>Mostrar inactivos</span>';
+                } else {
+                    toggleButton.innerHTML = '<i class="fa fa-eye-slash"></i><span>Ocultar inactivos</span>';
+                }
+            };
+
+            const applyFilter = () => {
+                rows.forEach((row) => {
+                    const inactive = row.dataset.userActive === '0';
+                    row.classList.toggle('hidden', hideInactive && inactive);
+                });
+            };
+
+            toggleButton.addEventListener('click', () => {
+                hideInactive = !hideInactive;
+                applyFilter();
+                updateButtonLabel();
+            });
+
+            updateButtonLabel();
+        });
+    </script>
 </x-layouts.app>

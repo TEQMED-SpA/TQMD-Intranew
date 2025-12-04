@@ -42,6 +42,12 @@ class User extends Authenticatable
         return $this->belongsTo(Role::class, 'rol_id');
     }
 
+    // Alias para compatibilidad con código que usa 'rol'
+    public function rol()
+    {
+        return $this->role();
+    }
+
     // Métodos para verificar privilegios
     public function tienePrivilegio($privilegios)
     {
