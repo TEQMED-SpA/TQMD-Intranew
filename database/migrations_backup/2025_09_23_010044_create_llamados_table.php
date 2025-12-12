@@ -21,7 +21,7 @@ return new class extends Migration
             $table->string('id_equipo');
             $table->text('desperfecto');
             $table->foreignId('tecnico_asignado_id')->constrained('users')->onDelete('cascade');
-            $table->foreignId('categoria_llamado_id')->constrained('categorias_llamados')->onDelete('cascade');
+            $table->foreignId('categoria_llamado_id')->constrained('categoria_llamados')->onDelete('cascade');
             $table->timestamps();
         });
     }
