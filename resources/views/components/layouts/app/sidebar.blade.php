@@ -92,7 +92,7 @@
                     @if ($mostrarEquipos)
                         <flux:navlist.item icon="cpu-chip" :href="route('equipos.index')"
                             :current="request()->routeIs('equipos.*')" wire:navigate>
-                            {{ __('Máquinas') }}
+                            {{ __('Equipos') }}
                         </flux:navlist.item>
                     @endif
                 </flux:navlist.group>

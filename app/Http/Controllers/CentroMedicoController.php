@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\CentroMedico;
 use App\Models\Cliente;
+use App\Models\TipoEquipo;
 use Illuminate\Http\Request;
 
 class CentroMedicoController extends Controller
@@ -35,7 +36,10 @@ class CentroMedicoController extends Controller
 
         $clientes = Cliente::orderBy('nombre')->get(['id', 'nombre']);
 
-        return view('centros_medicos.index', compact('centros_medicos', 'clientes'));
+        return view('centros_medicos.index', [
+            'centros_medicos' => $centros_medicos,
+            'clientes' => $clientes,
+        ]);
     }
 
     /**
@@ -44,7 +48,10 @@ class CentroMedicoController extends Controller
     public function create()
     {
         $clientes = Cliente::orderBy('nombre')->get(['id', 'nombre']);
-        return view('centros_medicos.create', compact('clientes'));
+
+        return view('centros_medicos.create', [
+            'clientes' => $clientes,
+        ]);
     }
 
     /**
@@ -87,25 +94,83 @@ class CentroMedicoController extends Controller
     /**
      * Mostrar un centro médico
      */
-    public function show(CentroMedico $centroMedico)
+    public function show(Request $request, CentroMedico $centros_medico)
     {
-        $centroMedico->load(['cliente', 'equipos']);
-        return view('centros_medicos.show', compact('centroMedico'));
+        $centros_medico->load('cliente');
+
+        $equiposTotal = $centros_medico->equipos()->count();
+        $solicitudesTotal = $centros_medico->solicitudes()->count();
+        $solicitudesPendientes = $centros_medico->solicitudes()
+            ->whereHas('estado', function ($estado) {
+                $estado->whereRaw('LOWER(nombre) = ?', ['pendiente']);
+            })->count();
+
+        $equiposQuery = $centros_medico->equipos()
+            ->with('tipo')
+            ->orderBy('nombre');
+
+        if ($request->filled('buscar')) {
+            $texto = '%' . $request->input('buscar') . '%';
+            $equiposQuery->where(function ($q) use ($texto) {
+                $q->where('nombre', 'like', $texto)
+                    ->orWhere('modelo', 'like', $texto)
+                    ->orWhere('marca', 'like', $texto)
+                    ->orWhere('numero_serie', 'like', $texto)
+                    ->orWhere('codigo', 'like', $texto);
+            });
+        }
+
+        if ($request->filled('estado')) {
+            $equiposQuery->where('estado', $request->input('estado'));
+        }
+
+        if ($request->filled('tipo_equipo_id')) {
+            $equiposQuery->where('tipo_equipo_id', (int) $request->input('tipo_equipo_id'));
+        }
+
+        $equipos = $equiposQuery->paginate(10)->withQueryString();
+
+        $tipos_equipo = TipoEquipo::where('activo', true)
+            ->orderBy('nombre')
+            ->get(['id', 'nombre']);
+
+        $estadoOpciones = [
+            'Operativo',
+            'En observacion',
+            'Fuera de servicio',
+            'Baja',
+        ];
+
+        return view('centros_medicos.show', [
+            // Alias consistente para tus blades
+            'centroMedico' => $centros_medico,
+            'equipos' => $equipos,
+            'tipos_equipo' => $tipos_equipo,
+            'estadoOpciones' => $estadoOpciones,
+            'equiposTotal' => $equiposTotal,
+            'solicitudesTotal' => $solicitudesTotal,
+            'solicitudesPendientes' => $solicitudesPendientes,
+        ]);
     }
 
     /**
      * Formulario de edición
      */
-    public function edit(CentroMedico $centroMedico)
+    public function edit(CentroMedico $centros_medico)
     {
         $clientes = Cliente::orderBy('nombre')->get(['id', 'nombre']);
-        return view('centros_medicos.edit', compact('centroMedico', 'clientes'));
+
+        return view('centros_medicos.edit', [
+            // Alias consistente para tus blades
+            'centroMedico' => $centros_medico,
+            'clientes' => $clientes,
+        ]);
     }
 
     /**
      * Actualizar centro médico
      */
-    public function update(Request $request, CentroMedico $centroMedico)
+    public function update(Request $request, CentroMedico $centros_medico)
     {
         $data = $request->validate([
             'cliente_id' => 'nullable|exists:clientes,id',
@@ -116,18 +181,18 @@ class CentroMedicoController extends Controller
             'telefono'   => 'nullable|string|max:30',
         ]);
 
-        $centroMedico->update($data);
+        $centros_medico->update($data);
 
-        return redirect()->route('centros_medicos.show', $centroMedico)
+        return redirect()->route('centros_medicos.show', $centros_medico)
             ->with('success', 'Centro médico actualizado correctamente');
     }
 
     /**
      * Eliminar centro médico
      */
-    public function destroy(CentroMedico $centroMedico)
+    public function destroy(CentroMedico $centros_medico)
     {
-        $centroMedico->delete();
+        $centros_medico->delete();
 
         return redirect()->route('centros_medicos.index')
             ->with('success', 'Centro médico eliminado correctamente');

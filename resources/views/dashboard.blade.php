@@ -333,9 +333,10 @@
             'values' => $fallasPorTipo->pluck('total')->toArray(),
         ];
 
-        $repuestosMasUsados = \Illuminate\Support\Facades\DB::table('informe_correctivo_repuesto as icr')
-            ->join('repuestos as r', 'r.id', '=', 'icr.repuesto_id')
-            ->select('r.nombre', \Illuminate\Support\Facades\DB::raw('SUM(COALESCE(icr.cantidad_usada, 0)) as total'))
+        $repuestosMasUsados = \Illuminate\Support\Facades\DB::table('reg_repuestos_informes as rri')
+            ->join('repuestos as r', 'r.id', '=', 'rri.repuesto_id')
+            ->select('r.nombre', \Illuminate\Support\Facades\DB::raw('SUM(COALESCE(rri.cantidad, 0)) as total'))
+            ->whereNotNull('rri.informe_correctivo_id')
             ->groupBy('r.nombre')
             ->orderByDesc('total')
             ->take(7)

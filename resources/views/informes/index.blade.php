@@ -187,8 +187,15 @@
                                         <td class="p-3 text-zinc-800 dark:text-zinc-300">
                                             {{ $inf->cliente->nombre ?? '—' }}
                                         </td>
+                                        @php
+                                            $sucursalCorrectivo =
+                                                optional($inf->centroMedico)->centro_dialisis ?:
+                                                optional($inf->centroMedico)->nombre ?:
+                                                optional($inf->centroMedico)->nombre_completo ?:
+                                                '—';
+                                        @endphp
                                         <td class="p-3 text-zinc-800 dark:text-zinc-300">
-                                            {{ $inf->centroMedico->centro_dialisis ?? '—' }}
+                                            {{ $sucursalCorrectivo }}
                                         </td>
                                         <td class="p-3 text-zinc-800 dark:text-zinc-300">
                                             @if ($inf->equipo?->modelo)
@@ -254,6 +261,31 @@
 
                 {{-- Tabla: Preventivos --}}
                 <div x-show="tab === 'preventivos'">
+                    <div
+                        class="mb-4 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                        <div>
+                            <h3 class="text-base font-semibold text-zinc-900 dark:text-zinc-50 flex items-center gap-2">
+                                <i class="fa fa-clipboard-check text-emerald-500"></i>
+                                Generar nuevo informe preventivo
+                            </h3>
+                            <p class="text-sm text-zinc-600 dark:text-zinc-300">
+                                Selecciona el tipo de protocolo para abrir el formulario correspondiente.
+                            </p>
+                        </div>
+                        <div class="flex flex-wrap gap-2">
+                            <a href="{{ route('informes.preventivos.select-tipo') }}"
+                                class="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition">
+                                <i class="fa fa-th-list text-xs"></i>
+                                Ver tipos disponibles
+                            </a>
+                            <a href="{{ route('informes.create') }}#preventivos"
+                                class="inline-flex items-center gap-2 px-3 py-2 text-sm font-semibold bg-zinc-200 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-100 rounded-lg hover:bg-zinc-300 dark:hover:bg-zinc-700 transition">
+                                <i class="fa fa-arrow-up-right-from-square text-xs"></i>
+                                Abrir pestaña Preventivo
+                            </a>
+                        </div>
+                    </div>
+
                     <div class="overflow-x-auto rounded-lg shadow bg-white dark:bg-zinc-900">
                         <table class="w-full table-auto text-left text-sm">
                             <thead>
@@ -315,8 +347,15 @@
                                         <td class="p-3 text-zinc-800 dark:text-zinc-300">
                                             {{ optional($inf->fecha)->format('d/m/Y') }}
                                         </td>
+                                        @php
+                                            $sucursalPreventivo =
+                                                optional($inf->centroMedico)->centro_dialisis ?:
+                                                optional($inf->centroMedico)->nombre ?:
+                                                optional($inf->centroMedico)->nombre_completo ?:
+                                                '—';
+                                        @endphp
                                         <td class="p-3 text-zinc-800 dark:text-zinc-300">
-                                            {{ $inf->centroMedico->centro_dialisis ?? '—' }}
+                                            {{ $sucursalPreventivo }}
                                         </td>
                                         <td class="p-3 text-zinc-800 dark:text-zinc-300">
                                             @if ($inf->equipo)

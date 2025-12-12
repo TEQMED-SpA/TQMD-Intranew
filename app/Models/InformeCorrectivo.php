@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class InformeCorrectivo extends Model
 {
@@ -60,10 +60,8 @@ class InformeCorrectivo extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function repuestos(): BelongsToMany
+    public function repuestos(): HasMany
     {
-        return $this->belongsToMany(Repuesto::class, 'informe_correctivo_repuesto')
-            ->withPivot('cantidad_usada')
-            ->withTimestamps();
+        return $this->hasMany(RegRepuestoInforme::class, 'informe_correctivo_id');
     }
 }

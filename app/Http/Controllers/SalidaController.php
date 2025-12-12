@@ -4,12 +4,34 @@ namespace App\Http\Controllers;
 
 use App\Models\Solicitud;
 use App\Models\Repuesto;
+use App\Models\Salida;
+use App\Models\User;
+use App\Models\CentroMedico;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 
 class SalidaController extends Controller
 {
+    public function index(Request $request)
+    {
+        $query = Salida::with(['repuesto', 'usuarioPedido', 'usuarioRequiere', 'centroMedico'])
+            ->orderByDesc('fecha_hora')
+            ->when($request->filled('repuesto_id'), fn($q) => $q->where('repuesto_id', (int) $request->input('repuesto_id')))
+            ->when($request->filled('tecnico_id'), fn($q) => $q->where('usuario_pedido_id', (int) $request->input('tecnico_id')))
+            ->when($request->filled('centro_medico_id'), fn($q) => $q->where('centro_medico_id', (int) $request->input('centro_medico_id')))
+            ->when($request->filled('desde'), fn($q) => $q->whereDate('fecha_hora', '>=', $request->input('desde')))
+            ->when($request->filled('hasta'), fn($q) => $q->whereDate('fecha_hora', '<=', $request->input('hasta')));
+
+        $salidas = $query->paginate(20)->withQueryString();
+
+        $repuestos = Repuesto::orderBy('nombre')->get(['id', 'nombre', 'serie', 'modelo', 'marca']);
+        $tecnicos = User::orderBy('name')->get(['id', 'name']);
+        $centros = CentroMedico::orderBy('nombre')->get(['id', 'nombre']);
+
+        return view('salidas.index', compact('salidas', 'repuestos', 'tecnicos', 'centros'));
+    }
+
     /**
      * Entrega (aprobación) de un repuesto solicitado: crea 'salidas' y descuenta stock.
      */

@@ -422,7 +422,8 @@
                             </p>
                         </div>
                     </div>
-                    <input type="hidden" name="firma_tecnico" id="firma-input-preventivo-tecnico">
+                    <input type="hidden" name="firma_tecnico" id="firma-input-preventivo-tecnico"
+                        value="{{ old('firma_tecnico') }}">
                     @error('firma_tecnico')
                         <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                     @enderror
@@ -450,7 +451,8 @@
                             </p>
                         </div>
                     </div>
-                    <input type="hidden" name="firma_cliente" id="firma-input-preventivo-cliente">
+                    <input type="hidden" name="firma_cliente" id="firma-input-preventivo-cliente"
+                        value="{{ old('firma_cliente') }}">
                     <div class="space-y-1">
                         <label for="firma_cliente_nombre"
                             class="block text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase">

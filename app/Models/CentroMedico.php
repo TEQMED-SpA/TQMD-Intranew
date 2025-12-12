@@ -16,6 +16,7 @@ class CentroMedico extends Model
         'cod_cliente',
         'cod_centro_medico',
         'nombre',
+        'centro_dialisis',
         'direccion',
         'ciudad',
         'region',
@@ -77,7 +78,7 @@ class CentroMedico extends Model
     // Accessors
     public function getNombreCompletoAttribute()
     {
-        return $this->razon_social ?: $this->centro_dialisis;
+        return $this->razon_social ?: $this->centro_dialisis; // Solo funciona si tienes esos campos
     }
 
     public function getTotalSolicitudesAttribute()

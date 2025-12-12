@@ -22,13 +22,15 @@ class LookupController extends Controller
     {
         $equipos = Equipo::where('centro_medico_id', $centro->id)
             ->orderBy('nombre')
-            ->get(['id', 'nombre', 'modelo', 'marca', 'numero_serie', 'id_maquina']);
+            ->get(['id', 'nombre', 'modelo', 'marca', 'numero_serie', 'id_maquina', 'horas_uso']);
         // Devuelve un texto amigable para mostrar en el <option>
         $equipos = $equipos->map(function ($e) {
             $meta = $e->modelo ?: ($e->marca ?: ($e->numero_serie ?: $e->id_maquina));
             return [
-                'id'    => $e->id,
+                'id' => $e->id,
                 'texto' => trim(($e->nombre ?? 'Equipo') . ' ' . ($meta ? "— {$meta}" : '')),
+                'numero_serie' => $e->numero_serie,
+                'horas_uso' => $e->horas_uso,
             ];
         });
         return response()->json($equipos);

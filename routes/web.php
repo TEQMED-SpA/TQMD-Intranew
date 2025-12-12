@@ -27,6 +27,7 @@ use App\Http\Controllers\RoleController;
 use App\Http\Controllers\PrivilegioController;
 use App\Http\Controllers\InventarioTecnicoController;
 use App\Http\Controllers\InformesController;
+use App\Http\Controllers\InformePreventivoController;
 
 
 // ---------------------------------------------------------
@@ -338,7 +339,23 @@ Route::middleware(['auth'])->group(function () {
         ->name('informes.correctivo.show')
         ->middleware('privilege:ver_reportes');
 
-    // Preventivo
+    // Preventivo (nuevo flujo)
+    Route::prefix('informes/preventivos')->name('informes.preventivos.')->middleware('privilege:ver_reportes')->group(function () {
+        Route::get('/', function () {
+            return redirect()->route('informes.preventivos.select-tipo');
+        })->name('index');
+
+        Route::get('/nuevo', [InformePreventivoController::class, 'selectTipo'])
+            ->name('select-tipo');
+
+        Route::get('/crear/{tipoInformePreventivo}', [InformePreventivoController::class, 'create'])
+            ->whereNumber('tipoInformePreventivo')
+            ->name('create');
+
+        Route::post('/', [InformePreventivoController::class, 'store'])
+            ->name('store');
+    });
+
     Route::post('/informes/preventivo', [InformesController::class, 'storePreventivo'])
         ->name('informes.preventivo.store')
         ->middleware('privilege:ver_reportes');
@@ -357,7 +374,9 @@ Route::middleware(['auth'])->group(function () {
         ->name('informes.print')
         ->middleware('privilege:ver_reportes');
 
-    Route::get('/clientes/{cliente}/centros', [CentroMedicoController::class, 'porCliente']);
+    Route::get('/clientes/{cliente}/centros', [CentroMedicoController::class, 'porCliente'])
+        ->whereNumber('cliente')
+        ->name('clientes.centros');
     Route::get('/centros-medicos/{centro}/equipos', [EquipoController::class, 'porCentro'])
         ->name('centros-medicos.equipos');
     Route::get('/equipos/{equipo}/horas-uso', [EquipoController::class, 'horasUso'])

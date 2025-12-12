@@ -43,13 +43,14 @@
                 </span>
             </div>
 
-            {{-- Cliente / Centro médico --}}
+            {{-- Datos generales --}}
             <div class="space-y-4">
                 <h4 class="text-sm font-semibold text-zinc-700 dark:text-zinc-200 flex items-center gap-2">
                     <span class="w-1 h-4 rounded-full bg-orange-500"></span>
-                    Cliente y centro médico
+                    Datos generales
                 </h4>
 
+                {{-- Cliente / Centro médico --}}
                 <div class="grid md:grid-cols-2 gap-4">
                     {{-- Cliente --}}
                     <div>
@@ -60,12 +61,12 @@
                         <select id="cliente_id" name="cliente_id"
                             class="select2 w-full px-3 py-2.5 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-zinc-50
                                    dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2
-                                   focus:ring-blue-500 focus:border-blue-500"
+                                   focus:ring-orange-500 focus:border-orange-500"
                             required>
                             <option value="">Selecciona un cliente…</option>
                             @foreach ($clientes as $cliente)
                                 <option value="{{ $cliente->id }}" @selected(old('cliente_id') == $cliente->id)>
-                                    {{ $cliente->nombre }} ({{ $cliente->rut }})
+                                    {{ $cliente->nombre }}
                                 </option>
                             @endforeach
                         </select>
@@ -83,7 +84,7 @@
                         <select id="centro_medico_id" name="centro_medico_id"
                             class="select2 w-full px-3 py-2.5 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-zinc-50
                                    dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2
-                                   focus:ring-blue-500 focus:border-blue-500"
+                                   focus:ring-orange-500 focus:border-orange-500"
                             required>
                             <option value="">Selecciona un centro médico…</option>
                             @foreach ($centrosMedicos as $centro)
@@ -97,16 +98,9 @@
                         @enderror
                     </div>
                 </div>
-            </div>
 
-            {{-- Fechas y horas --}}
-            <div class="space-y-4">
-                <h4 class="text-sm font-semibold text-zinc-700 dark:text-zinc-200 flex items-center gap-2">
-                    <span class="w-1 h-4 rounded-full bg-blue-500"></span>
-                    Tiempos de atención
-                </h4>
-
-                <div class="grid lg:grid-cols-4 md:grid-cols-2 gap-4">
+                {{-- Fechas y horas --}}
+                <div class="grid lg:grid-cols-4 md:grid-cols-2 gap-4 mt-4">
                     {{-- Fecha notificación --}}
                     <div>
                         <label for="fecha_notificacion"
@@ -117,7 +111,7 @@
                             value="{{ old('fecha_notificacion') }}"
                             class="w-full px-3 py-2.5 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-zinc-50
                                    dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2
-                                   focus:ring-blue-500 focus:border-blue-500"
+                                   focus:ring-orange-500 focus:border-orange-500"
                             required>
                         @error('fecha_notificacion')
                             <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
@@ -134,7 +128,7 @@
                             value="{{ old('fecha_servicio') }}"
                             class="w-full px-3 py-2.5 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-zinc-50
                                    dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2
-                                   focus:ring-blue-500 focus:border-blue-500"
+                                   focus:ring-orange-500 focus:border-orange-500"
                             required>
                         @error('fecha_servicio')
                             <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
@@ -150,7 +144,7 @@
                         <input id="hora_inicio" type="time" name="hora_inicio" value="{{ old('hora_inicio') }}"
                             class="w-full px-3 py-2.5 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-zinc-50
                                    dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2
-                                   focus:ring-blue-500 focus:border-blue-500"
+                                   focus:ring-orange-500 focus:border-orange-500"
                             required>
                         @error('hora_inicio')
                             <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
@@ -166,7 +160,7 @@
                         <input id="hora_cierre" type="time" name="hora_cierre" value="{{ old('hora_cierre') }}"
                             class="w-full px-3 py-2.5 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-zinc-50
                                    dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2
-                                   focus:ring-blue-500 focus:border-blue-500"
+                                   focus:ring-orange-500 focus:border-orange-500"
                             required>
                         @error('hora_cierre')
                             <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
@@ -174,29 +168,6 @@
                     </div>
                 </div>
             </div>
-
-            {{-- Problema informado --}}
-            <div class="space-y-2">
-                <h4 class="text-sm font-semibold text-zinc-700 dark:text-zinc-200 flex items-center gap-2">
-                    <span class="w-1 h-4 rounded-full bg-red-500"></span>
-                    Detalle del problema
-                </h4>
-                <div>
-                    <label for="problema_informado"
-                        class="block text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase mb-1.5">
-                        Problema informado
-                    </label>
-                    <textarea id="problema_informado" name="problema_informado" rows="3"
-                        class="w-full px-3 py-2.5 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-zinc-50
-                               dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2
-                               focus:ring-blue-500 focus:border-blue-500"
-                        required>{{ old('problema_informado') }}</textarea>
-                    @error('problema_informado')
-                        <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                    @enderror
-                </div>
-            </div>
-
             {{-- Equipo + horas de uso --}}
             <div class="space-y-4">
                 <h4 class="text-sm font-semibold text-zinc-700 dark:text-zinc-200 flex items-center gap-2">
@@ -214,7 +185,7 @@
                         <select id="equipo_id" name="equipo_id"
                             class="select2 w-full px-3 py-2.5 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-zinc-50
                                    dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2
-                                   focus:ring-blue-500 focus:border-blue-500"
+                                   focus:ring-orange-500 focus:border-orange-500"
                             required>
                             <option value="">Selecciona un equipo…</option>
                             @foreach ($equipos as $equipo)
@@ -238,7 +209,7 @@
                             value="{{ old('horas_uso') }}"
                             class="w-full px-3 py-2.5 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-zinc-50
                                    dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2
-                                   focus:ring-blue-500 focus:border-blue-500"
+                                   focus:ring-orange-500 focus:border-orange-500"
                             required>
                         <p class="text-[11px] text-zinc-500 dark:text-zinc-400 mt-1">
                             Debe ser mayor o igual a las horas actuales del equipo.
@@ -247,6 +218,28 @@
                             <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                         @enderror
                     </div>
+                </div>
+            </div>
+
+            {{-- Problema informado --}}
+            <div class="space-y-4">
+                <h4 class="text-sm font-semibold text-zinc-700 dark:text-zinc-200 flex items-center gap-2">
+                    <span class="w-1 h-4 rounded-full bg-red-500"></span>
+                    Detalle del problema
+                </h4>
+                <div>
+                    <label for="problema_informado"
+                        class="block text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase mb-1.5">
+                        Problema informado
+                    </label>
+                    <textarea id="problema_informado" name="problema_informado" rows="3"
+                        class="w-full px-3 py-2.5 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-zinc-50
+                               dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2
+                               focus:ring-orange-500 focus:border-orange-500"
+                        required>{{ old('problema_informado') }}</textarea>
+                    @error('problema_informado')
+                        <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                    @enderror
                 </div>
             </div>
 
@@ -264,7 +257,7 @@
                     <textarea id="trabajo_realizado" name="trabajo_realizado" rows="3"
                         class="w-full px-3 py-2.5 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-zinc-50
                                dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2
-                               focus:ring-blue-500 focus:border-blue-500"
+                               focus:ring-orange-500 focus:border-orange-500"
                         required>{{ old('trabajo_realizado') }}</textarea>
                     @error('trabajo_realizado')
                         <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
@@ -273,76 +266,104 @@
             </div>
 
             {{-- Repuestos usados --}}
-            <div class="space-y-3">
+            <div class="space-y-3"
+                x-data='{
+                    repuestos: @json(old('repuestos', [['repuesto_id' => null, 'cantidad' => null]])),
+                    agregar() { this.repuestos.push({ repuesto_id: null, cantidad: null }); },
+                    quitar(index) { if (this.repuestos.length > 1) { this.repuestos.splice(index, 1); } }
+                }'>
                 <h4 class="text-sm font-semibold text-zinc-700 dark:text-zinc-200 flex items-center gap-2">
-                    <span class="w-1 h-4 rounded-full bg-yellow-500"></span>
-                    Repuestos usados
+                    <span class="w-1 h-4 rounded-full bg-amber-500"></span>
+                    Repuestos utilizados
                 </h4>
 
-                <div>
-                    <label for="repuestos"
-                        class="block text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase mb-1.5">
-                        Selecciona los repuestos
-                    </label>
-                    <select id="repuestos" name="repuestos[]"
-                        class="select2 w-full px-3 py-2.5 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-zinc-50
-                               dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2
-                               focus:ring-blue-500 focus:border-blue-500"
-                        multiple>
-                        @foreach ($repuestos as $repuesto)
-                            <option value="{{ $repuesto->id }}" @if (is_array(old('repuestos')) && in_array($repuesto->id, old('repuestos'))) selected @endif>
-                                {{ $repuesto->nombre }} (Stock: {{ $repuesto->stock }})
-                            </option>
-                        @endforeach
-                    </select>
-                    @error('repuestos')
-                        <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                    @enderror
+                <div class="space-y-3">
+                    <template x-for="(item, index) in repuestos" :key="index">
+                        <div
+                            class="grid md:grid-cols-2 gap-4 border border-zinc-200 dark:border-zinc-700 rounded-lg p-4">
+                            <div>
+                                <label
+                                    class="block text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase mb-1.5">
+                                    Repuesto
+                                </label>
+                                <select
+                                    class="w-full px-3 py-2.5 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+                                    :name="`repuestos[${index}][repuesto_id]`" x-model="item.repuesto_id">
+                                    <option value="">Selecciona un repuesto…</option>
+                                    @foreach ($repuestos as $repuesto)
+                                        <option value="{{ $repuesto->id }}">{{ $repuesto->nombre }} (Stock:
+                                            {{ $repuesto->stock }})
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div>
+                                <label
+                                    class="block text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase mb-1.5">
+                                    Cantidad
+                                </label>
+                                <div class="flex items-center gap-2">
+                                    <input type="number" min="1"
+                                        class="w-full px-3 py-2.5 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+                                        :name="`repuestos[${index}][cantidad]`" x-model="item.cantidad">
+                                    <button type="button" class="text-red-500 hover:text-red-600"
+                                        @click="quitar(index)">
+                                        <i class="fa fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+
+                    <button type="button" @click="agregar()"
+                        class="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-600 rounded-lg hover:bg-amber-50 dark:hover:bg-amber-500/10 transition">
+                        <i class="fa fa-plus text-xs"></i>
+                        Añadir repuesto
+                    </button>
                 </div>
 
-                {{-- Cantidades dinámicas --}}
-                <div id="cantidades-container" class="mt-2 space-y-2"></div>
+                @error('repuestos.*.repuesto_id')
+                    <p class="text-red-500 text-xs">{{ $message }}</p>
+                @enderror
+                @error('repuestos.*.cantidad')
+                    <p class="text-red-500 text-xs">{{ $message }}</p>
+                @enderror
             </div>
 
             {{-- Condición del equipo --}}
-            <div class="space-y-2">
+            <div class="space-y-4">
                 <h4 class="text-sm font-semibold text-zinc-700 dark:text-zinc-200 flex items-center gap-2">
                     <span class="w-1 h-4 rounded-full bg-sky-500"></span>
                     Condición final del equipo
                 </h4>
-                <div class="flex flex-wrap gap-6 mt-1 text-sm">
-                    @php
-                        $condOld = old('condicion_equipo');
-                    @endphp
-                    <label class="inline-flex items-center gap-2 text-zinc-700 dark:text-zinc-200">
-                        <input type="radio" name="condicion_equipo" value="operativo"
-                            class="form-radio text-blue-600 focus:ring-blue-500"
-                            {{ $condOld === 'operativo' ? 'checked' : '' }} required>
-                        <span>Operativo</span>
+                <div>
+                    <label for="condicion_equipo"
+                        class="block text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase mb-1.5">
+                        Condición del equipo
                     </label>
-                    <label class="inline-flex items-center gap-2 text-zinc-700 dark:text-zinc-200">
-                        <input type="radio" name="condicion_equipo" value="en_observacion"
-                            class="form-radio text-blue-600 focus:ring-blue-500"
-                            {{ $condOld === 'en_observacion' ? 'checked' : '' }}>
-                        <span>En observación</span>
-                    </label>
-                    <label class="inline-flex items-center gap-2 text-zinc-700 dark:text-zinc-200">
-                        <input type="radio" name="condicion_equipo" value="fuera_de_servicio"
-                            class="form-radio text-blue-600 focus:ring-blue-500"
-                            {{ $condOld === 'fuera_de_servicio' ? 'checked' : '' }}>
-                        <span>Fuera de servicio</span>
-                    </label>
+                    <select id="condicion_equipo" name="condicion_equipo"
+                        class="w-full px-3 py-2.5 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-zinc-50
+                               dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2
+                               focus:ring-sky-500 focus:border-sky-500"
+                        required>
+                        <option value="">Selecciona una opción…</option>
+                        @foreach (['operativo', 'en_observacion', 'fuera_de_servicio'] as $estado)
+                            <option value="{{ $estado }}" @selected(old('condicion_equipo') === $estado)>
+                                {{ ucfirst(str_replace('_', ' ', $estado)) }}
+                            </option>
+                        @endforeach
+                    </select>
+                    @error('condicion_equipo')
+                        <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                    @enderror
                 </div>
-                @error('condicion_equipo')
-                    <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                @enderror
             </div>
 
-            {{-- Firmas requeridas --}}
+            {{-- Firmas --}}
             <div class="space-y-4">
                 <h4 class="text-sm font-semibold text-zinc-700 dark:text-zinc-200 flex items-center gap-2">
                     <span class="w-1 h-4 rounded-full bg-purple-500"></span>
-                    Firmas requeridas
+                    Firmas
                 </h4>
 
                 <div class="grid gap-6 md:grid-cols-2">
@@ -353,22 +374,23 @@
                         </p>
                         <div
                             class="border border-dashed border-zinc-300 dark:border-zinc-600 rounded-lg p-4 bg-zinc-50 dark:bg-zinc-900">
-                            <canvas id="signature-pad-tecnico"
+                            <canvas id="signature-pad-correctivo-tecnico"
                                 class="border border-zinc-200 dark:border-zinc-700 rounded bg-white"
-                                style="height: 150px; width: 100%;"></canvas>
+                                style="height: 180px; width: 100%;"></canvas>
                             <div
                                 class="mt-3 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-                                <button type="button" id="clear-signature-tecnico"
+                                <button type="button" id="clear-signature-correctivo-tecnico"
                                     class="inline-flex items-center px-3 py-1.5 bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300
                                            dark:hover:bg-zinc-600 text-zinc-800 dark:text-zinc-50 text-xs font-medium rounded-lg transition">
                                     <i class="fa fa-eraser mr-2"></i> Limpiar firma
                                 </button>
-                                <p class="text-[11px] text-zinc-500 dark:text-zinc-400" id="firma-tecnico-help">
+                                <p class="text-[11px] text-zinc-500 dark:text-zinc-400"
+                                    id="firma-help-correctivo-tecnico">
                                     Dibuja tu firma en el área de arriba.
                                 </p>
                             </div>
                         </div>
-                        <input type="hidden" name="firma" id="firma-tecnico-input">
+                        <input type="hidden" name="firma" id="firma-input-correctivo-tecnico">
                         @error('firma')
                             <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                         @enderror
@@ -377,27 +399,27 @@
                     {{-- Firma Cliente (opcional) --}}
                     <div class="space-y-2">
                         <p class="text-xs text-zinc-600 dark:text-zinc-300">
-                            Firma del cliente <span class="font-semibold">(opcional)</span>. Úsala cuando el
-                            representante esté disponible.
+                            Firma del cliente <span class="font-semibold">(opcional)</span> para validar la atención.
                         </p>
                         <div
                             class="border border-dashed border-zinc-300 dark:border-zinc-600 rounded-lg p-4 bg-zinc-50 dark:bg-zinc-900">
-                            <canvas id="signature-pad-cliente"
+                            <canvas id="signature-pad-correctivo-cliente"
                                 class="border border-zinc-200 dark:border-zinc-700 rounded bg-white"
-                                style="height: 150px; width: 100%;"></canvas>
+                                style="height: 180px; width: 100%;"></canvas>
                             <div
                                 class="mt-3 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-                                <button type="button" id="clear-signature-cliente"
+                                <button type="button" id="clear-signature-correctivo-cliente"
                                     class="inline-flex items-center px-3 py-1.5 bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300
                                            dark:hover:bg-zinc-600 text-zinc-800 dark:text-zinc-50 text-xs font-medium rounded-lg transition">
                                     <i class="fa fa-eraser mr-2"></i> Limpiar firma
                                 </button>
-                                <p class="text-[11px] text-zinc-500 dark:text-zinc-400" id="firma-cliente-help">
-                                    Pide la firma del cliente en esta área.
+                                <p class="text-[11px] text-zinc-500 dark:text-zinc-400"
+                                    id="firma-help-correctivo-cliente">
+                                    Solicita al representante del cliente que firme aquí.
                                 </p>
                             </div>
                         </div>
-                        <input type="hidden" name="firma_cliente" id="firma-cliente-input">
+                        <input type="hidden" name="firma_cliente" id="firma-input-correctivo-cliente">
                         <div class="space-y-1">
                             <label for="firma_cliente_nombre"
                                 class="block text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase">

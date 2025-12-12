@@ -78,8 +78,29 @@
                         </p>
                     </div>
 
-                    <div class="md:col-span-2 lg:col-span-2">
+                    <div>
+                        <p class="text-xs uppercase text-zinc-500 dark:text-zinc-400 font-semibold">Razón Social</p>
+                        <p class="text-zinc-900 dark:text-zinc-100 font-medium">
+                            {{ $informe->cliente->nombre }}
+                        </p>
+                    </div>
+
+                    <div>
+                        <p class="text-xs uppercase text-zinc-500 dark:text-zinc-400 font-semibold">RUT</p>
+                        <p class="text-zinc-900 dark:text-zinc-100 font-medium">
+                            {{ $informe->cliente->rut }}
+                        </p>
+                    </div>
+
+                    <div>
                         <p class="text-xs uppercase text-zinc-500 dark:text-zinc-400 font-semibold">Dirección</p>
+                        <p class="text-zinc-900 dark:text-zinc-100 font-medium">
+                            {{ $informe->cliente->direccion }}
+                        </p>
+                    </div>
+
+                    <div class="md:col-span-2 lg:col-span-2">
+                        <p class="text-xs uppercase text-zinc-500 dark:text-zinc-400 font-semibold">Dirección Centro</p>
                         <p class="text-zinc-900 dark:text-zinc-100">
                             {{ $informe->centroMedico->region }},
                             {{ $informe->centroMedico->ciudad }},
@@ -276,15 +297,16 @@
                             Encargado Servicio TEQMED
                         </p>
 
-                        <div class="border border-dashed border-zinc-400 dark:border-zinc-500 rounded-md bg-white dark:bg-zinc-950 
-                        flex items-center justify-start p-2"
+                        <div class="border border-dashed border-zinc-400 dark:border-zinc-500 rounded-md bg-white dark:bg-white 
+                        flex items-center justify-start p-2 shadow-sm"
                             style="width: 340px; height: 120px;">
 
                             @if ($informe->firma)
-                                <img src="{{ $informe->firma }}" alt="Firma Técnico" class="object-contain"
+                                <img src="{{ $informe->firma }}" alt="Firma Técnico"
+                                    class="object-contain max-h-full max-w-full"
                                     style="max-width: 320px; max-height: 110px;">
                             @else
-                                <span class="text-xs text-zinc-400">Firma no disponible</span>
+                                <span class="text-xs text-zinc-500 dark:text-zinc-600">Firma no disponible</span>
                             @endif
                         </div>
 
@@ -299,15 +321,16 @@
                             Cliente / Representante Legal
                         </p>
 
-                        <div class="border border-dashed border-zinc-400 dark:border-zinc-500 rounded-md bg-white dark:bg-zinc-950
-                        flex items-center justify-start p-2"
+                        <div class="border border-dashed border-zinc-400 dark:border-zinc-500 rounded-md bg-white dark:bg-white
+                        flex items-center justify-start p-2 shadow-sm"
                             style="width: 340px; height: 120px;">
 
                             @if ($informe->firma_cliente)
-                                <img src="{{ $informe->firma_cliente }}" alt="Firma Cliente" class="object-contain"
+                                <img src="{{ $informe->firma_cliente }}" alt="Firma Cliente"
+                                    class="object-contain max-h-full max-w-full"
                                     style="max-width: 320px; max-height: 110px;">
                             @else
-                                <span class="text-xs text-zinc-400">Firma no disponible</span>
+                                <span class="text-xs text-zinc-500 dark:text-zinc-600">Firma no disponible</span>
                             @endif
                         </div>
 
