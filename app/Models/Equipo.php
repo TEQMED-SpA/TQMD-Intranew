@@ -15,6 +15,7 @@ class Equipo extends Model
         'marca',
         'id_maquina',
         'numero_serie',
+        'tipo_equipo_id',
         'horas_uso',
         'estado',
         'cant_dias_fuera_serv',
@@ -28,6 +29,11 @@ class Equipo extends Model
     public function centro()
     {
         return $this->belongsTo(CentroMedico::class, 'centro_medico_id');
+    }
+
+    public function tipo()
+    {
+        return $this->belongsTo(TipoEquipo::class, 'tipo_equipo_id');
     }
 
     public function cliente()

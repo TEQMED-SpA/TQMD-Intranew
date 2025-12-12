@@ -57,21 +57,23 @@
 
                                 <td class="p-3 text-center">
                                     <div class="flex items-center justify-center gap-2">
-                                        <a href="{{ route('centros_medicos.show', $centro) }}"
+                                        <a href="{{ route('centros_medicos.show', ['centros_medico' => $centro->id]) }}"
                                             class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-blue-500 hover:bg-blue-600 text-white transition-colors duration-200"
                                             title="Ver">
                                             <i class="fa fa-eye text-sm"></i>
                                         </a>
 
                                         @can('editar_centros_medicos')
-                                            <a href="{{ route('centros_medicos.edit', $centro) }}"
+                                            <a href="{{ route('centros_medicos.edit', ['centros_medico' => $centro->id]) }}"
                                                 class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-green-500 hover:bg-green-600 text-white transition-colors duration-200"
                                                 title="Editar">
                                                 <i class="fa fa-pencil text-sm"></i>
                                             </a>
 
-                                            <form action="{{ route('centros_medicos.destroy', $centro) }}" method="POST"
-                                                style="display:inline;" onsubmit="return confirm('¿Eliminar centro?');">
+                                            <form
+                                                action="{{ route('centros_medicos.destroy', ['centros_medico' => $centro->id]) }}"
+                                                method="POST" style="display:inline;"
+                                                onsubmit="return confirm('¿Eliminar centro?');">
                                                 @csrf @method('DELETE')
                                                 <button type="submit"
                                                     class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-red-500 hover:bg-red-600 text-white transition-colors duration-200"

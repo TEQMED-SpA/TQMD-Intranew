@@ -18,6 +18,7 @@ class InformePreventivoInspeccion extends Model
         'informe_preventivo_id',
         'descripcion',
         'respuesta',
+        'comentario',
     ];
 
     //Relaciones

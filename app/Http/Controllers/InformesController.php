@@ -8,6 +8,7 @@ use App\Models\Equipo;
 use App\Models\InformeCorrectivo;
 use App\Models\InformePreventivo;
 use App\Models\Repuesto;
+use App\Models\TipoInformePreventivo;
 use App\Models\User;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
@@ -66,7 +67,7 @@ class InformesController extends Controller
         $sortablePreventivos = [
             'numero_reporte_servicio' => 'numero_reporte_servicio',
             'fecha'                   => 'fecha',
-            'centro'                  => CentroMedico::select('centro_dialisis')
+            'centro'                  => CentroMedico::selectRaw('COALESCE(centro_dialisis, nombre)')
                 ->whereColumn('centros_medicos.id', 'informes_preventivos.centro_medico_id'),
             'equipo'                  => Equipo::select('modelo')
                 ->whereColumn('equipos.id', 'informes_preventivos.equipo_id'),
@@ -250,13 +251,17 @@ class InformesController extends Controller
         $repuestos       = Repuesto::orderBy('nombre')->get();
         $clientes        = Cliente::orderBy('nombre')->get();
         $siguienteNumero = $this->generarNumeroPreventivo();
+        $tiposPreventivos = TipoInformePreventivo::where('activo', true)
+            ->orderBy('nombre')
+            ->get();
 
         return view('informes.create', compact(
             'centrosMedicos',
             'equipos',
             'repuestos',
             'clientes',
-            'siguienteNumero'
+            'siguienteNumero',
+            'tiposPreventivos'
         ));
     }
 
@@ -292,8 +297,8 @@ class InformesController extends Controller
             'equipo_id'           => 'required|exists:equipos,id',
             'repuestos'           => 'nullable|array',
             'cantidades'          => 'nullable|array',
-            'fecha_servicio'      => 'required|date',
-            'fecha_notificacion'  => 'required|date|before:fecha_servicio',
+            'fecha_servicio'      => 'required|date|after_or_equal:today|before_or_equal:+3 days',
+            'fecha_notificacion'  => 'required|date|before_or_equal:fecha_servicio',
             'problema_informado'  => 'required|string',
             'hora_inicio'         => 'required|date_format:H:i',
             'hora_cierre'         => 'required|date_format:H:i|after:hora_inicio',
@@ -306,7 +311,9 @@ class InformesController extends Controller
             'horas_uso'           => 'required|integer|min:0',
         ], [
             'hora_cierre.after'         => 'La hora de cierre debe ser posterior a la hora de inicio.',
-            'fecha_notificacion.before' => 'La fecha de notificación debe ser anterior a la fecha de servicio.',
+            'fecha_notificacion.before_or_equal' => 'La fecha de notificación debe ser anterior o igual a la fecha de servicio.',
+            'fecha_servicio.after_or_equal' => 'La fecha de servicio no puede ser anterior a la fecha actual.',
+            'fecha_servicio.before_or_equal' => 'La fecha de servicio no puede ser posterior a 3 días desde hoy.',
             'firma.required'            => 'La firma digital es obligatoria.',
             'horas_uso.required'        => 'Las horas de uso son obligatorias.',
             'horas_uso.integer'         => 'Horas de uso debe ser un número entero.',
@@ -347,10 +354,21 @@ class InformesController extends Controller
                 'firma_cliente_nombre' => $request->firma_cliente_nombre,
             ]);
 
-            // Actualizar horas de uso
+            // Actualizar horas de uso y estado del equipo
             $equipo = Equipo::find($request->equipo_id);
             if ($equipo) {
-                $equipo->update(['horas_uso' => $request->horas_uso]);
+                // Mapear los valores de condicion_equipo a estado del equipo
+                $estadoEquipo = match ($request->condicion_equipo) {
+                    'operativo' => 'Operativo',
+                    'en_observacion' => 'En observacion',
+                    'fuera_de_servicio' => 'Fuera de servicio',
+                    default => 'Operativo'
+                };
+
+                $equipo->update([
+                    'horas_uso' => $request->horas_uso,
+                    'estado' => $estadoEquipo
+                ]);
             }
 
             // Repuestos + stock
@@ -392,13 +410,20 @@ class InformesController extends Controller
     public function showPreventivo(int $id): View
     {
         $informe = InformePreventivo::with([
-            'centroMedico',
+            'centroMedico.cliente',
             'equipo',
             'usuario',
             'inspecciones',
+            'repuestos.repuesto',
+            'tipoInformePreventivo',
         ])->findOrFail($id);
 
-        return view('informes.show-preventivo', compact('informe'));
+        $seccionesInspeccion = $this->buildPreventivoSections($informe);
+
+        return view('informes.show-preventivo', [
+            'informe' => $informe,
+            'seccionesInspeccion' => $seccionesInspeccion,
+        ]);
     }
 
     public function storePreventivo(Request $request): Response|RedirectResponse
@@ -548,15 +573,18 @@ class InformesController extends Controller
 
         if ($tipo === 'preventivo') {
             $informe = InformePreventivo::with([
-                'centroMedico',
+                'centroMedico.cliente',
                 'equipo',
                 'usuario',
                 'inspecciones',
+                'repuestos.repuesto',
+                'tipoInformePreventivo',
             ])->findOrFail($id);
 
             $pdf = Pdf::loadView('pdf.informe-preventivos', [
-                'informe'    => $informe,
-                'base64Logo' => $base64Logo,
+                'informe'             => $informe,
+                'base64Logo'          => $base64Logo,
+                'inspeccionSections'  => $this->buildPreventivoSections($informe),
             ]);
 
             return $pdf->download('informe-preventivo-' . $informe->numero_reporte_servicio . '.pdf');
@@ -593,18 +621,188 @@ class InformesController extends Controller
 
         if ($tipo === 'preventivo') {
             $informe = InformePreventivo::with([
-                'centroMedico',
+                'centroMedico.cliente',
                 'equipo',
                 'usuario',
                 'inspecciones',
+                'repuestos.repuesto',
+                'tipoInformePreventivo',
             ])->findOrFail($id);
 
             return view('pdf.informe-preventivos', [
-                'informe'    => $informe,
-                'base64Logo' => $base64Logo,
+                'informe'            => $informe,
+                'base64Logo'         => $base64Logo,
+                'inspeccionSections' => $this->buildPreventivoSections($informe),
             ]);
         }
 
         abort(404, 'Tipo de informe no válido.');
+    }
+
+    protected function buildPreventivoSections(InformePreventivo $informe): array
+    {
+        $tipoNombre = $informe->tipoInformePreventivo->nombre ?? null;
+        $configKey = $this->resolvePreventivoConfigKey($tipoNombre);
+        $config = config('preventivos.' . $configKey, config('preventivos.fresenius'));
+        $sectionsConfig = $config['sections'] ?? [];
+
+        $registros = $informe->inspecciones->values();
+        $cursor = 0;
+        $secciones = [];
+
+        foreach ($sectionsConfig as $sectionConfig) {
+            $items = [];
+            foreach ($sectionConfig['items'] ?? [] as $itemConfig) {
+                $registro = $registros[$cursor] ?? null;
+                [$codigo, $titulo] = $this->splitDescripcionCodigo(
+                    $registro->descripcion ?? ($itemConfig['label'] ?? '')
+                );
+                $formattedComment = $this->formatPreventivoComment($registro?->comentario, $itemConfig);
+
+                $items[] = [
+                    'codigo' => $codigo ?? (string) ($cursor + 1),
+                    'titulo' => $titulo,
+                    'respuesta' => $registro?->respuesta,
+                    'comment_text' => $formattedComment['text'],
+                    'comment_details' => $formattedComment['details'],
+                ];
+
+                $cursor++;
+            }
+
+            $secciones[] = [
+                'title' => $sectionConfig['title'] ?? '',
+                'items' => $items,
+            ];
+        }
+
+        while ($cursor < $registros->count()) {
+            $registro = $registros[$cursor];
+            [$codigo, $titulo] = $this->splitDescripcionCodigo($registro->descripcion);
+            if (empty($secciones)) {
+                $secciones[] = [
+                    'title' => '',
+                    'items' => [],
+                ];
+            }
+
+            $formattedComment = $this->formatPreventivoCommentFallback($registro->comentario);
+            $secciones[count($secciones) - 1]['items'][] = [
+                'codigo' => $codigo ?? (string) ($cursor + 1),
+                'titulo' => $titulo,
+                'respuesta' => $registro->respuesta,
+                'comment_text' => $formattedComment['text'],
+                'comment_details' => $formattedComment['details'],
+            ];
+
+            $cursor++;
+        }
+
+        return $secciones;
+    }
+
+    protected function resolvePreventivoConfigKey(?string $tipoNombre): string
+    {
+        return match ($tipoNombre) {
+            'Fresenius' => 'fresenius',
+            'Autoclave' => 'autoclave',
+            'Aspirador de Secreciones', 'Aspirador' => 'aspirador',
+            'Balanzas' => 'balanzas',
+            'DEA' => 'dea',
+            default => 'fresenius',
+        };
+    }
+
+    protected function splitDescripcionCodigo(?string $texto): array
+    {
+        $texto = trim((string) $texto);
+        if ($texto === '') {
+            return [null, '—'];
+        }
+
+        if (preg_match('/^([0-9]+(?:\\.[0-9]+)*)\\s+(.*)$/u', $texto, $matches)) {
+            return [$matches[1], trim($matches[2])];
+        }
+
+        return [null, $texto];
+    }
+
+    protected function formatPreventivoComment(?string $comentario, array $itemConfig): array
+    {
+        $commentFields = $itemConfig['comment_fields'] ?? null;
+        if ($commentFields) {
+            $values = $this->decodeStructuredComment($comentario);
+            $details = [];
+            foreach ($commentFields as $field) {
+                $key = $field['key'] ?? null;
+                if (! $key) {
+                    continue;
+                }
+                $label = $field['label'] ?? ucfirst(str_replace('_', ' ', $key));
+                $suffix = $field['suffix'] ?? '';
+                $value = trim((string) ($values[$key] ?? ''));
+                if ($value === '') {
+                    continue;
+                }
+                $details[] = [
+                    'label' => $label,
+                    'value' => $value,
+                    'suffix' => $suffix,
+                ];
+            }
+
+            if (! empty($details)) {
+                return ['text' => null, 'details' => $details];
+            }
+        }
+
+        $suffix = $itemConfig['comment_suffix'] ?? '';
+        $text = $comentario ? trim((string) $comentario) : null;
+        if ($text && $suffix) {
+            $text .= $suffix;
+        }
+
+        return ['text' => $text, 'details' => []];
+    }
+
+    protected function formatPreventivoCommentFallback(?string $comentario): array
+    {
+        $values = $this->decodeStructuredComment($comentario);
+        if (! empty($values)) {
+            $details = [];
+            foreach ($values as $key => $value) {
+                $val = trim((string) $value);
+                if ($val === '') {
+                    continue;
+                }
+                $label = ucwords(str_replace('_', ' ', (string) $key));
+                $details[] = [
+                    'label' => $label,
+                    'value' => $val,
+                    'suffix' => '',
+                ];
+            }
+
+            if (! empty($details)) {
+                return ['text' => null, 'details' => $details];
+            }
+        }
+
+        $text = $comentario ? trim((string) $comentario) : null;
+        return ['text' => $text, 'details' => []];
+    }
+
+    protected function decodeStructuredComment(?string $comentario): array
+    {
+        if (! $comentario) {
+            return [];
+        }
+
+        $decoded = json_decode($comentario, true);
+        if (! is_array($decoded) || empty($decoded['__structured']) || ! is_array($decoded['values'] ?? null)) {
+            return [];
+        }
+
+        return $decoded['values'];
     }
 }

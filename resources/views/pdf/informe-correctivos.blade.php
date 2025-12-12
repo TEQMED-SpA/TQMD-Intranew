@@ -197,6 +197,14 @@
                 </td>
             </tr>
             <tr>
+                <td class="bold lightblue">Razón Social</td>
+                <td>{{ $informe->cliente->nombre }}</td>
+                <td class="bold lightblue">RUT</td>
+                <td>{{ $informe->cliente->rut }}</td>
+                <td class="bold lightblue">Dirección Cliente</td>
+                <td>{{ $informe->cliente->direccion }}</td>
+            </tr>
+            <tr>
                 <td class="bold lightblue">Teléfono</td>
                 <td>{{ $informe->centroMedico->telefono }}</td>
                 <td class="bold lightblue">Fecha de Servicio</td>
@@ -312,15 +320,16 @@
                     <div class="firma-box">
                         <img src="{{ $informe->firma_cliente }}" alt="Firma Cliente">
                     </div>
-                    <p class="firma-label">Firma del Cliente/Usuario</p>
+                    <p class="firma-label">Firma del Cliente</p>
                     <p class="firma-text small">
-                        Nombre: {{ $informe->firma_cliente_nombre ?: $informe->cliente->nombre }}
+                        Reponsable: {{ $informe->firma_cliente_nombre ?: $informe->cliente->nombre }}
                     </p>
                 @else
                     <div class="firma-box"></div>
-                    <p class="firma-label">Cliente/Usuario</p>
+                    <p class="firma-label">Cliente</p>
                     <hr class="firma-line">
                     <p class="small">Nombre: {{ $informe->firma_cliente_nombre ?: '' }}</p>
+                    <p class="small">Cliente: {{ $informe->cliente->nombre }} (RUT: {{ $informe->cliente->rut }})</p>
                     <hr class="firma-line">
                 @endif
             </td>

@@ -199,10 +199,14 @@
                 width: 40px; height: auto; display: block;">
 
         <!-- Título exactamente centrado respecto al ancho del contenedor -->
+        @php
+            $tipoNombre = mb_strtoupper($informe->tipoInformePreventivo->nombre ?? 'FRESENIUS');
+            $tituloPdf = 'PROTOCOLO MANTENCIÓN ' . $tipoNombre;
+        @endphp
         <h1
             style="position: absolute; left: 50%; top: 50%; transform: translate(-50%, -60%);
                margin: 0; font-size: 18px; line-height: 1; white-space: nowrap;">
-            PROTOCOLO MANTENCION FRESENIUS
+            {{ $tituloPdf }}
         </h1>
 
         <!-- Bloque de información a la derecha, alineado verticalmente y a la derecha -->
@@ -226,7 +230,7 @@
                 <td class="bold lightblue">Nombre del Técnico</td>
                 <td>{{ $informe->usuario->name }}</td>
                 <td class="bold lightblue">Cliente</td>
-                <td>{{ $informe->centroMedico->centro_dialisis }}</td>
+                <td>{{ optional($informe->centroMedico->cliente)->nombre ?? '—' }}</td>
             </tr>
             <tr>
                 <td class="bold lightblue">Marca/Modelo</td>
@@ -239,37 +243,148 @@
             <tr>
                 <td class="bold lightblue">N° Reporte de Servicio</td>
                 <td>{{ $informe->numero_reporte_servicio }}</td>
-                <td class="bold lightblue">N° Desc. Trabajo</td>
-                <td>{{ $informe->numero_reporte_servicio }}</td>
                 <td class="bold lightblue">Horas de Operación</td>
-                <td>{{ $informe->equipo->horas_uso }}</td>
+                <td>{{ number_format($informe->horas_operacion ?? ($informe->equipo->horas_uso ?? 0)) }}</td>
+                <td class="bold lightblue">Estado del Equipo</td>
+                <td>{{ $informe->condicion_equipo ?? 'Sin definir' }}</td>
+            </tr>
+            <tr>
+                <td class="bold lightblue">Tipo de Trabajo</td>
+                <td>{{ $informe->tipo_trabajo ?? 'N/A' }}</td>
+                <td class="bold lightblue">Centro</td>
+                <td colspan="3">
+                    {{ $informe->centroMedico->centro_dialisis ?? ($informe->centroMedico->nombre ?? '—') }}
+                </td>
             </tr>
         </tbody>
     </table>
 
     {{-- INSPECCIONES --}}
+    @php
+        $sections = collect($inspeccionSections ?? []);
+        if ($sections->isEmpty()) {
+            $sections = collect([
+                [
+                    'title' => null,
+                    'items' => $informe->inspecciones
+                        ->map(function ($inspeccion, $index) {
+                            $codigo = null;
+                            $titulo = $inspeccion->descripcion;
+                            if (preg_match('/^([0-9]+(?:\\.[0-9]+)*)\\s+(.*)$/u', $inspeccion->descripcion, $matches)) {
+                                $codigo = $matches[1];
+                                $titulo = $matches[2];
+                            }
+
+                            return [
+                                'codigo' => $codigo ?? (string) ($index + 1),
+                                'titulo' => $titulo,
+                                'respuesta' => $inspeccion->respuesta,
+                                'comentario' => $inspeccion->comentario,
+                            ];
+                        })
+                        ->toArray(),
+                ],
+            ]);
+        }
+    @endphp
     <table>
         <thead>
             <tr>
-                <th class="lightblue">N°</th>
-                <th class="lightblue">Descripción</th>
+                <th class="lightblue">ID</th>
+                <th class="lightblue">Ítem</th>
                 <th class="lightblue">Sí</th>
                 <th class="lightblue">No</th>
                 <th class="lightblue">N/A</th>
             </tr>
         </thead>
         <tbody>
-            @foreach ($informe->inspecciones as $index => $inspeccion)
-                <tr>
-                    <td class="center">{{ $index + 1 }}</td>
-                    <td>{{ $inspeccion->descripcion }}</td>
-                    <td class="center">{{ $inspeccion->respuesta === 'SI' ? 'X' : '' }}</td>
-                    <td class="center">{{ $inspeccion->respuesta === 'NO' ? 'X' : '' }}</td>
-                    <td class="center">{{ $inspeccion->respuesta === 'N/A' ? 'X' : '' }}</td>
-                </tr>
+            @foreach ($sections as $section)
+                @if ($section['title'])
+                    <tr>
+                        <td colspan="5" class="bold" style="background:#e2e8f0;">
+                            {{ $section['title'] }}
+                        </td>
+                    </tr>
+                @endif
+                @foreach ($section['items'] as $item)
+                    <tr>
+                        <td class="center bold">{{ $item['codigo'] }}</td>
+                        <td>
+                            <div>
+                                <span>{{ $item['titulo'] }}</span>
+                                @php
+                                    $commentText = $item['comment_text'] ?? ($item['comentario'] ?? null);
+                                    $commentDetails = $item['comment_details'] ?? [];
+                                    if (empty($commentDetails) && isset($item['comentario'])) {
+                                        $decoded = json_decode($item['comentario'], true);
+                                        if (
+                                            is_array($decoded) &&
+                                            !empty($decoded['__structured']) &&
+                                            is_array($decoded['values'] ?? null)
+                                        ) {
+                                            $commentText = null;
+                                            foreach ($decoded['values'] as $key => $value) {
+                                                $val = trim((string) $value);
+                                                if ($val === '') {
+                                                    continue;
+                                                }
+                                                $commentDetails[] = [
+                                                    'label' => ucwords(str_replace('_', ' ', (string) $key)),
+                                                    'value' => $val,
+                                                    'suffix' => '',
+                                                ];
+                                            }
+                                        }
+                                    }
+                                @endphp
+                                @if ($commentText)
+                                    <div style="font-size: 11px; color: #1f2937; margin-top: 2px;">
+                                        <strong>Valor:</strong> {{ $commentText }}
+                                    </div>
+                                @endif
+                                @if (!empty($commentDetails))
+                                    <div style="font-size: 11px; color: #1f2937; margin-top: 2px;">
+                                        @foreach ($commentDetails as $detail)
+                                            <div>
+                                                <strong>{{ $detail['label'] ?? 'Valor' }}:</strong>
+                                                {{ $detail['value'] ?? '—' }}{{ $detail['suffix'] ?? '' }}
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                @endif
+                            </div>
+                        </td>
+                        <td class="center">{{ $item['respuesta'] === 'SI' ? 'X' : '' }}</td>
+                        <td class="center">{{ $item['respuesta'] === 'NO' ? 'X' : '' }}</td>
+                        <td class="center">{{ $item['respuesta'] === 'N/A' ? 'X' : '' }}</td>
+                    </tr>
+                @endforeach
             @endforeach
         </tbody>
     </table>
+
+    {{-- REPUESTOS --}}
+    @if ($informe->repuestos->isNotEmpty())
+        <h2>Repuestos Utilizados</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th class="lightblue">#</th>
+                    <th class="lightblue">Repuesto</th>
+                    <th class="lightblue">Cantidad</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach ($informe->repuestos as $index => $registro)
+                    <tr>
+                        <td class="center">{{ $index + 1 }}</td>
+                        <td>{{ $registro->repuesto->nombre ?? 'Repuesto eliminado' }}</td>
+                        <td class="center">{{ $registro->cantidad }}</td>
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
+    @endif
 
     {{-- COMENTARIOS Y PRÓXIMO CONTROL --}}
     <table>

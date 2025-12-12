@@ -14,12 +14,15 @@ class InformePreventivo extends Model
     protected $table = 'informes_preventivos';
 
     protected $fillable = [
+        'tipo_informe_preventivo_id',
         'fecha',
         'usuario_id',
         'centro_medico_id',
         'equipo_id',
-        'numero_inventario',
         'numero_reporte_servicio',
+        'tipo_trabajo',
+        'condicion_equipo',
+        'horas_operacion',
         'comentarios',
         'fecha_proximo_control',
         'firma_tecnico',
@@ -51,8 +54,18 @@ class InformePreventivo extends Model
         return $this->belongsTo(Equipo::class);
     }
 
+    public function tipoInformePreventivo(): BelongsTo
+    {
+        return $this->belongsTo(TipoInformePreventivo::class, 'tipo_informe_preventivo_id');
+    }
+
     public function inspecciones(): HasMany
     {
         return $this->hasMany(InformePreventivoInspeccion::class, 'informe_preventivo_id');
+    }
+
+    public function repuestos(): HasMany
+    {
+        return $this->hasMany(RegRepuestoInforme::class, 'informe_preventivo_id');
     }
 }

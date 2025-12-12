@@ -3,13 +3,6 @@
         <div class="max-w-6xl mx-auto">
             <div class="flex justify-between items-center mb-6">
                 <h1 class="text-2xl font-bold text-zinc-800 dark:text-white">Salidas</h1>
-                <a href="{{ route('salidas.create') }}">
-                    <button type="button"
-                        class="bg-zinc-200 dark:bg-zinc-700 text-zinc-100 dark:text-zinc-100 font-semibold px-4 py-2 rounded-lg hover:bg-zinc-300 dark:hover:bg-zinc-600 transition flex items-center gap-2">
-                        <i class="fa fa-plus"></i>
-                        Nueva Salida
-                    </button>
-                </a>
             </div>
             <div class="overflow-x-auto rounded-lg shadow bg-white dark:bg-zinc-900">
                 @php

@@ -67,8 +67,13 @@
             </div>
             <div class="rounded-lg shadow bg-white dark:bg-zinc-900 p-4">
                 <div class="text-sm text-zinc-500 dark:text-zinc-400 mb-1">Tipo mantención</div>
-                <div class="bg-yellow-100 dark:bg-yellow-900/40 text-yellow-800 dark:text-yellow-200">
+                <div
+                    class="px-2 py-1 rounded bg-yellow-100 dark:bg-yellow-900/40 text-yellow-800 dark:text-yellow-200 inline-flex items-center gap-2">
                     {{ $equipo->tipo_mantencion ?? '—' }}
+                    @if (($equipo->cant_dias_fuera_serv ?? 0) > 0)
+                        <span class="text-xs font-semibold text-zinc-600 dark:text-zinc-300">(Fuera
+                            {{ $equipo->cant_dias_fuera_serv }} días)</span>
+                    @endif
                 </div>
             </div>
             <div class="rounded-lg shadow bg-white dark:bg-zinc-900 p-4">
@@ -127,6 +132,14 @@
                             <tr class="border-b border-zinc-200 dark:border-zinc-700">
                                 <th
                                     class="w-56 p-3 text-zinc-600 dark:text-zinc-300 font-medium border-r border-zinc-200 dark:border-zinc-700">
+                                    Tipo de equipo</th>
+                                <td class="p-3 text-zinc-900 dark:text-zinc-100">
+                                    {{ $equipo->tipo?->nombre ?? '—' }}
+                                </td>
+                            </tr>
+                            <tr class="border-b border-zinc-200 dark:border-zinc-700">
+                                <th
+                                    class="w-56 p-3 text-zinc-600 dark:text-zinc-300 font-medium border-r border-zinc-200 dark:border-zinc-700">
                                     ID máquina</th>
                                 <td class="p-3 text-zinc-900 dark:text-zinc-100">{{ $equipo->id_maquina ?? '—' }}</td>
                             </tr>
@@ -143,6 +156,15 @@
                                     Horas de uso</th>
                                 <td class="p-3 text-zinc-900 dark:text-zinc-100">
                                     {{ is_null($equipo->horas_uso) ? '—' : number_format($equipo->horas_uso, 0, ',', '.') }}
+                                </td>
+                            </tr>
+                            <tr class="border-b border-zinc-200 dark:border-zinc-700">
+                                <th
+                                    class="w-56 p-3 text-zinc-600 dark:text-zinc-300 font-medium border-r border-zinc-200 dark:border-zinc-700">
+                                    Días fuera de servicio
+                                </th>
+                                <td class="p-3 text-zinc-900 dark:text-zinc-100">
+                                    {{ ($equipo->cant_dias_fuera_serv ?? 0) > 0 ? $equipo->cant_dias_fuera_serv . ' día(s)' : 'Sin registro' }}
                                 </td>
                             </tr>
                             <tr class="border-b border-zinc-200 dark:border-zinc-700">
@@ -180,7 +202,7 @@
                                     Centro médico
                                 </th>
                                 <td class="p-3 text-zinc-900 dark:text-zinc-100">
-                                    {{ $equipo->centro?->nombre ?? '—' }}
+                                    {{ $equipo->centro?->centro_dialisis ?? '—' }}
                                 </td>
                             </tr>
                             <tr>
